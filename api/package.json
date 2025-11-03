@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "node scripts/run_migrations.js",
+    "migrate:dry-run": "node scripts/run_migrations.js --dry-run",
+    "seed:roles": "node scripts/seed_roles_permissions.js",
+    "seed:launches": "node scripts/seed_launch_data.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  }
+}

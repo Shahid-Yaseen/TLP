@@ -1,0 +1,11 @@
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/preflight" layer(base);
+@import "tailwindcss/utilities" layer(utilities);
+
+@font-face {
+  font-family: 'Nasalization';
+  src: url('/nasalization/Nasalization%20Rg.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

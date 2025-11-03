@@ -1,0 +1,78 @@
+name: Deploy API to Digital Ocean
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'api/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./api
+        run: npm ci
+
+      - name: Run tests (if available)
+        working-directory: ./api
+        run: npm test || true
+        continue-on-error: true
+
+      - name: Deploy to Digital Ocean Droplet
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "api/*"
+          target: "/opt/tlp/api"
+          strip_components: 1
+
+      - name: Deploy PM2 ecosystem config
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deployment/pm2.ecosystem.config.js"
+          target: "/opt/tlp"
+
+      - name: Run deployment script on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/tlp/api
+            npm ci --production
+            npm run migrate || true
+            pm2 restart tlp-api || pm2 start /opt/tlp/deployment/pm2.ecosystem.config.js --env production
+            pm2 save
+
+      - name: Health check
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sleep 5
+            curl -f http://localhost:${{ secrets.API_PORT || 3007 }}/health || exit 1
+
