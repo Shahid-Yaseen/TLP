@@ -38,6 +38,7 @@ jobs:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          debug: true
           script: |
             echo "SSH Connected Successfully!"
             whoami
