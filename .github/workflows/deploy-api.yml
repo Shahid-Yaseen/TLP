@@ -35,8 +35,8 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > deploy_key
+          chmod 600 deploy_key
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Test SSH Connection
@@ -44,7 +44,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: /github/workspace/deploy_key
           port: 22
           timeout: 60s
           debug: true
@@ -58,7 +58,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: /github/workspace/deploy_key
           source: "api/*"
           target: "/opt/tlp/api"
           strip_components: 1
@@ -68,7 +68,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: /github/workspace/deploy_key
           source: "deployment/pm2.ecosystem.config.js"
           target: "/opt/tlp"
 
@@ -77,7 +77,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: /github/workspace/deploy_key
           port: 22
           timeout: 60s
           script: |
@@ -92,10 +92,13 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: /github/workspace/deploy_key
           port: 22
           timeout: 60s
           script: |
             sleep 5
             curl -f http://localhost:${{ secrets.API_PORT || 3007 }}/health || exit 1
 
+      - name: Cleanup SSH Key
+        if: always()
+        run: rm -f deploy_key
