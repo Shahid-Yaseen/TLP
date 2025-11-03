@@ -2,9 +2,7 @@ name: Deploy Web Frontend to Digital Ocean
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
     paths:
       - 'web/**'
       - '.github/workflows/deploy-web.yml'
@@ -13,7 +11,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,35 +30,35 @@ jobs:
       - name: Build production bundle
         working-directory: ./web
         env:
-          VITE_API_URL: ${{ secrets.API_URL || 'http://localhost:3007' }}
+          VITE_API_URL: ${{ secrets.API_URL }}
         run: npm run build
 
       - name: Test SSH Connection
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "SSH connection successful!"
+            echo "SSH Connected Successfully!"
+            whoami
+            pwd
 
-      - name: Deploy to Digital Ocean Droplet
-        uses: appleboy/scp-action@master
+      - name: SCP Deploy build files
+        uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "web/dist/*"
           target: "/var/www/tlp-web"
-          strip_components: 2
 
-      - name: Reload nginx
-        uses: appleboy/ssh-action@master
+      - name: Reload Nginx
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sudo nginx -t && sudo systemctl reload nginx
-
-
+            sudo nginx -t
+            sudo systemctl reload nginx
