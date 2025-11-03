@@ -2,9 +2,7 @@ name: Deploy API to Digital Ocean
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
     paths:
       - 'api/**'
       - '.github/workflows/deploy-api.yml'
@@ -35,42 +33,41 @@ jobs:
         continue-on-error: true
 
       - name: Test SSH Connection
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "SSH connection successful!"
-            echo "Connected as user: $(whoami)"
-            echo "Current directory: $(pwd)"
-            echo "Hostname: $(hostname)"
+            echo "SSH Connected Successfully!"
+            whoami
+            pwd
 
       - name: Deploy to Digital Ocean Droplet
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "api/*"
           target: "/opt/tlp/api"
           strip_components: 1
 
       - name: Deploy PM2 ecosystem config
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "deployment/pm2.ecosystem.config.js"
           target: "/opt/tlp"
 
       - name: Run deployment script on server
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/tlp/api
             npm ci --production
@@ -79,11 +76,11 @@ jobs:
             pm2 save
 
       - name: Health check
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             sleep 5
             curl -f http://localhost:${{ secrets.API_PORT || 3007 }}/health || exit 1
