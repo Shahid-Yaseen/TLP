@@ -55,7 +55,18 @@ apt-get upgrade -y
 apt-get install -y git
 ```
 
-### 2.3 Clone Your Repository
+### 2.3 Install Node.js 20.x
+```bash
+# Install Node.js 20 (required for Vite 7.x)
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+
+# Verify installation
+node --version  # Should show v20.x.x
+npm --version
+```
+
+### 2.4 Clone Your Repository
 ```bash
 # Create directory for application
 mkdir -p /opt/tlp
@@ -80,7 +91,7 @@ sudo ./deployment/setup.sh
 ```
 
 **What this does:**
-- Installs Node.js 18.x
+- Installs Node.js 20.x
 - Installs PostgreSQL client
 - Installs nginx
 - Installs PM2 globally

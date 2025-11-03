@@ -12,10 +12,10 @@ echo "Updating system packages..."
 apt-get update
 apt-get upgrade -y
 
-# Install Node.js 18.x
+# Install Node.js 20.x
 echo "Installing Node.js..."
 if ! command -v node &> /dev/null; then
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
     apt-get install -y nodejs
 fi
 
