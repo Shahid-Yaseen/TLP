@@ -33,26 +33,9 @@ jobs:
           VITE_API_URL: ${{ secrets.API_URL }}
         run: npm run build
 
-      - name: Setup SSH Key
+      - name: Setup SSH known_hosts
         run: |
           mkdir -p ~/.ssh
-          # Write the private key - echo preserves newlines from secret
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > deploy_key
-          chmod 600 deploy_key
-          # Verify key file format (for debugging)
-          echo "Verifying key file format..."
-          echo "First line: $(head -1 deploy_key)"
-          echo "Last line: $(tail -1 deploy_key)"
-          echo "Line count: $(wc -l < deploy_key)"
-          # Verify it's a valid key format
-          if ! grep -q "BEGIN.*PRIVATE KEY" deploy_key; then
-            echo "ERROR: Key file doesn't contain BEGIN marker"
-            exit 1
-          fi
-          if ! grep -q "END.*PRIVATE KEY" deploy_key; then
-            echo "ERROR: Key file doesn't contain END marker"
-            exit 1
-          fi
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Test SSH Connection
@@ -60,7 +43,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: /github/workspace/deploy_key
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
           debug: true
@@ -72,7 +55,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: /github/workspace/deploy_key
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "web/dist/*"
           target: "/var/www/tlp-web"
 
@@ -81,13 +64,9 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: /github/workspace/deploy_key
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
           script: |
             sudo nginx -t
             sudo systemctl reload nginx
-
-      - name: Cleanup SSH Key
-        if: always()
-        run: rm -f deploy_key
