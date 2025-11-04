@@ -63,27 +63,32 @@ jobs:
             cd /opt/tlp || { echo "❌ Failed to change to /opt/tlp"; exit 1; }
             echo "📥 Pulling latest changes..."
             git pull origin main || echo "⚠️ Git pull skipped"
-            echo "📁 Checking directory structure..."
-            ls -la api/ || echo "api directory not found"
-            ls -la api/admin/ 2>/dev/null || echo "api/admin directory not found"
-            echo "📁 Navigating to admin directory..."
-            if [ -d "api/admin" ]; then
-              cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
-            elif [ -d "admin" ]; then
-              cd admin || { echo "❌ Failed to change to admin directory"; exit 1; }
+            echo "📁 Initializing git submodules (if any)..."
+            git submodule update --init --recursive || echo "No submodules found"
+            echo "📁 Checking admin directory..."
+            if [ ! -d "api/admin" ] || [ ! -f "api/admin/package.json" ]; then
+              echo "⚠️ Admin directory missing package.json. Checking if it's a nested git repo..."
+              if [ -d "api/admin/.git" ]; then
+                echo "📥 Admin is a nested git repo. Cloning separately..."
+                cd api
+                if [ -d "admin" ] && [ -d "admin/.git" ]; then
+                  cd admin
+                  git pull || echo "⚠️ Could not pull admin repo"
+                else
+                  echo "❌ Admin nested repo not found"
+                  exit 1
+                fi
+              else
+                echo "❌ Admin directory or package.json not found"
+                echo "Available in api/:"
+                ls -la api/ || echo "api directory not found"
+                exit 1
+              fi
             else
-              echo "❌ Admin directory not found. Available directories:"
-              find . -type d -name "*admin*" 2>/dev/null || echo "No admin directories found"
-              exit 1
+              cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
             fi
             echo "Current directory: $(pwd)"
-            echo "Checking package.json..."
-            if [ ! -f "package.json" ]; then
-              echo "❌ package.json not found in $(pwd)"
-              echo "Files in current directory:"
-              ls -la
-              exit 1
-            fi
+            echo "✅ package.json found at: $(pwd)/package.json"
             echo "✅ package.json found"
             echo "Installing dependencies..."
             npm ci
