@@ -1,3 +1,6 @@
+// Load .env file before reading environment variables
+require('dotenv').config({ path: '/opt/tlp/api/.env' });
+
 module.exports = {
   apps: [{
     name: 'tlp-api',
@@ -7,7 +10,7 @@ module.exports = {
     exec_mode: 'cluster',
     env: {
       NODE_ENV: 'production',
-      PORT: 3007,
+      PORT: process.env.PORT || 3007,
       DB_HOST: process.env.DB_HOST || 'localhost',
       DB_PORT: process.env.DB_PORT || 5432,
       DB_USER: process.env.DB_USER || 'postgres',
