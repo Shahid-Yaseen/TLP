@@ -41,8 +41,6 @@ if (!envLoaded) {
   console.log('⚠️  Using default dotenv.config() - .env file may not be found');
 }
 const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
 
 // Debug: Check if env vars are loaded
 console.log('🔍 Environment check:');
