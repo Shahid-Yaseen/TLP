@@ -3,8 +3,8 @@ module.exports = {
     name: 'tlp-api',
     script: './index.js',
     cwd: '/opt/tlp/api',
-    instances: 2,
-    exec_mode: 'cluster',
+    instances: 1,
+    exec_mode: 'fork',
     // Let the app load .env file itself - don't override with defaults
     // PM2 will pass through environment variables, and the app will load .env
     env_file: '/opt/tlp/api/.env',  // PM2 will load this if supported
