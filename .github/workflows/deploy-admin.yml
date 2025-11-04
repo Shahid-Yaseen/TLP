@@ -40,15 +40,36 @@ jobs:
           # Validate key format before using it
           TEMP_KEY="$HOME/.ssh/temp_validate_key"
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > "$TEMP_KEY"
+          
+          # Check for BEGIN marker
           if ! grep -q "BEGIN.*PRIVATE KEY" "$TEMP_KEY"; then
             echo "ERROR: Key format is invalid - missing BEGIN marker"
             echo "Fix the secret using: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
             exit 1
           fi
+          
+          # Check for END marker
           if ! grep -q "END.*PRIVATE KEY" "$TEMP_KEY"; then
             echo "ERROR: Key format is invalid - missing END marker"
             exit 1
           fi
+          
+          # Check if key has proper line breaks (should have multiple lines, not just one)
+          LINE_COUNT=$(wc -l < "$TEMP_KEY" || echo "0")
+          if [ "$LINE_COUNT" -lt 10 ]; then
+            echo "WARNING: Key appears to have corrupted newlines (only $LINE_COUNT lines, expected 50+)"
+            echo "The secret likely lost newlines when pasted via GitHub web UI"
+            echo "Fix using GitHub CLI: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
+            exit 1
+          fi
+          
+          # Verify key can be parsed (basic check)
+          if ! ssh-keygen -l -f "$TEMP_KEY" > /dev/null 2>&1; then
+            echo "ERROR: Key cannot be parsed - likely corrupted format"
+            echo "Fix using GitHub CLI: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
+            exit 1
+          fi
+          
           rm -f "$TEMP_KEY"
           echo "✓ SSH key format is valid"
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> $HOME/.ssh/known_hosts 2>/dev/null || true
