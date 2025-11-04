@@ -4,7 +4,41 @@
  * Main entry point for the backend API
  */
 
-require('dotenv').config();
+// Load .env file with explicit path
+const path = require('path');
+const fs = require('fs');
+
+// Try multiple paths for .env file
+const possiblePaths = [
+  path.join(__dirname, '.env'),                  // api/.env (same directory as index.js)
+  '/opt/tlp/api/.env',                           // Absolute path on server
+  path.join(process.cwd(), '.env'),             // Current working directory
+];
+
+let envLoaded = false;
+for (const envPath of possiblePaths) {
+  if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+    console.log(`✅ Loaded .env from: ${envPath}`);
+    envLoaded = true;
+    break;
+  }
+}
+
+if (!envLoaded) {
+  // Try default location
+  require('dotenv').config();
+  console.log('⚠️  Using default dotenv.config() - .env file may not be found');
+}
+
+// Debug: Show loaded DB config (without password)
+console.log('🔍 Database Configuration:');
+console.log('  DB_HOST:', process.env.DB_HOST || 'NOT SET');
+console.log('  DB_PORT:', process.env.DB_PORT || 'NOT SET');
+console.log('  DB_USER:', process.env.DB_USER || 'NOT SET');
+console.log('  DB_DATABASE:', process.env.DB_DATABASE || 'NOT SET');
+console.log('  DB_PASSWORD:', process.env.DB_PASSWORD ? '***SET***' : 'NOT SET');
+console.log('');
 const express = require('express');
 const cors = require('cors');
 
