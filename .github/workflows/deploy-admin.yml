@@ -89,10 +89,13 @@ jobs:
           # Save validated key to workspace for SSH actions to use
           DEPLOY_KEY="${{ github.workspace }}/.github_ssh_key"
           cp "$TEMP_KEY" "$DEPLOY_KEY"
-          chmod 600 "$DEPLOY_KEY"
+          # Set permissions: 644 allows Docker container to read it (600 is too restrictive)
+          chmod 644 "$DEPLOY_KEY"
           rm -f "$TEMP_KEY"
           echo "✓ SSH key format is valid and saved for use"
           echo "SSH_KEY_PATH=$DEPLOY_KEY" >> $GITHUB_ENV
+          # Verify file is accessible
+          ls -la "$DEPLOY_KEY"
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> $HOME/.ssh/known_hosts 2>/dev/null || true
 
       - name: Test SSH Connection
