@@ -23,7 +23,11 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./api
-        run: npm ci
+        run: |
+          echo "Installing API dependencies..."
+          npm ci
+          echo "Verifying package.json scripts..."
+          grep -A 10 '"scripts"' package.json || echo "package.json not found"
 
       - name: Run tests (if available)
         working-directory: ./api
@@ -40,11 +44,17 @@ jobs:
           timeout: 60s
           script: |
             echo "🚀 Starting API deployment..."
-            cd /opt/tlp/api || exit 1
-            git pull origin main || echo "Git pull skipped"
+            cd /opt/tlp/api || { echo "❌ Failed to change to /opt/tlp/api"; exit 1; }
+            echo "📥 Pulling latest changes..."
+            git pull origin main || echo "⚠️ Git pull skipped"
+            echo "📦 Installing production dependencies..."
             npm ci --production
-            npm run migrate || true
-            pm2 restart tlp-api || pm2 start /opt/tlp/deployment/pm2.ecosystem.config.js --env production
-            pm2 save
+            echo "🔄 Running database migrations..."
+            npm run migrate || { echo "⚠️ Migration failed or skipped"; true; }
+            echo "🔄 Restarting application..."
+            pm2 restart tlp-api || pm2 start /opt/tlp/deployment/pm2.ecosystem.config.js --env production || { echo "❌ Failed to start API"; exit 1; }
+            pm2 save || echo "⚠️ PM2 save failed"
+            echo "✅ Checking application status..."
+            pm2 status
             echo "✅ API deployment complete!"
 

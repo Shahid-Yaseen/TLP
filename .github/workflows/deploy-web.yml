@@ -23,7 +23,11 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./web
-        run: npm ci
+        run: |
+          echo "Installing web dependencies..."
+          npm ci
+          echo "Verifying package.json scripts..."
+          grep -A 10 '"scripts"' package.json || echo "package.json not found"
 
       - name: Build production bundle
         working-directory: ./web
@@ -41,12 +45,17 @@ jobs:
           timeout: 60s
           script: |
             echo "🚀 Deploying web frontend..."
-            cd /opt/tlp
-            git pull origin main || echo "Git pull skipped"
-            cd web
+            cd /opt/tlp || { echo "❌ Failed to change to /opt/tlp"; exit 1; }
+            echo "📥 Pulling latest changes..."
+            git pull origin main || echo "⚠️ Git pull skipped"
+            cd web || { echo "❌ Failed to change to web directory"; exit 1; }
+            echo "📦 Installing dependencies..."
             npm ci
-            VITE_API_URL=${{ secrets.API_URL }} npm run build
-            sudo rm -rf /var/www/tlp-web/*
-            sudo cp -r dist/* /var/www/tlp-web/
-            sudo nginx -t && sudo systemctl reload nginx
+            echo "🔨 Building production bundle..."
+            VITE_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
+            echo "📁 Copying files to web root..."
+            sudo rm -rf /var/www/tlp-web/* || { echo "⚠️ Failed to clear web root"; exit 1; }
+            sudo cp -r dist/* /var/www/tlp-web/ || { echo "❌ Failed to copy files"; exit 1; }
+            echo "🔄 Reloading nginx..."
+            sudo nginx -t && sudo systemctl reload nginx || { echo "❌ Nginx reload failed"; exit 1; }
             echo "✅ Web frontend deployed!"
