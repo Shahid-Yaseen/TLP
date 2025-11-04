@@ -65,9 +65,15 @@ jobs:
             git pull origin main || echo "⚠️ Git pull skipped"
             cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
             npm ci
-            REACT_APP_API_URL=${{ secrets.API_URL }} npm run build
-            sudo rm -rf /var/www/tlp-admin/*
-            sudo cp -r build/* /var/www/tlp-admin/
-            sudo nginx -t && sudo systemctl reload nginx
+            REACT_APP_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
+            echo "📁 Setting up admin root directory..."
+            sudo mkdir -p /var/www/tlp-admin
+            sudo chown -R www-data:www-data /var/www/tlp-admin || sudo chown -R $(whoami):$(whoami) /var/www/tlp-admin || true
+            echo "📁 Copying files to admin root..."
+            sudo rm -rf /var/www/tlp-admin/* || { echo "⚠️ Failed to clear admin root (may be empty)"; true; }
+            sudo cp -r build/* /var/www/tlp-admin/ || { echo "❌ Failed to copy files"; exit 1; }
+            sudo chown -R www-data:www-data /var/www/tlp-admin || echo "⚠️ Failed to set ownership"
+            echo "🔄 Reloading nginx..."
+            sudo nginx -t && sudo systemctl reload nginx || { echo "❌ Nginx reload failed"; exit 1; }
             echo "✅ Admin frontend deployed!"
 

@@ -63,9 +63,13 @@ jobs:
             npm ci
             echo "🔨 Building production bundle..."
             VITE_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
+            echo "📁 Setting up web root directory..."
+            sudo mkdir -p /var/www/tlp-web
+            sudo chown -R www-data:www-data /var/www/tlp-web || sudo chown -R $(whoami):$(whoami) /var/www/tlp-web || true
             echo "📁 Copying files to web root..."
-            sudo rm -rf /var/www/tlp-web/* || { echo "⚠️ Failed to clear web root"; exit 1; }
+            sudo rm -rf /var/www/tlp-web/* || { echo "⚠️ Failed to clear web root (may be empty)"; true; }
             sudo cp -r dist/* /var/www/tlp-web/ || { echo "❌ Failed to copy files"; exit 1; }
+            sudo chown -R www-data:www-data /var/www/tlp-web || echo "⚠️ Failed to set ownership"
             echo "🔄 Reloading nginx..."
             sudo nginx -t && sudo systemctl reload nginx || { echo "❌ Nginx reload failed"; exit 1; }
             echo "✅ Web frontend deployed!"
