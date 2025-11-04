@@ -44,6 +44,16 @@ jobs:
             cd /opt/tlp || { echo "❌ Failed to change to /opt/tlp"; exit 1; }
             echo "📥 Pulling latest changes..."
             git pull origin main || echo "⚠️ Git pull skipped"
+            echo "📁 Checking for admin directory..."
+            if [ ! -d "api/admin" ]; then
+              echo "❌ api/admin directory not found in repository"
+              echo "Available directories in api/:"
+              ls -la api/ || echo "api directory not found"
+              echo ""
+              echo "⚠️ The admin directory needs to be added to the repository."
+              echo "Please add the api/admin directory with its files and commit them."
+              exit 1
+            fi
             cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
             echo "📦 Installing dependencies..."
             npm ci
