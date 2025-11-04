@@ -35,28 +35,32 @@ jobs:
 
       - name: Setup SSH Key
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          mkdir -p $HOME/.ssh
+          SSH_KEY_PATH="$HOME/.ssh/deploy_key"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > "$SSH_KEY_PATH"
+          chmod 600 "$SSH_KEY_PATH"
           # Validate key format - catch corrupted secrets early
-          if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key; then
+          if ! grep -q "BEGIN.*PRIVATE KEY" "$SSH_KEY_PATH"; then
             echo "ERROR: Key format is invalid - missing BEGIN marker"
             echo "This usually means GitHub Secret lost newlines. Use GitHub CLI to set it:"
             echo "gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
             exit 1
           fi
-          if ! grep -q "END.*PRIVATE KEY" ~/.ssh/deploy_key; then
+          if ! grep -q "END.*PRIVATE KEY" "$SSH_KEY_PATH"; then
             echo "ERROR: Key format is invalid - missing END marker"
             exit 1
           fi
-          ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> $HOME/.ssh/known_hosts 2>/dev/null || true
+          echo "SSH key file created at: $SSH_KEY_PATH"
+          ls -la "$SSH_KEY_PATH"
+          echo "SSH_KEY_PATH=$SSH_KEY_PATH" >> $GITHUB_ENV
 
       - name: Test SSH Connection
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: ${{ env.SSH_KEY_PATH }}
           port: 22
           timeout: 60s
           script: |
@@ -67,7 +71,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: ${{ env.SSH_KEY_PATH }}
           source: "web/dist/*"
           target: "/var/www/tlp-web"
 
@@ -76,7 +80,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ~/.ssh/deploy_key
+          key_path: ${{ env.SSH_KEY_PATH }}
           port: 22
           timeout: 60s
           script: |
