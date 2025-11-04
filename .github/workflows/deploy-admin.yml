@@ -67,8 +67,9 @@ jobs:
               fi
             fi
             cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
-            echo "📦 Installing dependencies..."
-            npm ci
+            echo "📦 Cleaning and installing dependencies..."
+            rm -rf node_modules package-lock.json
+            npm install
             echo "🔨 Building production bundle..."
             REACT_APP_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
             echo "📁 Setting up admin root directory..."
