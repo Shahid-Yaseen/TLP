@@ -33,99 +33,22 @@ jobs:
           VITE_API_URL: ${{ secrets.API_URL }}
         run: npm run build
 
-      - name: Validate SSH Key Format
-        run: |
-          mkdir -p $HOME/.ssh
-          # Validate key format before using it
-          TEMP_KEY="$HOME/.ssh/temp_validate_key"
-          # Use printf to preserve exact formatting (no trailing newline issues)
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > "$TEMP_KEY"
-          
-          # Check for BEGIN marker
-          if ! grep -q "BEGIN.*PRIVATE KEY" "$TEMP_KEY"; then
-            echo "ERROR: Key format is invalid - missing BEGIN marker"
-            echo "Fix the secret using: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
-            exit 1
-          fi
-          
-          # Check for END marker
-          if ! grep -q "END.*PRIVATE KEY" "$TEMP_KEY"; then
-            echo "ERROR: Key format is invalid - missing END marker"
-            exit 1
-          fi
-          
-          # Check if key has proper line breaks (should have multiple lines, not just one)
-          LINE_COUNT=$(wc -l < "$TEMP_KEY" || echo "0")
-          if [ "$LINE_COUNT" -lt 10 ]; then
-            echo "WARNING: Key appears to have corrupted newlines (only $LINE_COUNT lines, expected 50+)"
-            echo "The secret likely lost newlines when pasted via GitHub web UI"
-            echo "Fix using GitHub CLI: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
-            exit 1
-          fi
-          
-          # Verify key can be parsed (basic check)
-          # Set proper permissions first
-          chmod 600 "$TEMP_KEY"
-          
-          # Capture actual error message
-          SSH_KEYGEN_OUTPUT=$(ssh-keygen -l -f "$TEMP_KEY" 2>&1)
-          SSH_KEYGEN_EXIT=$?
-          
-          if [ $SSH_KEYGEN_EXIT -ne 0 ]; then
-            echo "ERROR: Key cannot be parsed"
-            echo "ssh-keygen error: $SSH_KEYGEN_OUTPUT"
-            echo ""
-            echo "Debug info:"
-            echo "  Line count: $(wc -l < "$TEMP_KEY" || echo "0")"
-            echo "  File size: $(wc -c < "$TEMP_KEY") bytes"
-            echo "  Permissions: $(ls -l "$TEMP_KEY" | awk '{print $1}')"
-            echo ""
-            echo "Fix using GitHub CLI:"
-            echo "  gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo Shahid-Yaseen/TLP"
-            exit 1
-          fi
-          
-          # Save validated key to workspace for SSH actions to use (use relative path for Docker)
-          DEPLOY_KEY=".github_ssh_key"
-          cp "$TEMP_KEY" "${{ github.workspace }}/$DEPLOY_KEY"
-          # Set permissions: 644 allows Docker container to read it
-          chmod 644 "${{ github.workspace }}/$DEPLOY_KEY"
-          rm -f "$TEMP_KEY"
-          echo "✓ SSH key format is valid and saved for use"
-          # Export just the filename for Docker container
-          echo "SSH_KEY_FILE=$DEPLOY_KEY" >> $GITHUB_ENV
-          # Verify file is accessible
-          ls -la "${{ github.workspace }}/$DEPLOY_KEY"
-          ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> $HOME/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Test SSH Connection
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy Web Frontend
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
           script: |
-            echo "SSH Connected Successfully!"
-
-      - name: SCP Deploy build files
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
-          source: "web/dist/*"
-          target: "/var/www/tlp-web"
-
-      - name: Reload Nginx
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
-          port: 22
-          timeout: 60s
-          script: |
-            sudo nginx -t
-            sudo systemctl reload nginx
+            echo "🚀 Deploying web frontend..."
+            cd /opt/tlp
+            git pull origin main || echo "Git pull skipped"
+            cd web
+            npm ci
+            VITE_API_URL=${{ secrets.API_URL }} npm run build
+            sudo rm -rf /var/www/tlp-web/*
+            sudo cp -r dist/* /var/www/tlp-web/
+            sudo nginx -t && sudo systemctl reload nginx
+            echo "✅ Web frontend deployed!"

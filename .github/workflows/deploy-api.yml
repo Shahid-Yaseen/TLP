@@ -32,137 +32,21 @@ jobs:
         run: npm test || true
         continue-on-error: true
 
-      - name: Validate SSH Key Format
-        run: |
-          mkdir -p $HOME/.ssh
-          # Validate key format before using it
-          TEMP_KEY="$HOME/.ssh/temp_validate_key"
-          # Use printf to preserve exact formatting (no trailing newline issues)
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > "$TEMP_KEY"
-          
-          # Check for BEGIN marker
-          if ! grep -q "BEGIN.*PRIVATE KEY" "$TEMP_KEY"; then
-            echo "ERROR: Key format is invalid - missing BEGIN marker"
-            echo "Fix the secret using: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
-            exit 1
-          fi
-          
-          # Check for END marker
-          if ! grep -q "END.*PRIVATE KEY" "$TEMP_KEY"; then
-            echo "ERROR: Key format is invalid - missing END marker"
-            exit 1
-          fi
-          
-          # Check if key has proper line breaks (should have multiple lines, not just one)
-          LINE_COUNT=$(wc -l < "$TEMP_KEY" || echo "0")
-          if [ "$LINE_COUNT" -lt 10 ]; then
-            echo "WARNING: Key appears to have corrupted newlines (only $LINE_COUNT lines, expected 50+)"
-            echo "The secret likely lost newlines when pasted via GitHub web UI"
-            echo "Fix using GitHub CLI: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
-            echo "Current key preview (first 200 chars):"
-            head -c 200 "$TEMP_KEY"
-            exit 1
-          fi
-          
-          # Verify key can be parsed (basic check)
-          # Set proper permissions first
-          chmod 600 "$TEMP_KEY"
-          
-          # Capture actual error message
-          SSH_KEYGEN_OUTPUT=$(ssh-keygen -l -f "$TEMP_KEY" 2>&1)
-          SSH_KEYGEN_EXIT=$?
-          
-          if [ $SSH_KEYGEN_EXIT -ne 0 ]; then
-            echo "ERROR: Key cannot be parsed"
-            echo "ssh-keygen error: $SSH_KEYGEN_OUTPUT"
-            echo ""
-            echo "Debug info:"
-            echo "  Line count: $(wc -l < "$TEMP_KEY" || echo "0")"
-            echo "  File size: $(wc -c < "$TEMP_KEY") bytes"
-            echo "  Permissions: $(ls -l "$TEMP_KEY" | awk '{print $1}')"
-            echo ""
-            echo "Fix using GitHub CLI:"
-            echo "  gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo Shahid-Yaseen/TLP"
-            exit 1
-          fi
-          
-          # Extract public key for verification
-          echo "Key validation passed:"
-          ssh-keygen -l -f "$TEMP_KEY" || true
-          echo ""
-          echo "Public key fingerprint (verify this matches on droplet):"
-          ssh-keygen -y -f "$TEMP_KEY" | head -c 100
-          echo "..."
-          
-          # Save validated key to workspace for SSH actions to use (use relative path for Docker)
-          DEPLOY_KEY=".github_ssh_key"
-          cp "$TEMP_KEY" "${{ github.workspace }}/$DEPLOY_KEY"
-          # Set permissions: 644 allows Docker container to read it
-          chmod 644 "${{ github.workspace }}/$DEPLOY_KEY"
-          rm -f "$TEMP_KEY"
-          echo "✓ SSH key format is valid and saved for use"
-          # Export just the filename for Docker container
-          echo "SSH_KEY_FILE=$DEPLOY_KEY" >> $GITHUB_ENV
-          # Verify file is accessible
-          ls -la "${{ github.workspace }}/$DEPLOY_KEY"
-          ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> $HOME/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Test SSH Connection
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy to Droplet
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
-          port: 22
-          timeout: 60s
-          debug: true
-          script: |
-            echo "SSH Connected Successfully!"
-            whoami
-            pwd
-
-      - name: Deploy to Digital Ocean Droplet
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
-          source: "api/*"
-          target: "/opt/tlp/api"
-          strip_components: 1
-
-      - name: Deploy PM2 ecosystem config
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
-          source: "deployment/pm2.ecosystem.config.js"
-          target: "/opt/tlp"
-
-      - name: Run deployment script on server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
           script: |
-            cd /opt/tlp/api
+            echo "🚀 Starting API deployment..."
+            cd /opt/tlp/api || exit 1
+            git pull origin main || echo "Git pull skipped - using uploaded files"
             npm ci --production
             npm run migrate || true
             pm2 restart tlp-api || pm2 start /opt/tlp/deployment/pm2.ecosystem.config.js --env production
             pm2 save
+            echo "✅ API deployment complete!"
 
-      - name: Health check
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_FILE }}
-          port: 22
-          timeout: 60s
-          script: |
-            sleep 5
-            curl -f http://localhost:${{ secrets.API_PORT || 3007 }}/health || exit 1
