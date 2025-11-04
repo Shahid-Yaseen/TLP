@@ -32,9 +32,22 @@ jobs:
         run: npm test || true
         continue-on-error: true
 
-      - name: Setup SSH known_hosts
+      - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Validate key format - catch corrupted secrets early
+          if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "ERROR: Key format is invalid - missing BEGIN marker"
+            echo "This usually means GitHub Secret lost newlines. Use GitHub CLI to set it:"
+            echo "gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
+            exit 1
+          fi
+          if ! grep -q "END.*PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "ERROR: Key format is invalid - missing END marker"
+            exit 1
+          fi
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Test SSH Connection
@@ -42,10 +55,9 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ~/.ssh/deploy_key
           port: 22
           timeout: 60s
-          debug: true
           script: |
             echo "SSH Connected Successfully!"
             whoami
@@ -56,7 +68,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ~/.ssh/deploy_key
           source: "api/*"
           target: "/opt/tlp/api"
           strip_components: 1
@@ -66,7 +78,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ~/.ssh/deploy_key
           source: "deployment/pm2.ecosystem.config.js"
           target: "/opt/tlp"
 
@@ -75,7 +87,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ~/.ssh/deploy_key
           port: 22
           timeout: 60s
           script: |
@@ -90,7 +102,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ~/.ssh/deploy_key
           port: 22
           timeout: 60s
           script: |
