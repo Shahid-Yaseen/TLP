@@ -67,12 +67,27 @@ jobs:
               fi
             fi
             cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
+            echo "💾 Checking available memory..."
+            free -h
+            echo "💾 Setting up swap space if needed..."
+            if [ ! -f /swapfile ]; then
+              echo "Creating 2GB swap file..."
+              sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1024 count=2097152
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo "Swap enabled temporarily"
+            else
+              echo "Swap file exists, enabling..."
+              sudo swapon /swapfile || echo "Swap already active"
+            fi
+            free -h
             echo "📦 Cleaning and installing dependencies..."
             rm -rf node_modules
             npm cache clean --force || true
-            npm install
-            echo "🔨 Building production bundle..."
-            REACT_APP_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
+            NODE_OPTIONS="--max-old-space-size=2048" npm install
+            echo "🔨 Building production bundle with increased memory..."
+            NODE_OPTIONS="--max-old-space-size=2048" REACT_APP_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
             echo "📁 Setting up admin root directory..."
             sudo mkdir -p /var/www/tlp-admin
             sudo chown -R www-data:www-data /var/www/tlp-admin || sudo chown -R $(whoami):$(whoami) /var/www/tlp-admin || true
