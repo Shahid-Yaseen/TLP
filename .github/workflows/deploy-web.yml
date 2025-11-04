@@ -85,8 +85,13 @@ jobs:
             exit 1
           fi
           
+          # Save validated key to workspace for SSH actions to use
+          DEPLOY_KEY="${{ github.workspace }}/.github_ssh_key"
+          cp "$TEMP_KEY" "$DEPLOY_KEY"
+          chmod 600 "$DEPLOY_KEY"
           rm -f "$TEMP_KEY"
-          echo "✓ SSH key format is valid"
+          echo "✓ SSH key format is valid and saved for use"
+          echo "SSH_KEY_PATH=$DEPLOY_KEY" >> $GITHUB_ENV
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> $HOME/.ssh/known_hosts 2>/dev/null || true
 
       - name: Test SSH Connection
@@ -94,7 +99,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ${{ env.SSH_KEY_PATH }}
           port: 22
           timeout: 60s
           script: |
@@ -105,7 +110,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ${{ env.SSH_KEY_PATH }}
           source: "web/dist/*"
           target: "/var/www/tlp-web"
 
@@ -114,7 +119,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ${{ env.SSH_KEY_PATH }}
           port: 22
           timeout: 60s
           script: |
