@@ -13,7 +13,33 @@
  *   --to=N       Run migrations up to and including N (e.g., --to=3)
  */
 
-require('dotenv').config({ path: '../.env' });
+// Try multiple paths for .env file
+const path = require('path');
+const fs = require('fs');
+
+// Possible .env file locations
+const possiblePaths = [
+  path.join(__dirname, '..', '.env'),           // api/.env (relative to scripts/)
+  path.join(__dirname, '..', '..', '.env'),     // root .env (if exists)
+  '/opt/tlp/api/.env',                           // Absolute path on server
+  path.join(process.cwd(), '.env'),             // Current working directory
+];
+
+let envLoaded = false;
+for (const envPath of possiblePaths) {
+  if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+    console.log(`✅ Loaded .env from: ${envPath}`);
+    envLoaded = true;
+    break;
+  }
+}
+
+if (!envLoaded) {
+  // Try default location
+  require('dotenv').config();
+  console.log('⚠️  Using default dotenv.config() - .env file may not be found');
+}
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
