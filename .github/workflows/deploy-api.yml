@@ -66,7 +66,14 @@ jobs:
           # Verify key can be parsed (basic check)
           if ! ssh-keygen -l -f "$TEMP_KEY" > /dev/null 2>&1; then
             echo "ERROR: Key cannot be parsed - likely corrupted format"
-            echo "Fix using GitHub CLI: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
+            echo "Debug info:"
+            echo "  Line count: $(wc -l < "$TEMP_KEY" || echo "0")"
+            echo "  First line: $(head -1 "$TEMP_KEY" | head -c 50)"
+            echo "  Last line: $(tail -1 "$TEMP_KEY" | head -c 50)"
+            echo "  File size: $(wc -c < "$TEMP_KEY") bytes"
+            echo ""
+            echo "Fix using GitHub CLI:"
+            echo "  gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo Shahid-Yaseen/TLP"
             exit 1
           fi
           
