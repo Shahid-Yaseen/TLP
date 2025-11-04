@@ -37,7 +37,8 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p $HOME/.ssh
-          SSH_KEY_PATH="$HOME/.ssh/deploy_key"
+          # Create key file in workspace so Docker container can access it
+          SSH_KEY_PATH="${{ github.workspace }}/.ssh_deploy_key"
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > "$SSH_KEY_PATH"
           chmod 600 "$SSH_KEY_PATH"
           # Validate key format - catch corrupted secrets early
