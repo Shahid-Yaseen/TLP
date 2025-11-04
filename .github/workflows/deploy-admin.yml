@@ -63,10 +63,28 @@ jobs:
             cd /opt/tlp || { echo "❌ Failed to change to /opt/tlp"; exit 1; }
             echo "📥 Pulling latest changes..."
             git pull origin main || echo "⚠️ Git pull skipped"
-            cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
+            echo "📁 Checking directory structure..."
+            ls -la api/ || echo "api directory not found"
+            ls -la api/admin/ 2>/dev/null || echo "api/admin directory not found"
+            echo "📁 Navigating to admin directory..."
+            if [ -d "api/admin" ]; then
+              cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
+            elif [ -d "admin" ]; then
+              cd admin || { echo "❌ Failed to change to admin directory"; exit 1; }
+            else
+              echo "❌ Admin directory not found. Available directories:"
+              find . -type d -name "*admin*" 2>/dev/null || echo "No admin directories found"
+              exit 1
+            fi
             echo "Current directory: $(pwd)"
             echo "Checking package.json..."
-            ls -la package.json || echo "package.json not found"
+            if [ ! -f "package.json" ]; then
+              echo "❌ package.json not found in $(pwd)"
+              echo "Files in current directory:"
+              ls -la
+              exit 1
+            fi
+            echo "✅ package.json found"
             echo "Installing dependencies..."
             npm ci
             echo "Available scripts:"
