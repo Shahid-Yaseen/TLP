@@ -37,7 +37,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          echo "Key file created:"
+          ls -la ~/.ssh/deploy_key
+          file ~/.ssh/deploy_key
+          ssh-keygen -l -f ~/.ssh/deploy_key || echo "Key validation failed"
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "Testing direct SSH..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o BatchMode=yes ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} "echo 'Direct SSH works'" || echo "Direct SSH failed"
 
       - name: Deploy to Droplet
         uses: appleboy/ssh-action@master
