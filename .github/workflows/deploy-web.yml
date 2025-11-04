@@ -38,7 +38,8 @@ jobs:
           mkdir -p $HOME/.ssh
           # Validate key format before using it
           TEMP_KEY="$HOME/.ssh/temp_validate_key"
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > "$TEMP_KEY"
+          # Use printf to preserve exact formatting (no trailing newline issues)
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > "$TEMP_KEY"
           
           # Check for BEGIN marker
           if ! grep -q "BEGIN.*PRIVATE KEY" "$TEMP_KEY"; then
@@ -63,13 +64,21 @@ jobs:
           fi
           
           # Verify key can be parsed (basic check)
-          if ! ssh-keygen -l -f "$TEMP_KEY" > /dev/null 2>&1; then
-            echo "ERROR: Key cannot be parsed - likely corrupted format"
+          # Set proper permissions first
+          chmod 600 "$TEMP_KEY"
+          
+          # Capture actual error message
+          SSH_KEYGEN_OUTPUT=$(ssh-keygen -l -f "$TEMP_KEY" 2>&1)
+          SSH_KEYGEN_EXIT=$?
+          
+          if [ $SSH_KEYGEN_EXIT -ne 0 ]; then
+            echo "ERROR: Key cannot be parsed"
+            echo "ssh-keygen error: $SSH_KEYGEN_OUTPUT"
+            echo ""
             echo "Debug info:"
             echo "  Line count: $(wc -l < "$TEMP_KEY" || echo "0")"
-            echo "  First line: $(head -1 "$TEMP_KEY" | head -c 50)"
-            echo "  Last line: $(tail -1 "$TEMP_KEY" | head -c 50)"
             echo "  File size: $(wc -c < "$TEMP_KEY") bytes"
+            echo "  Permissions: $(ls -l "$TEMP_KEY" | awk '{print $1}')"
             echo ""
             echo "Fix using GitHub CLI:"
             echo "  gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo Shahid-Yaseen/TLP"
