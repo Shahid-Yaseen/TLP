@@ -32,35 +32,31 @@ jobs:
         run: npm test || true
         continue-on-error: true
 
-      - name: Setup SSH Key
+      - name: Validate SSH Key Format
         run: |
           mkdir -p $HOME/.ssh
-          # Create key file in workspace so Docker container can access it
-          SSH_KEY_PATH="${{ github.workspace }}/.ssh_deploy_key"
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > "$SSH_KEY_PATH"
-          chmod 600 "$SSH_KEY_PATH"
-          # Validate key format - catch corrupted secrets early
-          if ! grep -q "BEGIN.*PRIVATE KEY" "$SSH_KEY_PATH"; then
+          # Validate key format before using it
+          TEMP_KEY="$HOME/.ssh/temp_validate_key"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > "$TEMP_KEY"
+          if ! grep -q "BEGIN.*PRIVATE KEY" "$TEMP_KEY"; then
             echo "ERROR: Key format is invalid - missing BEGIN marker"
-            echo "This usually means GitHub Secret lost newlines. Use GitHub CLI to set it:"
-            echo "gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
+            echo "Fix the secret using: gh secret set SSH_PRIVATE_KEY --body \"\$(cat ~/.ssh/github_actions_deploy)\" --repo OWNER/REPO"
             exit 1
           fi
-          if ! grep -q "END.*PRIVATE KEY" "$SSH_KEY_PATH"; then
+          if ! grep -q "END.*PRIVATE KEY" "$TEMP_KEY"; then
             echo "ERROR: Key format is invalid - missing END marker"
             exit 1
           fi
+          rm -f "$TEMP_KEY"
+          echo "✓ SSH key format is valid"
           ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> $HOME/.ssh/known_hosts 2>/dev/null || true
-          echo "SSH key file created at: $SSH_KEY_PATH"
-          ls -la "$SSH_KEY_PATH"
-          echo "SSH_KEY_PATH=$SSH_KEY_PATH" >> $GITHUB_ENV
 
       - name: Test SSH Connection
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_PATH }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
           script: |
@@ -73,7 +69,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_PATH }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "api/*"
           target: "/opt/tlp/api"
           strip_components: 1
@@ -83,7 +79,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_PATH }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "deployment/pm2.ecosystem.config.js"
           target: "/opt/tlp"
 
@@ -92,7 +88,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_PATH }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
           script: |
@@ -107,7 +103,7 @@ jobs:
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
-          key_path: ${{ env.SSH_KEY_PATH }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
           script: |
