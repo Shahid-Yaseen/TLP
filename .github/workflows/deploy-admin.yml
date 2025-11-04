@@ -46,13 +46,25 @@ jobs:
             git pull origin main || echo "⚠️ Git pull skipped"
             echo "📁 Checking for admin directory..."
             if [ ! -d "api/admin" ]; then
-              echo "❌ api/admin directory not found in repository"
-              echo "Available directories in api/:"
-              ls -la api/ || echo "api directory not found"
-              echo ""
-              echo "⚠️ The admin directory needs to be added to the repository."
-              echo "Please add the api/admin directory with its files and commit them."
-              exit 1
+              echo "⚠️ api/admin directory not found in repository"
+              echo "Checking if admin exists from previous deployment..."
+              if [ -d "/opt/tlp-backup.*/api/admin" ] 2>/dev/null; then
+                echo "📥 Found admin in backup, restoring..."
+                BACKUP_DIR=$(ls -td /opt/tlp-backup.* 2>/dev/null | head -1)
+                if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR/api/admin" ]; then
+                  cp -r "$BACKUP_DIR/api/admin" api/admin
+                  echo "✅ Admin restored from backup"
+                fi
+              fi
+              if [ ! -d "api/admin" ]; then
+                echo "❌ api/admin directory still not found"
+                echo "Available directories in api/:"
+                ls -la api/ || echo "api directory not found"
+                echo ""
+                echo "⚠️ The admin directory needs to be added to the repository."
+                echo "If you have it elsewhere, copy it to api/admin and commit."
+                exit 1
+              fi
             fi
             cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
             echo "📦 Installing dependencies..."
