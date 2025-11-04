@@ -45,6 +45,16 @@ jobs:
           timeout: 60s
           script: |
             echo "🚀 Deploying web frontend..."
+            echo "📁 Ensuring directory structure..."
+            mkdir -p /opt/tlp
+            if [ ! -d "/opt/tlp/.git" ]; then
+              echo "📥 Cloning repository (first time setup)..."
+              if [ -d "/opt/tlp" ] && [ "$(ls -A /opt/tlp 2>/dev/null)" ]; then
+                echo "⚠️ /opt/tlp exists but is not a git repo. Backing up and cloning..."
+                sudo mv /opt/tlp /opt/tlp.backup.$(date +%s) 2>/dev/null || true
+              fi
+              git clone https://github.com/Shahid-Yaseen/TLP.git /opt/tlp || { echo "❌ Failed to clone repository"; exit 1; }
+            fi
             cd /opt/tlp || { echo "❌ Failed to change to /opt/tlp"; exit 1; }
             echo "📥 Pulling latest changes..."
             git pull origin main || echo "⚠️ Git pull skipped"
