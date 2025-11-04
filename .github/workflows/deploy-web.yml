@@ -7,6 +7,11 @@ on:
       - 'web/**'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment even if no changes'
+        required: false
+        default: 'false'
 
 jobs:
   deploy:
