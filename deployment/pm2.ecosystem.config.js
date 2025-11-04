@@ -1,6 +1,3 @@
-// Load .env file before reading environment variables
-require('dotenv').config({ path: '/opt/tlp/api/.env' });
-
 module.exports = {
   apps: [{
     name: 'tlp-api',
@@ -8,17 +5,13 @@ module.exports = {
     cwd: '/opt/tlp/api',
     instances: 2,
     exec_mode: 'cluster',
+    // Let the app load .env file itself - don't override with defaults
+    // PM2 will pass through environment variables, and the app will load .env
+    env_file: '/opt/tlp/api/.env',  // PM2 will load this if supported
     env: {
       NODE_ENV: 'production',
-      PORT: process.env.PORT || 3007,
-      DB_HOST: process.env.DB_HOST || 'localhost',
-      DB_PORT: process.env.DB_PORT || 5432,
-      DB_USER: process.env.DB_USER || 'postgres',
-      DB_PASSWORD: process.env.DB_PASSWORD,
-      DB_DATABASE: process.env.DB_DATABASE || 'tlp_db',
-      JWT_SECRET: process.env.JWT_SECRET,
-      JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '15m',
-      REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d'
+      // Only set PORT if needed, let .env handle DB config
+      PORT: 3007,
     },
     error_file: '/var/log/pm2/tlp-api-error.log',
     out_file: '/var/log/pm2/tlp-api-out.log',
