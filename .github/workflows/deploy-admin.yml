@@ -24,12 +24,13 @@ jobs:
       - name: Install dependencies
         working-directory: ./api/admin
         run: |
+          echo "Current directory: $(pwd)"
           echo "Installing dependencies..."
           npm ci
           echo "Verifying package.json and scripts..."
-          cat package.json | grep -A 5 '"scripts"'
+          grep -A 5 '"scripts"' package.json || echo "package.json not found"
           echo "Checking if react-scripts is installed..."
-          ls node_modules/react-scripts 2>/dev/null || echo "react-scripts not found in node_modules"
+          test -d node_modules/react-scripts && echo "react-scripts found" || echo "react-scripts not found"
 
       - name: Build production bundle (optional - for validation)
         working-directory: ./api/admin
