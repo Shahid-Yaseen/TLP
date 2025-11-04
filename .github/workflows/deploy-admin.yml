@@ -21,34 +21,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        working-directory: ./api/admin
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Installing dependencies..."
-          npm ci
-          echo "Verifying package.json and scripts..."
-          grep -A 5 '"scripts"' package.json || echo "package.json not found"
-          echo "Checking if react-scripts is installed..."
-          test -d node_modules/react-scripts && echo "react-scripts found" || echo "react-scripts not found"
-
-      - name: Build production bundle
-        working-directory: ./api/admin
-        env:
-          REACT_APP_API_URL: ${{ secrets.API_URL }}
-          NODE_ENV: production
-        run: npm run build
-
-      - name: Copy build to droplet
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          port: 22
-          source: "api/admin/build/*"
-          target: "/tmp/tlp-admin-build"
-
       - name: Deploy Admin Frontend
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -59,13 +31,31 @@ jobs:
           timeout: 60s
           script: |
             echo "🚀 Deploying admin frontend..."
+            echo "📁 Ensuring directory structure..."
+            mkdir -p /opt/tlp
+            if [ ! -d "/opt/tlp/.git" ]; then
+              echo "📥 Cloning repository (first time setup)..."
+              if [ -d "/opt/tlp" ] && [ "$(ls -A /opt/tlp 2>/dev/null)" ]; then
+                echo "⚠️ /opt/tlp exists but is not a git repo. Backing up and cloning..."
+                sudo mv /opt/tlp /opt/tlp.backup.$(date +%s) 2>/dev/null || true
+              fi
+              git clone https://github.com/Shahid-Yaseen/TLP.git /opt/tlp || { echo "❌ Failed to clone repository"; exit 1; }
+            fi
+            cd /opt/tlp || { echo "❌ Failed to change to /opt/tlp"; exit 1; }
+            echo "📥 Pulling latest changes..."
+            git pull origin main || echo "⚠️ Git pull skipped"
+            cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
+            echo "📦 Installing dependencies..."
+            npm ci
+            echo "🔨 Building production bundle..."
+            REACT_APP_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
             echo "📁 Setting up admin root directory..."
             sudo mkdir -p /var/www/tlp-admin
+            sudo chown -R www-data:www-data /var/www/tlp-admin || sudo chown -R $(whoami):$(whoami) /var/www/tlp-admin || true
             echo "📁 Copying files to admin root..."
             sudo rm -rf /var/www/tlp-admin/* || { echo "⚠️ Failed to clear admin root (may be empty)"; true; }
-            sudo cp -r /tmp/tlp-admin-build/* /var/www/tlp-admin/ || { echo "❌ Failed to copy files"; exit 1; }
+            sudo cp -r build/* /var/www/tlp-admin/ || { echo "❌ Failed to copy files"; exit 1; }
             sudo chown -R www-data:www-data /var/www/tlp-admin || echo "⚠️ Failed to set ownership"
-            sudo rm -rf /tmp/tlp-admin-build || true
             echo "🔄 Reloading nginx..."
             sudo nginx -t && sudo systemctl reload nginx || { echo "❌ Nginx reload failed"; exit 1; }
             echo "✅ Admin frontend deployed!"
