@@ -18,6 +18,22 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
+// Debug: Check if env vars are loaded
+console.log('🔍 Environment check:');
+console.log('DB_HOST:', process.env.DB_HOST || 'NOT SET (default: localhost)');
+console.log('DB_PORT:', process.env.DB_PORT || 'NOT SET (default: 5432)');
+console.log('DB_USER:', process.env.DB_USER || 'NOT SET (default: postgres)');
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***SET***' : 'NOT SET');
+console.log('DB_DATABASE:', process.env.DB_DATABASE || 'NOT SET (default: tlp_db)');
+console.log('');
+
+// Validate required environment variables
+if (!process.env.DB_PASSWORD) {
+  console.error('❌ ERROR: DB_PASSWORD is not set in .env file');
+  console.error('Please ensure /opt/tlp/api/.env contains DB_PASSWORD=your_password');
+  process.exit(1);
+}
+
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
