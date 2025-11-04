@@ -64,7 +64,14 @@ jobs:
             echo "📥 Pulling latest changes..."
             git pull origin main || echo "⚠️ Git pull skipped"
             cd api/admin || { echo "❌ Failed to change to api/admin directory"; exit 1; }
+            echo "Current directory: $(pwd)"
+            echo "Checking package.json..."
+            ls -la package.json || echo "package.json not found"
+            echo "Installing dependencies..."
             npm ci
+            echo "Available scripts:"
+            npm run || echo "Failed to list scripts"
+            echo "Building production bundle..."
             REACT_APP_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
             echo "📁 Setting up admin root directory..."
             sudo mkdir -p /var/www/tlp-admin
