@@ -76,6 +76,14 @@ const MIGRATIONS = [
   '006_supporting_features.sql',
   '007_indexes.sql',
   '008_user_profile_fields.sql',
+  '009_enhanced_launch_schema.sql',
+  '010_enhanced_agency_schema.sql',
+  '011_enhanced_astronaut_schema.sql',
+  '012_add_launch_updated_at.sql',
+  '013_add_raw_data_to_launches.sql',
+  '014_add_all_api_fields.sql',
+  '015_add_missing_launch_fields.sql',
+  '016_create_launch_arrays.sql',
 ];
 
 // Track completed migrations

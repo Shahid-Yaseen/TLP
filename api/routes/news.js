@@ -27,9 +27,16 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   args.push('published');
 
   if (req.query.category) {
-    filters.push(`news_categories.slug = $${paramCount++} OR news_categories.id = $${paramCount++}`);
-    const category = isNaN(req.query.category) ? req.query.category : parseInt(req.query.category);
-    args.push(category, category);
+    const category = req.query.category;
+    if (isNaN(category)) {
+      // Category is a slug/name, only match by slug
+      filters.push(`news_categories.slug = $${paramCount++}`);
+      args.push(category);
+    } else {
+      // Category is numeric, match by ID
+      filters.push(`news_categories.id = $${paramCount++}`);
+      args.push(parseInt(category));
+    }
   }
 
   if (req.query.tag) {

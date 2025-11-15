@@ -1,6 +1,8 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import LaunchCenter from './pages/LaunchCenter';
+import UpcomingLaunches from './pages/UpcomingLaunches';
+import PreviousLaunches from './pages/PreviousLaunches';
 import Homepage from './pages/Homepage';
 import AboutUs from './pages/AboutUs';
 import News from './pages/News';
@@ -26,9 +28,12 @@ function App() {
     <AuthProvider>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Homepage />} />
+        <Route path="/" element={<Navigate to="/launches/upcoming" replace />} />
+        <Route path="/home" element={<Homepage />} />
         <Route path="/about" element={<AboutUs />} />
-        <Route path="/launches" element={<LaunchCenter />} />
+        <Route path="/launches" element={<Navigate to="/launches/upcoming" replace />} />
+        <Route path="/launches/upcoming" element={<UpcomingLaunches />} />
+        <Route path="/launches/previous" element={<PreviousLaunches />} />
         <Route path="/launches/:id" element={<LaunchDetail />} />
         <Route path="/news" element={<News />} />
         <Route path="/news/:slug" element={<ArticleDetail />} />

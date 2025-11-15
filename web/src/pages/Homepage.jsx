@@ -20,35 +20,62 @@ const Homepage = () => {
 
   const fetchData = async () => {
     try {
-      const [launchesRes, eventsRes, statsRes, articlesRes, featuredRes] = await Promise.all([
-        axios.get(`${API_URL}/api/launches?limit=3&offset=0`),
-        axios.get(`${API_URL}/api/events?limit=3&offset=0`),
-        axios.get(`${API_URL}/api/statistics/launches`),
-        axios.get(`${API_URL}/api/news?limit=6&offset=0&status=published`),
-        axios.get(`${API_URL}/api/featured`),
+      setLoading(true);
+      
+      // Create axios instance with longer timeout
+      const apiClient = axios.create({
+        baseURL: API_URL,
+        timeout: 30000, // 30 seconds instead of 10
+      });
+
+      // Fetch data with error handling for each endpoint
+      const [launchesRes, statsRes, articlesRes, featuredRes] = await Promise.allSettled([
+        apiClient.get('/api/launches?limit=3&offset=0'),
+        apiClient.get('/api/statistics/launches'),
+        apiClient.get('/api/news?limit=6&offset=0&status=published'),
+        apiClient.get('/api/featured'),
       ]);
 
       // Handle launches response (may be wrapped in data property)
-      const launchesData = launchesRes.data?.data || launchesRes.data || [];
-      setLaunches(Array.isArray(launchesData) ? launchesData : []);
+      if (launchesRes.status === 'fulfilled') {
+        const launchesData = launchesRes.value.data?.data || launchesRes.value.data || [];
+        setLaunches(Array.isArray(launchesData) ? launchesData : []);
+      } else {
+        console.warn('Failed to fetch launches:', launchesRes.reason?.message || launchesRes.reason);
+        setLaunches([]);
+      }
 
-      // Handle events response
-      const eventsData = eventsRes.data?.data || eventsRes.data || [];
-      setEvents(Array.isArray(eventsData) ? eventsData : []);
+      // Events endpoint doesn't exist, set empty array
+      setEvents([]);
 
       // Statistics are returned directly
-      setStats(statsRes.data || null);
+      if (statsRes.status === 'fulfilled') {
+        setStats(statsRes.value.data || null);
+      } else {
+        console.warn('Failed to fetch statistics:', statsRes.reason?.message);
+        setStats(null);
+      }
 
       // Handle articles response
-      const articlesData = articlesRes.data?.data || articlesRes.data || [];
-      setArticles(Array.isArray(articlesData) ? articlesData : []);
+      if (articlesRes.status === 'fulfilled') {
+        const articlesData = articlesRes.value.data?.data || articlesRes.value.data || [];
+        setArticles(Array.isArray(articlesData) ? articlesData : []);
+      } else {
+        console.warn('Failed to fetch articles:', articlesRes.reason?.message);
+        setArticles([]);
+      }
 
       // Featured content
-      const featuredData = featuredRes.data?.data || featuredRes.data || null;
-      setFeatured(featuredData);
+      if (featuredRes.status === 'fulfilled') {
+        const featuredData = featuredRes.value.data?.data || featuredRes.value.data || null;
+        setFeatured(featuredData);
+      } else {
+        console.warn('Failed to fetch featured:', featuredRes.reason?.message);
+        setFeatured(null);
+      }
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching homepage data:', error);
-    } finally {
       setLoading(false);
     }
   };

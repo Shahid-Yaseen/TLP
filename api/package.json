@@ -20,6 +20,8 @@
     "migrate:dry-run": "node scripts/run_migrations.js --dry-run",
     "seed:roles": "node scripts/seed_roles_permissions.js",
     "seed:launches": "node scripts/seed_launch_data.js",
+    "seed:countries": "node scripts/seed_countries.js",
+    "sync:launches": "node scripts/syncLaunches.js",
     "start": "node index.js",
     "dev": "nodemon index.js"
   }

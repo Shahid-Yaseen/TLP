@@ -1,41 +1,44 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config/api';
+import LaunchFilters from '../components/LaunchFilters';
+import { buildLaunchFilters } from '../utils/filters';
 
 // Use this exact image for 100% match
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
 function LaunchCenter() {
   const [launches, setLaunches] = useState([]);
-  const [filteredLaunches, setFilteredLaunches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('UPCOMING');
   const [regionFilter, setRegionFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [hideTBD, setHideTBD] = useState(false);
+  const [filters, setFilters] = useState({});
+  const [pagination, setPagination] = useState({ total: 0, limit: 100, offset: 0 });
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    fetchLaunches();
-  }, []);
+    // Reset pagination and clear launches when tab or filters change
+    const resetPagination = { total: 0, limit: 100, offset: 0, has_more: false };
+    setPagination(resetPagination);
+    setLaunches([]);
+    // Fetch with reset pagination
+    fetchLaunchesWithPagination(resetPagination);
+  }, [selectedTab, filters, regionFilter, searchQuery, hideTBD]);
 
-  useEffect(() => {
-    if (launches.length > 0) {
-      applyFilters();
-    }
-    // Always set countdown to 00:00:00:00
-    setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  }, [launches, regionFilter, searchQuery, selectedTab, hideTBD]);
 
   const startCountdown = (targetDate) => {
-    const interval = setInterval(() => {
+    // Calculate initial countdown immediately
+    const calculateCountdown = () => {
       const now = new Date().getTime();
       const target = new Date(targetDate).getTime();
       const distance = target - now;
 
       if (distance < 0) {
-        clearInterval(interval);
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return false; // Stop the interval
       } else {
         setCountdown({
           days: Math.floor(distance / (1000 * 60 * 60 * 24)),
@@ -43,68 +46,130 @@ function LaunchCenter() {
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000),
         });
+        return true; // Continue the interval
+      }
+    };
+
+    // Set initial countdown
+    calculateCountdown();
+
+    // Update every second
+    const interval = setInterval(() => {
+      if (!calculateCountdown()) {
+        clearInterval(interval);
       }
     }, 1000);
+
     return () => clearInterval(interval);
   };
 
   const fetchLaunches = async () => {
+    return fetchLaunchesWithPagination(pagination);
+  };
+
+  const fetchLaunchesWithPagination = async (paginationToUse = pagination) => {
     try {
-      const response = await axios.get(`${API_URL}/launches`);
-      const sorted = response.data.sort((a, b) =>
-        new Date(b.launch_date).getTime() - new Date(a.launch_date).getTime()
-      );
-      setLaunches(sorted);
+      setLoading(true);
+      
+      // Build filter params
+      const filterParams = buildLaunchFilters({
+        ...filters,
+        limit: paginationToUse.limit || 100,
+        offset: paginationToUse.offset || 0,
+      });
+
+      // Add tab-based date filter - ensure proper filtering
+      const now = new Date().toISOString();
+      if (selectedTab === 'UPCOMING') {
+        // Only show launches with launch_date >= now
+        filterParams.net__gte = now;
+        // Remove any previous filter if it exists
+        delete filterParams.net__lt;
+      } else if (selectedTab === 'PREVIOUS') {
+        // Only show launches with launch_date < now
+        filterParams.net__lt = now;
+        // Remove any upcoming filter if it exists
+        delete filterParams.net__gte;
+      }
+
+      // Add search query
+      if (searchQuery) {
+        filterParams.name = searchQuery;
+      }
+
+      // Add region filter (map to country codes/names)
+      if (regionFilter !== 'ALL') {
+        const regionCountryMap = {
+          AMERICA: { code: 'US', name: 'United States' },
+          CANADA: { code: 'CA', name: 'Canada' },
+          EUROPE: { code: null, name: null }, // Europe has multiple countries, handle separately
+          RUSSIA: { code: 'RU', name: 'Russia' },
+          CHINA: { code: 'CN', name: 'China' },
+          INDIA: { code: 'IN', name: 'India' },
+          'DOWN UNDER': { code: 'AU', name: 'Australia' },
+          OTHER: { code: null, name: null },
+        };
+        
+        const countryInfo = regionCountryMap[regionFilter];
+        if (countryInfo) {
+          if (countryInfo.code) {
+            // Use country code for precise filtering
+            filterParams.country__code = countryInfo.code;
+          } else if (countryInfo.name) {
+            // Use country name as fallback
+            filterParams.country__name = countryInfo.name;
+          } else if (regionFilter === 'EUROPE') {
+            // Europe: filter by multiple European country codes
+            // Common European space-faring countries
+            filterParams.country__code = 'FR,DE,IT,ES,GB,SE,NO'; // France, Germany, Italy, Spain, UK, Sweden, Norway
+          }
+        }
+      }
+
+      // Hide TBD filter
+      if (hideTBD) {
+        filterParams.outcome = 'success,failure,partial';
+      }
+
+      const response = await axios.get(`${API_URL}/api/launches`, { params: filterParams });
+      
+      // Handle response format: { data: [...], pagination: {...} }
+      const launchesData = response.data?.data || response.data || [];
+      
+      if (Array.isArray(launchesData)) {
+        const sorted = launchesData.sort((a, b) =>
+          new Date(b.launch_date || 0).getTime() - new Date(a.launch_date || 0).getTime()
+        );
+        setLaunches(sorted);
+      } else {
+        console.warn('Unexpected launches data format:', launchesData);
+        setLaunches([]);
+      }
+      
+      if (response.data?.pagination) {
+        setPagination(response.data.pagination);
+      }
+      
       setLoading(false);
     } catch (error) {
       console.error('Error fetching launches:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      setLaunches([]); // Set empty array on error
       setLoading(false);
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...launches];
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
+    setPagination({ ...pagination, offset: 0 });
+  };
 
-    const now = new Date();
-    if (selectedTab === 'UPCOMING') {
-      filtered = filtered.filter(l => new Date(l.launch_date) >= now);
-    } else if (selectedTab === 'PREVIOUS') {
-      filtered = filtered.filter(l => new Date(l.launch_date) < now);
-    }
-
-    if (regionFilter !== 'ALL') {
-      const regionMap = {
-        AMERICA: ['USA', 'United States', 'Kennedy', 'Cape Canaveral', 'Florida', 'California', 'Texas'],
-        CANADA: ['Canada'],
-        EUROPE: ['Europe', 'French', 'Kourou'],
-        RUSSIA: ['Russia', 'Baikonur', 'Roscosmos'],
-        CHINA: ['China'],
-        INDIA: ['India'],
-        'DOWN UNDER': ['Australia'],
-      };
-      const keywords = regionMap[regionFilter] || [];
-      filtered = filtered.filter(l =>
-        keywords.some(kw =>
-          l.site?.toLowerCase().includes(kw.toLowerCase()) ||
-          l.provider?.toLowerCase().includes(kw.toLowerCase())
-        )
-      );
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter(l =>
-        l.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.rocket?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        l.provider?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (hideTBD) {
-      filtered = filtered.filter(l => l.outcome && !['TBD', 'tbd'].includes(l.outcome));
-    }
-
-    filtered.sort((a, b) => new Date(a.launch_date).getTime() - new Date(b.launch_date).getTime());
-    setFilteredLaunches(filtered);
+  const handleResetFilters = () => {
+    setFilters({});
+    setSearchQuery('');
+    setRegionFilter('ALL');
+    setHideTBD(false);
+    setPagination({ ...pagination, offset: 0 });
   };
 
   const getEventTags = (launch) => {
@@ -128,19 +193,34 @@ function LaunchCenter() {
     return groups;
   };
 
+  // Helper function to extract launch image URL
+  const getLaunchImageUrl = (launch) => {
+    if (!launch) return HERO_BG_IMAGE;
+    if (launch.media?.image?.image_url) {
+      return launch.media.image.image_url;
+    }
+    if (launch.mission_image_url) {
+      return launch.mission_image_url;
+    }
+    if (launch.infographic_url) {
+      return launch.infographic_url;
+    }
+    return HERO_BG_IMAGE; // Fallback to default
+  };
+
   const allUpcoming = launches
-    .filter(l => new Date(l.launch_date) > new Date())
-    .sort((a, b) => new Date(a.launch_date).getTime() - new Date(b.launch_date).getTime());
+    .filter(l => new Date(l.launch_date || 0) > new Date())
+    .sort((a, b) => new Date(a.launch_date || 0).getTime() - new Date(b.launch_date || 0).getTime());
   const starlink69420 = allUpcoming.find(l => l.name?.includes('69-420'));
   const upcomingLaunch = starlink69420 || allUpcoming[0];
   
   const allPrevious = launches
-    .filter(l => new Date(l.launch_date) < new Date())
-    .sort((a, b) => new Date(b.launch_date).getTime() - new Date(a.launch_date).getTime());
+    .filter(l => new Date(l.launch_date || 0) < new Date())
+    .sort((a, b) => new Date(b.launch_date || 0).getTime() - new Date(a.launch_date || 0).getTime());
   const previousLaunch = allPrevious && allPrevious.length > 0 ? allPrevious[0] : null;
   
   const historicalLaunches = launches
-    .filter(l => new Date(l.launch_date) < new Date())
+    .filter(l => new Date(l.launch_date || 0) < new Date())
     .slice(0, 5);
   
   // Ensure we always have 5 cards for display
@@ -148,7 +228,21 @@ function LaunchCenter() {
     ? historicalLaunches 
     : [...historicalLaunches, ...launches.slice(0, 5 - historicalLaunches.length)];
 
-  if (loading) {
+  // Start countdown when upcoming launch is available
+  useEffect(() => {
+    if (selectedTab === 'UPCOMING' && upcomingLaunch?.launch_date) {
+      const launchDate = upcomingLaunch.launch_date || upcomingLaunch.net;
+      if (launchDate) {
+        const cleanup = startCountdown(launchDate);
+        return cleanup;
+      }
+    } else {
+      // Reset countdown if not on upcoming tab or no launch
+      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    }
+  }, [selectedTab, upcomingLaunch, launches]);
+
+  if (loading && launches.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white">
         <div className="text-xl">Loading launches...</div>
@@ -156,7 +250,7 @@ function LaunchCenter() {
     );
   }
 
-  const launchesByMonth = groupLaunchesByMonth(filteredLaunches);
+  const launchesByMonth = groupLaunchesByMonth(launches);
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
@@ -232,16 +326,16 @@ function LaunchCenter() {
       </div>
 
       {/* HERO SECTION - 100% MATCH TO IMAGE */}
-      {upcomingLaunch && selectedTab === 'UPCOMING' && (
+      {selectedTab === 'UPCOMING' && (
         <>
         <div 
-          className="relative h-[600px] bg-cover bg-center bg-no-repeat"
+          className="relative min-h-[600px] h-[600px] bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('${HERO_BG_IMAGE}')`,
+            backgroundImage: `url('${upcomingLaunch ? getLaunchImageUrl(upcomingLaunch) : HERO_BG_IMAGE}')`,
             backgroundPosition: 'center 30%',
           }}
         >
-          <div className="absolute inset-0 bg-black/70"></div>
+          <div className="absolute inset-0 bg-black/50"></div>
 
           <div className="relative z-10 max-w-7xl mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
             {/* Date and Time - Above Launch Name, Smallest, Centered */}
@@ -272,12 +366,12 @@ function LaunchCenter() {
 
             {/* Launch Name - Largest */}
             <h2 className="text-8xl font-bold tracking-tight text-white mb-1">
-              {upcomingLaunch.name?.toUpperCase() || 'UPCOMING LAUNCH'}
+              {upcomingLaunch?.name?.toUpperCase() || 'UPCOMING LAUNCH'}
             </h2>
 
             {/* Location - Medium Size */}
             <p className="text-xl font-light text-white tracking-wide mb-16">
-              {upcomingLaunch.site || 'Launch Site Information'}
+              {upcomingLaunch?.site || upcomingLaunch?.site_name || 'Launch Site Information'}
             </p>
 
             {/* Countdown Timer - Large Numbers, White */}
@@ -326,32 +420,37 @@ function LaunchCenter() {
               ON THIS DAY IN HISTORY
             </h3>
             <div className="grid grid-cols-5 gap-3">
-              {displayHistoricalLaunches.slice(0, 5).map((launch, idx) => (
-                <div 
-                  key={idx} 
-                  className="relative h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300"
+              {displayHistoricalLaunches.slice(0, 5).map((launch, idx) => {
+                const launchImageUrl = getLaunchImageUrl(launch);
+                
+                return (
+                <Link
+                  key={idx}
+                  to={`/launches/${launch.id}`}
+                  className="relative h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
                 >
                   <div 
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url('${HERO_BG_IMAGE}')` }}
+                    style={{ backgroundImage: `url('${launchImageUrl}')` }}
                   ></div>
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/40"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
 
                   <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
                     <div className="h-0.5 bg-green-500 mb-1"></div>
                     <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
-                      {launch.provider || 'Starlink'}
+                      {launch.provider || launch.provider_abbrev || 'Provider'}
                     </div>
                     <h4 className="text-[11px] font-bold text-white uppercase leading-tight mb-1">
-                      {launch.name?.toUpperCase() || 'STARLINK 69-420'}
+                      {(launch.name || 'Launch Name').toUpperCase()}
                     </h4>
                     <p className="text-[8px] text-gray-400 leading-tight normal-case">
-                      {launch.site || 'Details here...'}
+                      {launch.site || launch.site_name || 'Details here...'}
                     </p>
                   </div>
-                </div>
-              ))}
+                </Link>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -362,13 +461,13 @@ function LaunchCenter() {
       {selectedTab === 'PREVIOUS' && (
         <>
         <div 
-          className="relative h-[600px] bg-cover bg-center bg-no-repeat"
+          className="relative min-h-[600px] h-[600px] bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('${HERO_BG_IMAGE}')`,
+            backgroundImage: `url('${previousLaunch ? getLaunchImageUrl(previousLaunch) : HERO_BG_IMAGE}')`,
             backgroundPosition: 'center 30%',
           }}
         >
-          <div className="absolute inset-0 bg-black/70"></div>
+          <div className="absolute inset-0 bg-black/50"></div>
 
           <div className="relative z-10 max-w-7xl mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
             {/* Date and Time - Above Launch Name, Smallest, Centered */}
@@ -404,7 +503,7 @@ function LaunchCenter() {
 
             {/* Location - Medium Size */}
             <p className="text-xl font-light text-white tracking-wide mb-16">
-              {previousLaunch?.site || 'Launch Site Information'}
+              {previousLaunch?.site || previousLaunch?.site_name || 'Launch Site Information'}
             </p>
 
             {/* Countdown Timer - Large Numbers, White */}
@@ -453,32 +552,37 @@ function LaunchCenter() {
               ON THIS DAY IN HISTORY
             </h3>
             <div className="grid grid-cols-5 gap-3">
-              {displayHistoricalLaunches.slice(0, 5).map((launch, idx) => (
-                <div 
-                  key={idx} 
-                  className="relative h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300"
+              {displayHistoricalLaunches.slice(0, 5).map((launch, idx) => {
+                const launchImageUrl = getLaunchImageUrl(launch);
+                
+                return (
+                <Link
+                  key={idx}
+                  to={`/launches/${launch.id}`}
+                  className="relative h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
                 >
                   <div 
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url('${HERO_BG_IMAGE}')` }}
+                    style={{ backgroundImage: `url('${launchImageUrl}')` }}
                   ></div>
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/40"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
 
                   <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
                     <div className="h-0.5 bg-green-500 mb-1"></div>
                     <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
-                      {launch.provider || 'Starlink'}
+                      {launch.provider || launch.provider_abbrev || 'Provider'}
                     </div>
                     <h4 className="text-[11px] font-bold text-white uppercase leading-tight mb-1">
-                      {launch.name?.toUpperCase() || 'STARLINK 69-420'}
+                      {(launch.name || 'Launch Name').toUpperCase()}
                     </h4>
                     <p className="text-[8px] text-gray-400 leading-tight normal-case">
-                      {launch.site || 'Details here...'}
+                      {launch.site || launch.site_name || 'Details here...'}
                     </p>
                   </div>
-                </div>
-              ))}
+                </Link>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -535,52 +639,12 @@ function LaunchCenter() {
             <span className="text-gray-400 text-xs">Hide TBD</span>
           </label>
 
-          {/* Dropdown Filters */}
-          <div className="flex items-center gap-8">
-            {/* Launch Site Dropdown */}
-            <div className="relative cursor-pointer">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-400 text-xs">Launch Site</span>
-                  <span className="text-gray-400 text-xs leading-none">▼</span>
-                </div>
-                <div className="w-full h-px bg-gray-300 mt-1"></div>
-              </div>
-            </div>
-
-            {/* Launch Provider Dropdown */}
-            <div className="relative cursor-pointer">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-400 text-xs">Launch Provider</span>
-                  <span className="text-gray-400 text-xs leading-none">▼</span>
-                </div>
-                <div className="w-full h-px bg-gray-300 mt-1"></div>
-              </div>
-            </div>
-
-            {/* Rocket Dropdown */}
-            <div className="relative cursor-pointer">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-400 text-xs">Rocket</span>
-                  <span className="text-gray-400 text-xs leading-none">▼</span>
-                </div>
-                <div className="w-full h-px bg-gray-300 mt-1"></div>
-              </div>
-            </div>
-
-            {/* Mission Type Dropdown */}
-            <div className="relative cursor-pointer">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-400 text-xs">Mission Type</span>
-                  <span className="text-gray-400 text-xs leading-none">▼</span>
-                </div>
-                <div className="w-full h-px bg-gray-300 mt-1"></div>
-              </div>
-            </div>
-          </div>
+          {/* Dropdown Filters - Now using LaunchFilters component */}
+          <LaunchFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onReset={handleResetFilters}
+          />
         </div>
       </div>
 
@@ -605,46 +669,50 @@ function LaunchCenter() {
         {Object.entries(launchesByMonth).map(([month, monthLaunches]) => (
           <div key={month} className="mb-20">
             <h2 className="text-2xl  uppercase mb-10 tracking-tight text-white">{month}</h2>
-            <div className="grid grid-cols-3 gap-5">
-              {monthLaunches.map((launch) => {
-                const isSuccess = launch.outcome === 'success';
-                const isFailure = launch.outcome === 'failure';
-                const isPartial = launch.outcome === 'partial';
-                const eventTags = getEventTags(launch);
-                
-                // Determine border color
-                let borderColor = 'bg-gray-600';
-                if (isSuccess) borderColor = 'bg-green-500';
-                else if (isFailure) borderColor = 'bg-red-500';
-                else if (isPartial) borderColor = 'bg-orange-500';
-                
-                return (
-                  <div
-                    key={launch.id}
-                    className="bg-gray-900 rounded overflow-hidden relative"
-                    style={{ minHeight: '180px' }}
-                  >
-                    {/* Background Image with Dark Overlay */}
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{ 
-                        backgroundImage: `url('${HERO_BG_IMAGE}')`,
-                        opacity: 0.08
-                      }}
-                    ></div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-black/90 via-gray-900/85 to-black/90"></div>
+                   <div className="grid grid-cols-3 gap-5">
+                     {monthLaunches.map((launch) => {
+                       const isSuccess = launch.outcome === 'success';
+                       const isFailure = launch.outcome === 'failure';
+                       const isPartial = launch.outcome === 'partial';
+                       const eventTags = getEventTags(launch);
+                       
+                       // Determine border color
+                       let borderColor = 'bg-gray-600';
+                       if (isSuccess) borderColor = 'bg-green-500';
+                       else if (isFailure) borderColor = 'bg-red-500';
+                       else if (isPartial) borderColor = 'bg-orange-500';
+                       
+                       const launchImageUrl = getLaunchImageUrl(launch);
+                       
+                       return (
+                         <div
+                           key={launch.id}
+                           className="bg-gray-900 rounded overflow-hidden relative"
+                           style={{ minHeight: '180px' }}
+                         >
+                           {/* Background Image with Dark Overlay */}
+                           <div 
+                             className="absolute inset-0 bg-cover bg-center"
+                             style={{ 
+                               backgroundImage: `url('${launchImageUrl}')`,
+                               opacity: launchImageUrl === HERO_BG_IMAGE ? 0.08 : 0.6
+                             }}
+                           ></div>
+                           <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-gray-900/55 to-black/60"></div>
 
                     {/* Vertical Colored Bar on Left */}
                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${borderColor}`}></div>
 
                     <div className="relative z-10 p-4 h-full flex flex-col justify-center items-center text-center">
                       <div>
-                        <div className="text-[9px] text-gray-400 mb-2 font-bold uppercase tracking-widest">{launch.provider}</div>
+                        <div className="text-[9px] text-gray-400 mb-2 font-bold uppercase tracking-widest">
+                          {launch.provider || launch.provider_abbrev || 'Provider'}
+                        </div>
                         <h3 className="text-base font-bold mb-2 leading-tight tracking-tight text-white uppercase">
-                          {launch.name.toUpperCase()}
+                          {(launch.name || 'Launch Name').toUpperCase()}
                         </h3>
                         <p className="text-xs text-gray-400 leading-snug normal-case">
-                          {launch.provider} {launch.rocket} | {launch.site}
+                          {launch.provider || launch.provider_abbrev || ''} {launch.rocket || ''} | {launch.site || launch.site_name || 'Location TBD'}
                         </p>
                         
                         {eventTags.length > 0 && (
@@ -669,7 +737,7 @@ function LaunchCenter() {
           </div>
         ))}
 
-        {filteredLaunches.length === 0 && (
+        {launches.length === 0 && !loading && (
           <div className="text-center py-12 text-gray-400">
             <p className="text-xl">No launches found</p>
           </div>
@@ -677,9 +745,12 @@ function LaunchCenter() {
       </div>
 
       {/* Load More */}
-      {filteredLaunches.length > 0 && (
+      {launches.length > 0 && pagination.has_more && (
         <div className="bg-black py-8 text-center">
-          <button className="text-white hover:text-gray-400 transition uppercase text-sm font-semibold tracking-widest">
+          <button 
+            onClick={() => setPagination({ ...pagination, offset: pagination.offset + pagination.limit })}
+            className="text-white hover:text-gray-400 transition uppercase text-sm font-semibold tracking-widest"
+          >
             V Load More
           </button>
         </div>
