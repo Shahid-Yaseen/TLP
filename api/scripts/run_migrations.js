@@ -84,6 +84,7 @@ const MIGRATIONS = [
   '014_add_all_api_fields.sql',
   '015_add_missing_launch_fields.sql',
   '016_create_launch_arrays.sql',
+  '017_ensure_launch_schema_complete.sql',
 ];
 
 // Track completed migrations
