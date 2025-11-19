@@ -30,7 +30,16 @@ jobs:
         working-directory: ./web
         run: |
           echo "Installing web dependencies..."
-          npm ci --include=optional
+          # Work around npm bug with optional dependencies (https://github.com/npm/cli/issues/4828)
+          # Remove node_modules to force fresh install of optional deps
+          rm -rf node_modules
+          # Use npm install (handles optional deps better than npm ci for this bug)
+          npm install --include=optional
+          # Explicitly verify rollup Linux binary is installed, install if missing
+          if [ ! -d "node_modules/@rollup/rollup-linux-x64-gnu" ]; then
+            echo "Installing missing rollup Linux binary..."
+            npm install --save-optional @rollup/rollup-linux-x64-gnu@4.52.5
+          fi
           echo "Verifying package.json scripts..."
           grep -A 10 '"scripts"' package.json || echo "package.json not found"
 
@@ -65,7 +74,14 @@ jobs:
             git pull origin main || echo "⚠️ Git pull skipped"
             cd web || { echo "❌ Failed to change to web directory"; exit 1; }
             echo "📦 Installing dependencies..."
-            npm ci --include=optional
+            # Work around npm bug with optional dependencies
+            rm -rf node_modules
+            npm install --include=optional
+            # Explicitly verify rollup Linux binary is installed, install if missing
+            if [ ! -d "node_modules/@rollup/rollup-linux-x64-gnu" ]; then
+              echo "Installing missing rollup Linux binary..."
+              npm install --save-optional @rollup/rollup-linux-x64-gnu@4.52.5
+            fi
             echo "🔨 Building production bundle..."
             VITE_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
             echo "📁 Setting up web root directory..."
