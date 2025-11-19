@@ -1,17 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useLaunchData } from '../hooks/useLaunchData';
 import LaunchFilters from '../components/LaunchFilters';
+import { useAuth } from '../contexts/AuthContext';
 import API_URL from '../config/api';
+import { getLaunchSlug } from '../utils/slug';
+import RedDotLoader from '../components/common/RedDotLoader';
 
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
 function PreviousLaunches() {
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
   const [topMenuOpen, setTopMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef(null);
   const {
     launches,
     heroLaunch,
@@ -142,6 +148,23 @@ function PreviousLaunches() {
     }
   }, [previousLaunch, fetchHistoricalLaunches]);
 
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileMenu]);
+
   const groupLaunchesByMonth = (launches) => {
     const groups = {};
     launches.forEach(launch => {
@@ -156,11 +179,7 @@ function PreviousLaunches() {
   const launchesByMonth = groupLaunchesByMonth(launches);
 
   if (loading && launches.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-xl">Loading launches...</div>
-      </div>
-    );
+    return <RedDotLoader fullScreen={true} size="large" />;
   }
 
   return (
@@ -186,6 +205,62 @@ function PreviousLaunches() {
             <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
             <span>|</span>
             <span className="cursor-pointer hover:text-white transition-colors">SUPPORT</span>
+            <span>|</span>
+            {isAuthenticated ? (
+              <div className="relative ml-2" ref={profileMenuRef}>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-2 hover:text-white transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  <span className="text-gray-400">{user?.full_name || user?.email || user?.username || 'PROFILE'}</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`h-4 w-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-black border border-gray-800 rounded shadow-lg z-50">
+                    <Link
+                      to="/profile"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="block px-4 py-2 text-sm text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        logout();
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login" className="hover:text-white transition-colors ml-2">LOGIN</Link>
+            )}
           </div>
             </div>
 
@@ -438,7 +513,7 @@ function PreviousLaunches() {
                   return (
                     <Link
                       key={launch.id || launch.external_id || idx}
-                      to={`/launches/${launch.id}`}
+                      to={`/launches/${getLaunchSlug(launch)}`}
                       className="relative h-44 w-[280px] shrink-0 snap-center bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
                     >
                       <div 

@@ -184,6 +184,8 @@ const LaunchCenter = () => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           onSubmitEditing={fetchLaunches}
+          selectionColor={theme.colors.focus}
+          underlineColorAndroid={theme.colors.focus}
         />
         <TouchableOpacity
           style={styles.filterButton}
@@ -212,13 +214,19 @@ const LaunchCenter = () => {
             <LoadingSpinner />
           ) : launches.length > 0 ? (
             <>
-              {launches.map((launch) => (
-                <LaunchCard 
-                  key={launch.id || launch.external_id || Math.random()} 
-                  launch={launch} 
-                  isUpcoming={selectedTab === 'UPCOMING'}
-                />
-              ))}
+              {launches.map((launch, index) => {
+                if (!launch) {
+                  console.warn(`Launch at index ${index} is null/undefined`);
+                  return null;
+                }
+                return (
+                  <LaunchCard 
+                    key={launch.id || launch.external_id || `launch-${index}`} 
+                    launch={launch} 
+                    isUpcoming={selectedTab === 'UPCOMING'}
+                  />
+                );
+              })}
               {pagination.has_more && (
                 <TouchableOpacity style={styles.loadMoreButton} onPress={loadMore}>
                   <Text style={styles.loadMoreText}>Load More</Text>
@@ -335,7 +343,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: getResponsivePadding(theme.spacing.sm),
+    padding: theme.spacing.md,
+    width: '100%',
+    flexGrow: 1,
   },
 });
 

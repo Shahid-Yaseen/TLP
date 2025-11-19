@@ -87,7 +87,8 @@ async function fetchLaunchers(params = {}) {
       ...params
     };
     
-    return await makeRequest('/launches/', defaultParams);
+    // Use /launch/ endpoint as per SpaceDevs API documentation
+    return await makeRequest('/launch/', defaultParams);
   } catch (error) {
     console.error('Error fetching launches from Space Devs API:', error.message);
     throw error;
@@ -101,9 +102,69 @@ async function fetchLaunchers(params = {}) {
  */
 async function fetchLauncherById(id) {
   try {
+    // Use /launches/{id}/ endpoint for fetching single launch by ID
     return await makeRequest(`/launches/${id}/`);
   } catch (error) {
     console.error(`Error fetching launch ${id} from Space Devs API:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Fetch astronauts by launch ID
+ * @param {string} launchId - Launch UUID
+ * @returns {Promise<Array>} Array of astronaut objects
+ */
+async function fetchAstronautsByLaunchId(launchId) {
+  try {
+    const response = await makeRequest('/astronauts/', {
+      flights__launch__id: launchId
+    });
+    // Space Devs API returns {results: [...], count: N}
+    return response.results || response || [];
+  } catch (error) {
+    console.error(`Error fetching astronauts for launch ${launchId} from Space Devs API:`, error.message);
+    // Return empty array on error instead of throwing
+    return [];
+  }
+}
+
+/**
+ * Fetch launcher configuration by URL
+ * @param {string} url - Configuration URL (can be full URL or just the path)
+ * @returns {Promise<Object>} Launcher configuration data
+ */
+async function fetchLauncherConfiguration(url) {
+  try {
+    // If URL is a full URL, extract the path; otherwise use as-is
+    let endpoint = url;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      // Extract path from full URL
+      try {
+        const urlObj = new URL(url);
+        endpoint = urlObj.pathname;
+      } catch (e) {
+        // If URL parsing fails, try to extract path manually
+        const match = url.match(/\/2\.3\.0\/.*$/);
+        if (match) {
+          endpoint = match[0];
+        }
+      }
+    }
+    
+    // Ensure endpoint starts with /
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/' + endpoint;
+    }
+    
+    // Ensure endpoint ends with / for consistency
+    if (!endpoint.endsWith('/')) {
+      endpoint = endpoint + '/';
+    }
+    
+    return await makeRequest(endpoint);
+  } catch (error) {
+    console.error(`Error fetching launcher configuration from ${url}:`, error.message);
     throw error;
   }
 }
@@ -121,7 +182,8 @@ async function fetchUpcomingLaunches(params = {}) {
       ...params
     };
     
-    return await makeRequest('/launches/upcoming/', defaultParams);
+    // Use /launch/upcoming/ endpoint as per SpaceDevs API documentation
+    return await makeRequest('/launch/upcoming/', defaultParams);
   } catch (error) {
     console.error('Error fetching upcoming launches from Space Devs API:', error.message);
     throw error;
@@ -141,7 +203,8 @@ async function fetchPreviousLaunches(params = {}) {
       ...params
     };
     
-    return await makeRequest('/launches/previous/', defaultParams);
+    // Use /launch/previous/ endpoint as per SpaceDevs API documentation
+    return await makeRequest('/launch/previous/', defaultParams);
   } catch (error) {
     console.error('Error fetching previous launches from Space Devs API:', error.message);
     throw error;
@@ -194,6 +257,8 @@ module.exports = {
   fetchLauncherById,
   fetchAllLaunchers,
   fetchUpcomingLaunches,
-  fetchPreviousLaunches
+  fetchPreviousLaunches,
+  fetchAstronautsByLaunchId,
+  fetchLauncherConfiguration
 };
 

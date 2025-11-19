@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -11,9 +12,10 @@ const Header = ({ title, showBack = false }) => {
   const { isAuthenticated, user, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
         <View style={styles.leftSection}>
           {showBack && (
@@ -33,7 +35,9 @@ const Header = ({ title, showBack = false }) => {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.brand}>TLP Network Inc.</Text>
+          {title && (
+            <Text style={styles.pageTitle}>{title}</Text>
+          )}
         </View>
         <View style={styles.rightSection}>
           {isAuthenticated && (
@@ -116,11 +120,6 @@ const Header = ({ title, showBack = false }) => {
           )}
         </View>
       </View>
-      {title && (
-        <View style={styles.titleBar}>
-          <Text style={styles.title}>{title}</Text>
-        </View>
-      )}
     </View>
   );
 };
@@ -147,6 +146,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
+    flex: 1,
   },
   backButton: {
     padding: theme.spacing.xs,
@@ -155,7 +155,13 @@ const styles = StyleSheet.create({
   logo: {
     width: 24,
     height: 24,
-    marginRight: theme.spacing.xs,
+  },
+  pageTitle: {
+    color: theme.colors.text,
+    fontSize: theme.fontSizes.lg,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+    marginLeft: theme.spacing.xs,
   },
   rightSection: {
     flexDirection: 'row',
@@ -186,35 +192,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
-  brand: {
-    color: theme.colors.text,
-    fontSize: theme.fontSizes.xs,
-    fontWeight: '600',
-  },
   link: {
     color: theme.colors.textSecondary,
     fontSize: theme.fontSizes.xs,
     fontWeight: '600',
-  },
-  separator: {
-    color: theme.colors.border,
-    fontSize: theme.fontSizes.xs,
-  },
-  titleBar: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderTopWidth: 2,
-    borderTopColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: theme.fontSizes.xl,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    textAlign: 'center',
   },
   profileMenuContainer: {
     position: 'relative',
@@ -227,7 +208,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
-    paddingTop: 60,
+    paddingTop: 100, // Increased to account for status bar
     paddingRight: theme.spacing.md,
     position: 'relative',
   },

@@ -81,6 +81,8 @@ const Register = () => {
                 placeholder="John Doe"
                 placeholderTextColor={theme.colors.textSecondary}
                 autoCapitalize="words"
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 
@@ -95,6 +97,8 @@ const Register = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 
@@ -108,6 +112,8 @@ const Register = () => {
                 placeholderTextColor={theme.colors.textSecondary}
                 secureTextEntry
                 autoCapitalize="none"
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
               <Text style={styles.hint}>Must be at least 8 characters</Text>
             </View>
@@ -122,6 +128,8 @@ const Register = () => {
                 placeholderTextColor={theme.colors.textSecondary}
                 secureTextEntry
                 autoCapitalize="none"
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 

@@ -121,6 +121,8 @@ const Profile = () => {
                     editable={editing}
                     placeholder="Enter your full name"
                     placeholderTextColor={theme.colors.textSecondary}
+                    selectionColor={theme.colors.focus}
+                    underlineColorAndroid={theme.colors.focus}
                   />
                 </View>
 
@@ -133,6 +135,8 @@ const Profile = () => {
                     style={[styles.modernInput, styles.inputDisabled]}
                     value={formData.email}
                     editable={false}
+                    selectionColor={theme.colors.focus}
+                    underlineColorAndroid={theme.colors.focus}
                   />
                   <View style={styles.hintContainer}>
                     <Ionicons name="information-circle-outline" size={14} color={theme.colors.textSecondary} />
@@ -154,6 +158,8 @@ const Profile = () => {
                     numberOfLines={4}
                     placeholder="Tell us about yourself..."
                     placeholderTextColor={theme.colors.textSecondary}
+                    selectionColor={theme.colors.focus}
+                    underlineColorAndroid={theme.colors.focus}
                   />
                 </View>
 
@@ -169,6 +175,8 @@ const Profile = () => {
                     editable={editing}
                     placeholder="City, Country"
                     placeholderTextColor={theme.colors.textSecondary}
+                    selectionColor={theme.colors.focus}
+                    underlineColorAndroid={theme.colors.focus}
                   />
                 </View>
               </View>

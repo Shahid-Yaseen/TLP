@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getLaunchSlug } from '../utils/slug';
 
 const LaunchCard = ({ launch }) => {
   const getStatusColor = (outcome) => {
@@ -30,7 +31,7 @@ const LaunchCard = ({ launch }) => {
 
   return (
     <Link
-      to={`/launches/${launch.id}`}
+      to={`/launches/${getLaunchSlug(launch)}`}
       className={`block border-l-4 ${getStatusColor(launch.outcome)} bg-gray-900 hover:bg-gray-800 transition-colors p-4`}
     >
       <div className="flex items-start justify-between mb-2">

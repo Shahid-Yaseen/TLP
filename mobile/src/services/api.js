@@ -31,6 +31,30 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Enhanced error logging for network issues
+    if (!error.response) {
+      // Network error (no response from server)
+      console.error('🌐 Network Error Details:');
+      console.error('  - Error Code:', error.code);
+      console.error('  - Error Message:', error.message);
+      console.error('  - Request URL:', `${error.config?.baseURL}${error.config?.url}`);
+      console.error('  - API URL configured:', API_URL);
+      console.error('  - Full error:', error);
+      
+      // Add more helpful error message
+      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.message?.includes('Network request failed')) {
+        error.userMessage = `Cannot connect to server at ${API_URL}. Please check:
+1. API server is running
+2. Correct IP address in app.json
+3. Phone and computer on same Wi-Fi network
+4. Firewall allows connections on port 3007`;
+      } else if (error.code === 'ETIMEDOUT') {
+        error.userMessage = 'Request timed out. Server may be slow or unreachable.';
+      } else {
+        error.userMessage = `Network error: ${error.message || 'Unable to connect to server'}`;
+      }
+    }
+
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;

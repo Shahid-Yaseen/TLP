@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../styles/theme';
@@ -68,20 +69,39 @@ const LaunchCard = ({ launch, isUpcoming = false }) => {
   const imageUrl = getImageUrl();
   const defaultBgColor = theme.colors.surface;
   const launchName = getLaunchName();
+  const [imageError, setImageError] = useState(false);
+
+  // Ensure we have valid launch data
+  if (!launch || (!launch.id && !launch.external_id && !launch.name)) {
+    console.warn('Invalid launch data:', launch);
+    return null;
+  }
+
+  // Use image only if URL exists and hasn't errored
+  const shouldUseImage = imageUrl && !imageError;
 
   return (
     <TouchableOpacity
       style={[styles.card, { borderLeftColor: getStatusColor(launch.outcome) }]}
-      onPress={() => navigation.navigate('LaunchDetail', { id: launch.id })}
+      onPress={() => {
+        if (launch.id) {
+          navigation.navigate('LaunchDetail', { id: launch.id });
+        }
+      }}
+      activeOpacity={0.7}
     >
-      {imageUrl ? (
+      {shouldUseImage ? (
         <ImageBackground
           source={{ uri: imageUrl }}
           style={styles.backgroundImage}
           imageStyle={styles.backgroundImageStyle}
+          onError={(error) => {
+            console.log('Image failed to load:', imageUrl, error);
+            setImageError(true);
+          }}
         >
           <View style={styles.overlay} />
-          <View style={styles.content}>
+          <View style={[styles.content, { backgroundColor: 'transparent' }]}>
             <View style={styles.header}>
               <Text style={styles.provider}>
                 {launch.provider || launch.provider_abbrev || launch.provider_id || 'Unknown Provider'}
@@ -139,44 +159,48 @@ const LaunchCard = ({ launch, isUpcoming = false }) => {
           </View>
         </ImageBackground>
       ) : (
-        <View style={styles.content}>
+        <View style={[styles.content, { backgroundColor: '#1A1A1A', width: '100%' }]}>
           <View style={styles.header}>
-            <Text style={styles.provider}>
+            <Text style={[styles.provider, { color: '#9CA3AF' }]}>
               {launch.provider || launch.provider_abbrev || launch.provider_id || 'Unknown Provider'}
             </Text>
           </View>
           <View style={styles.nameContainer}>
-            <Text style={styles.nameFirst} numberOfLines={1}>{launchName.firstLine}</Text>
+            <Text style={[styles.nameFirst, { color: '#FFFFFF', fontFamily: undefined, fontWeight: 'bold' }]} numberOfLines={2}>
+              {launchName.firstLine}
+            </Text>
             {launchName.secondLine ? (
-              <Text style={[styles.name, styles.nameSecond]} numberOfLines={1}>{launchName.secondLine}</Text>
+              <Text style={[styles.name, styles.nameSecond, { color: '#FFFFFF', fontWeight: 'bold' }]} numberOfLines={2}>
+                {launchName.secondLine}
+              </Text>
             ) : null}
           </View>
-          <Text style={styles.location}>
+          <Text style={[styles.location, { color: '#9CA3AF' }]}>
             {launch.site || launch.site_name || launch.launch_site?.name || 'Location TBD'}
           </Text>
           {isUpcoming && launchDate && new Date(launchDate) > new Date() ? (
             <View style={styles.countdownContainer}>
               <View style={styles.countdownRow}>
                 <View style={styles.countdownItem}>
-                  <Text style={styles.countdownValue}>
+                  <Text style={[styles.countdownValue, { color: theme.colors.primary }]}>
                     {String(countdown.days).padStart(2, '0')}
                   </Text>
                 </View>
-                <Text style={styles.countdownSeparator}>:</Text>
+                <Text style={[styles.countdownSeparator, { color: theme.colors.text }]}>:</Text>
                 <View style={styles.countdownItem}>
-                  <Text style={styles.countdownValue}>
+                  <Text style={[styles.countdownValue, { color: theme.colors.primary }]}>
                     {String(countdown.hours).padStart(2, '0')}
                   </Text>
                 </View>
-                <Text style={styles.countdownSeparator}>:</Text>
+                <Text style={[styles.countdownSeparator, { color: theme.colors.text }]}>:</Text>
                 <View style={styles.countdownItem}>
-                  <Text style={styles.countdownValue}>
+                  <Text style={[styles.countdownValue, { color: theme.colors.primary }]}>
                     {String(countdown.minutes).padStart(2, '0')}
                   </Text>
                 </View>
-                <Text style={styles.countdownSeparator}>:</Text>
+                <Text style={[styles.countdownSeparator, { color: theme.colors.text }]}>:</Text>
                 <View style={styles.countdownItem}>
-                  <Text style={styles.countdownValue}>
+                  <Text style={[styles.countdownValue, { color: theme.colors.primary }]}>
                     {String(countdown.seconds).padStart(2, '0')}
                   </Text>
                 </View>
@@ -203,24 +227,37 @@ const LaunchCard = ({ launch, isUpcoming = false }) => {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isSmall = isSmallDevice();
 
+// Calculate safe dimensions
+const cardHeight = Math.max(scale(200), 200);
+const cardMinHeight = Math.max(scale(180), 180);
+const cardBorderRadius = Math.max(scale(8), 8);
+const cardMarginBottom = Math.max(getResponsivePadding(theme.spacing.md), 12);
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
-    borderLeftWidth: scale(6),
-    marginBottom: getResponsivePadding(theme.spacing.md),
-    borderRadius: 0,
-    overflow: 'hidden',
-    minHeight: scale(180),
+    backgroundColor: '#1A1A1A', // Explicit dark gray - always visible
+    borderLeftWidth: Math.max(scale(6), 4),
+    marginBottom: cardMarginBottom,
+    borderRadius: cardBorderRadius,
+    overflow: 'hidden', // Keep hidden for rounded corners
+    width: '100%',
+    minHeight: cardMinHeight,
+    height: cardHeight,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: scale(4) },
+    shadowOffset: { width: 0, height: Math.max(scale(4), 2) },
     shadowOpacity: 0.3,
-    shadowRadius: scale(8),
+    shadowRadius: Math.max(scale(8), 4),
     elevation: 5,
+    borderWidth: 1,
+    borderColor: '#374151', // Explicit border color
+    opacity: 1, // Ensure card is fully opaque
   },
   backgroundImage: {
     width: '100%',
-    height: '100%',
+    height: cardHeight,
+    minHeight: cardMinHeight,
     justifyContent: 'center',
+    backgroundColor: theme.colors.surface || '#1A1A1A',
   },
   backgroundImageStyle: {
     opacity: 0.6,
@@ -228,13 +265,16 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   content: {
-    padding: getResponsivePadding(theme.spacing.sm),
+    padding: Math.max(getResponsivePadding(theme.spacing.md), 12),
     zIndex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: cardMinHeight,
+    width: '100%',
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

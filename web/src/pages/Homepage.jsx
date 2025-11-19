@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import LaunchCard from '../components/LaunchCard';
 import ArticleCard from '../components/ArticleCard';
 import API_URL from '../config/api';
+import RedDotLoader from '../components/common/RedDotLoader';
 
 const Homepage = () => {
   const [launches, setLaunches] = useState([]);
@@ -106,7 +107,9 @@ const Homepage = () => {
             <h2 className="text-2xl font-bold mb-4">UPCOMING EARTH DEPARTURES</h2>
             <div className="space-y-3 mb-4">
               {loading ? (
-                <div className="text-gray-400">Loading...</div>
+                <div className="py-4">
+                  <RedDotLoader size="small" />
+                </div>
               ) : launches.length > 0 ? (
                 launches.map((launch) => (
                   <div key={launch.id} className="border-l-4 border-gray-600 pl-4">
@@ -136,7 +139,9 @@ const Homepage = () => {
             <h2 className="text-2xl font-bold mb-4">UPCOMING EVENTS</h2>
             <div className="space-y-3">
               {loading ? (
-                <div className="text-gray-400">Loading...</div>
+                <div className="py-4">
+                  <RedDotLoader size="small" />
+                </div>
               ) : events.length > 0 ? (
                 events.map((event) => (
                   <div key={event.id} className="border-l-4 border-gray-600 pl-4">
@@ -193,7 +198,9 @@ const Homepage = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {loading ? (
-              <div className="col-span-3 text-gray-400">Loading articles...</div>
+              <div className="col-span-3 py-8">
+                <RedDotLoader size="medium" />
+              </div>
             ) : articles.length > 0 ? (
               articles.slice(0, 6).map((article) => (
                 <ArticleCard key={article.id} article={article} />

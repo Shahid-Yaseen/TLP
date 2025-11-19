@@ -22,6 +22,7 @@ import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
 import EmailVerification from './pages/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
+import EarthOrbitNavigator from './pages/EarthOrbitNavigator';
 
 function App() {
   return (
@@ -34,7 +35,7 @@ function App() {
         <Route path="/launches" element={<Navigate to="/launches/upcoming" replace />} />
         <Route path="/launches/upcoming" element={<UpcomingLaunches />} />
         <Route path="/launches/previous" element={<PreviousLaunches />} />
-        <Route path="/launches/:id" element={<LaunchDetail />} />
+        <Route path="/launches/:slug" element={<LaunchDetail />} />
         <Route path="/news" element={<News />} />
         <Route path="/news/:slug" element={<ArticleDetail />} />
         <Route path="/spacebase/astronauts" element={<AstronautsList />} />
@@ -65,7 +66,7 @@ function App() {
         {/* Placeholder routes for other pages */}
         <Route path="/briefing" element={<div className="min-h-screen bg-black text-white p-8">Mission Briefing (YouTube, Leaflet, etc.)</div>} />
         <Route path="/tlpedia" element={<div className="min-h-screen bg-black text-white p-8">TLPedia (search/faceted results)</div>} />
-        <Route path="/navigator" element={<div className="min-h-screen bg-black text-white p-8">Earth Navigator (Cesium.js demo)</div>} />
+        <Route path="/navigator" element={<EarthOrbitNavigator />} />
       </Routes>
     </AuthProvider>
   );

@@ -1,0 +1,35 @@
+.red-dot-loader-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.red-dot-loader-fullscreen {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+}
+
+.red-dot-loader-dots {
+  display: flex;
+  align-items: center;
+}
+
+.red-dot-loader-dot {
+  background-color: #8B1A1A;
+  border-radius: 50%;
+  animation: red-dot-bounce 1.4s infinite ease-in-out;
+}
+
+@keyframes red-dot-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+

@@ -63,6 +63,8 @@ const ForgotPassword = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 

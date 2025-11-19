@@ -54,7 +54,7 @@ const EmailVerification = () => {
     <Layout>
       <div className="min-h-screen flex items-center justify-center px-6 py-12">
         <div className="max-w-md w-full">
-          <div className="bg-gray-900 p-8 rounded-lg border border-gray-800 text-center">
+          <div className="bg-[#222222] p-8 rounded-lg border border-[#222222] text-center">
             {status === 'verifying' && (
               <>
                 <div className="text-6xl mb-4">⏳</div>
@@ -70,7 +70,7 @@ const EmailVerification = () => {
                 <p className="text-gray-400 mb-6">{message}</p>
                 <Link
                   to="/login"
-                  className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 rounded transition-colors"
+                  className="inline-block bg-[#8B1A1A] hover:bg-[#A02A2A] text-white font-semibold px-6 py-2 rounded transition-colors"
                 >
                   GO TO LOGIN
                 </Link>
@@ -85,13 +85,13 @@ const EmailVerification = () => {
                 <div className="space-y-4">
                   <button
                     onClick={resendVerification}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 rounded transition-colors"
+                    className="w-full bg-[#8B1A1A] hover:bg-[#A02A2A] text-white font-semibold px-6 py-2 rounded transition-colors"
                   >
                     RESEND VERIFICATION EMAIL
                   </button>
                   <Link
                     to="/login"
-                    className="block text-center text-orange-500 hover:text-orange-400"
+                    className="block text-center text-[#8B1A1A] hover:text-[#A02A2A]"
                   >
                     Return to Login
                   </Link>

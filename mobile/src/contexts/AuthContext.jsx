@@ -68,9 +68,37 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
+      // Better error handling for network issues
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      // Check for user-friendly error message from interceptor
+      if (error.userMessage) {
+        errorMessage = error.userMessage;
+      } else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.message?.includes('Network request failed')) {
+        errorMessage = `Cannot connect to server. Please check:
+• API server is running
+• Correct IP address in app.json
+• Phone and computer on same Wi-Fi network
+• Firewall allows connections on port 3007`;
+      } else if (error.code === 'ETIMEDOUT') {
+        errorMessage = 'Request timed out. Server may be slow or unreachable.';
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error('Login error:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        response: error.response?.data,
+        config: error.config?.url
+      });
+      
       return {
         success: false,
-        error: error.response?.data?.error || 'Login failed. Please check your credentials.',
+        error: errorMessage,
       };
     }
   };

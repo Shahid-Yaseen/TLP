@@ -72,14 +72,18 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>FILTER LAUNCHES</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.filterContent}>
+          <ScrollView 
+            style={styles.filterContent}
+            contentContainerStyle={styles.filterContentContainer}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={true}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>FILTER LAUNCHES</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
             {/* Search */}
             <View style={styles.filterSection}>
               <Text style={styles.filterLabel}>Search</Text>
@@ -89,11 +93,13 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                 placeholderTextColor={theme.colors.textSecondary}
                 value={localFilters.name || ''}
                 onChangeText={(text) => handleFilterChange('name', text || null)}
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 
             {/* Launch Site Dropdown */}
-            <View style={styles.filterSection}>
+            <View style={[styles.filterSection, selectedDropdown === 'launchSite' && { zIndex: 10000 }]}>
               <Text style={styles.filterLabel}>
                 Launch Site {localFilters.pad__location ? '✓' : ''}
               </Text>
@@ -109,34 +115,44 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                 </Text>
               </TouchableOpacity>
               {selectedDropdown === 'launchSite' && (
-                <View style={styles.dropdownList}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      handleFilterChange('pad__location', null);
-                      setSelectedDropdown(null);
-                    }}
+                <View style={styles.dropdownContainer}>
+                  <ScrollView 
+                    style={styles.dropdownList}
+                    contentContainerStyle={styles.dropdownListContent}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                    bounces={false}
                   >
-                    <Text style={styles.dropdownItemText}>All</Text>
-                  </TouchableOpacity>
-                  {options.launchSites.map((site) => (
                     <TouchableOpacity
-                      key={site}
                       style={styles.dropdownItem}
                       onPress={() => {
-                        handleFilterChange('pad__location', site);
+                        handleFilterChange('pad__location', null);
                         setSelectedDropdown(null);
                       }}
                     >
-                      <Text style={styles.dropdownItemText}>{site}</Text>
+                      <Text style={styles.dropdownItemText}>All</Text>
                     </TouchableOpacity>
-                  ))}
+                    {options.launchSites.map((site, index) => (
+                      <View key={`launchSite-${index}`}>
+                        <View style={styles.dropdownSeparator} />
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            handleFilterChange('pad__location', site);
+                            setSelectedDropdown(null);
+                          }}
+                        >
+                          <Text style={styles.dropdownItemText}>{site}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
             </View>
 
             {/* Launch Provider Dropdown */}
-            <View style={styles.filterSection}>
+            <View style={[styles.filterSection, selectedDropdown === 'launchProvider' && { zIndex: 10000 }]}>
               <Text style={styles.filterLabel}>
                 Launch Provider {localFilters.lsp__name ? '✓' : ''}
               </Text>
@@ -152,34 +168,44 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                 </Text>
               </TouchableOpacity>
               {selectedDropdown === 'launchProvider' && (
-                <View style={styles.dropdownList}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      handleFilterChange('lsp__name', null);
-                      setSelectedDropdown(null);
-                    }}
+                <View style={styles.dropdownContainer}>
+                  <ScrollView 
+                    style={styles.dropdownList}
+                    contentContainerStyle={styles.dropdownListContent}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                    bounces={false}
                   >
-                    <Text style={styles.dropdownItemText}>All</Text>
-                  </TouchableOpacity>
-                  {options.providers.map((provider) => (
                     <TouchableOpacity
-                      key={provider}
                       style={styles.dropdownItem}
                       onPress={() => {
-                        handleFilterChange('lsp__name', provider);
+                        handleFilterChange('lsp__name', null);
                         setSelectedDropdown(null);
                       }}
                     >
-                      <Text style={styles.dropdownItemText}>{provider}</Text>
+                      <Text style={styles.dropdownItemText}>All</Text>
                     </TouchableOpacity>
-                  ))}
+                    {options.providers.map((provider, index) => (
+                      <View key={`launchProvider-${index}`}>
+                        <View style={styles.dropdownSeparator} />
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            handleFilterChange('lsp__name', provider);
+                            setSelectedDropdown(null);
+                          }}
+                        >
+                          <Text style={styles.dropdownItemText}>{provider}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
             </View>
 
             {/* Rocket Dropdown */}
-            <View style={styles.filterSection}>
+            <View style={[styles.filterSection, selectedDropdown === 'rocket' && { zIndex: 10000 }]}>
               <Text style={styles.filterLabel}>
                 Rocket {localFilters.rocket__configuration__name__icontains ? '✓' : ''}
               </Text>
@@ -195,34 +221,44 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                 </Text>
               </TouchableOpacity>
               {selectedDropdown === 'rocket' && (
-                <View style={styles.dropdownList}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      handleFilterChange('rocket__configuration__name__icontains', null);
-                      setSelectedDropdown(null);
-                    }}
+                <View style={styles.dropdownContainer}>
+                  <ScrollView 
+                    style={styles.dropdownList}
+                    contentContainerStyle={styles.dropdownListContent}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                    bounces={false}
                   >
-                    <Text style={styles.dropdownItemText}>All</Text>
-                  </TouchableOpacity>
-                  {options.rockets.map((rocket) => (
                     <TouchableOpacity
-                      key={rocket}
                       style={styles.dropdownItem}
                       onPress={() => {
-                        handleFilterChange('rocket__configuration__name__icontains', rocket);
+                        handleFilterChange('rocket__configuration__name__icontains', null);
                         setSelectedDropdown(null);
                       }}
                     >
-                      <Text style={styles.dropdownItemText}>{rocket}</Text>
+                      <Text style={styles.dropdownItemText}>All</Text>
                     </TouchableOpacity>
-                  ))}
+                    {options.rockets.map((rocket, index) => (
+                      <View key={`rocket-${index}`}>
+                        <View style={styles.dropdownSeparator} />
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            handleFilterChange('rocket__configuration__name__icontains', rocket);
+                            setSelectedDropdown(null);
+                          }}
+                        >
+                          <Text style={styles.dropdownItemText}>{rocket}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
             </View>
 
             {/* Mission Type Dropdown */}
-            <View style={styles.filterSection}>
+            <View style={[styles.filterSection, selectedDropdown === 'missionType' && { zIndex: 10000 }]}>
               <Text style={styles.filterLabel}>
                 Mission Type {localFilters.mission_type ? '✓' : ''}
               </Text>
@@ -238,28 +274,38 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                 </Text>
               </TouchableOpacity>
               {selectedDropdown === 'missionType' && (
-                <View style={styles.dropdownList}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      handleFilterChange('mission_type', null);
-                      setSelectedDropdown(null);
-                    }}
+                <View style={styles.dropdownContainer}>
+                  <ScrollView 
+                    style={styles.dropdownList}
+                    contentContainerStyle={styles.dropdownListContent}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                    bounces={false}
                   >
-                    <Text style={styles.dropdownItemText}>All</Text>
-                  </TouchableOpacity>
-                  {options.missionTypes.map((type) => (
                     <TouchableOpacity
-                      key={type}
                       style={styles.dropdownItem}
                       onPress={() => {
-                        handleFilterChange('mission_type', type);
+                        handleFilterChange('mission_type', null);
                         setSelectedDropdown(null);
                       }}
                     >
-                      <Text style={styles.dropdownItemText}>{type}</Text>
+                      <Text style={styles.dropdownItemText}>All</Text>
                     </TouchableOpacity>
-                  ))}
+                    {options.missionTypes.map((type, index) => (
+                      <View key={`missionType-${index}`}>
+                        <View style={styles.dropdownSeparator} />
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            handleFilterChange('mission_type', type);
+                            setSelectedDropdown(null);
+                          }}
+                        >
+                          <Text style={styles.dropdownItemText}>{type}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
             </View>
@@ -277,6 +323,8 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                   mission__orbit__name: text || undefined,
                   orbit: text || undefined
                 })}
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 
@@ -293,6 +341,8 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                   ...localFilters, 
                   year: text ? parseInt(text) : undefined
                 })}
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 
@@ -352,6 +402,8 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                   after: text || undefined,
                   net__gte: text || undefined
                 })}
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
               <TextInput
                 style={[styles.input, { marginTop: theme.spacing.sm }]}
@@ -363,18 +415,20 @@ const LaunchFilters = ({ visible, onClose, filters, onApplyFilters, onReset }) =
                   before: text || undefined,
                   net__lte: text || undefined
                 })}
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
-          </ScrollView>
 
-          <View style={styles.modalFooter}>
-            <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-              <Text style={styles.resetButtonText}>RESET</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-              <Text style={styles.applyButtonText}>APPLY FILTERS</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+                <Text style={styles.resetButtonText}>RESET</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+                <Text style={styles.applyButtonText}>APPLY FILTERS</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -392,14 +446,19 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '90%',
+    zIndex: 1000,
+    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: getResponsivePadding(theme.spacing.md),
+    paddingHorizontal: getResponsivePadding(theme.spacing.md),
+    paddingVertical: getResponsivePadding(theme.spacing.md),
+    paddingTop: getResponsivePadding(theme.spacing.lg),
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    marginBottom: getResponsivePadding(theme.spacing.md),
   },
   modalTitle: {
     fontSize: getResponsiveFontSize(theme.fontSizes.lg),
@@ -411,10 +470,16 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   filterContent: {
-    padding: getResponsivePadding(theme.spacing.md),
+    zIndex: 100,
+  },
+  filterContentContainer: {
+    paddingBottom: getResponsivePadding(theme.spacing.xl),
   },
   filterSection: {
     marginBottom: getResponsivePadding(theme.spacing.md),
+    position: 'relative',
+    zIndex: 1,
+    paddingHorizontal: getResponsivePadding(theme.spacing.md),
   },
   filterLabel: {
     fontSize: getResponsiveFontSize(theme.fontSizes.sm),
@@ -480,26 +545,52 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: getResponsiveFontSize(theme.fontSizes.sm),
   },
-  dropdownList: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: scale(8),
+  dropdownContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    elevation: 20,
     marginTop: getResponsivePadding(theme.spacing.xs),
-    maxHeight: 200,
+  },
+  dropdownList: {
+    backgroundColor: '#000000',
+    borderWidth: 2,
+    borderColor: '#374151',
+    borderRadius: scale(8),
+    maxHeight: 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+  },
+  dropdownListContent: {
+    flexGrow: 1,
+  },
+  dropdownSeparator: {
+    height: 1,
+    backgroundColor: '#2a2a2a',
+    marginHorizontal: getResponsivePadding(theme.spacing.md),
   },
   dropdownItem: {
-    padding: getResponsivePadding(theme.spacing.sm),
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingVertical: getResponsivePadding(theme.spacing.md),
+    paddingHorizontal: getResponsivePadding(theme.spacing.md),
+    backgroundColor: '#000000',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   dropdownItemText: {
-    color: theme.colors.text,
+    color: '#FFFFFF',
     fontSize: getResponsiveFontSize(theme.fontSizes.md),
+    fontWeight: '500',
+    lineHeight: getResponsiveFontSize(theme.fontSizes.md) * 1.4,
   },
   modalFooter: {
     flexDirection: 'row',
     padding: getResponsivePadding(theme.spacing.md),
+    paddingTop: getResponsivePadding(theme.spacing.lg),
+    marginTop: getResponsivePadding(theme.spacing.md),
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     gap: getResponsivePadding(theme.spacing.sm),

@@ -85,6 +85,7 @@ const MIGRATIONS = [
   '015_add_missing_launch_fields.sql',
   '016_create_launch_arrays.sql',
   '017_ensure_launch_schema_complete.sql',
+  '018_add_launch_comments.sql',
 ];
 
 // Track completed migrations

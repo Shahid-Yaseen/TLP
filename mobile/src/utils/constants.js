@@ -3,12 +3,13 @@ export const COLORS = {
   primary: '#8B1A1A', // Red (matches header)
   secondary: '#8B1A1A', // Red
   background: '#000000',
-  surface: '#1A1A1A',
+  surface: '#222222',
   text: '#FFFFFF',
   textSecondary: '#9CA3AF',
   border: '#374151',
   error: '#EF4444',
   success: '#10B981',
+  focus: '#8B1A1A', // Red for focus outlines
 };
 
 export const SPACING = {

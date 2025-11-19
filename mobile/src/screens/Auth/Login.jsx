@@ -18,11 +18,17 @@ const Login = () => {
     setError('');
     setLoading(true);
 
+    // Debug: Log API configuration
+    console.log('🔐 Attempting login...');
+    console.log('Email:', email);
+    
     const result = await login(email, password);
 
     if (result.success) {
+      console.log('✅ Login successful!');
       navigation.replace('MainTabs');
     } else {
+      console.error('❌ Login failed:', result.error);
       setError(result.error);
     }
 
@@ -54,6 +60,8 @@ const Login = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 
@@ -67,6 +75,8 @@ const Login = () => {
                 placeholderTextColor={theme.colors.textSecondary}
                 secureTextEntry
                 autoCapitalize="none"
+                selectionColor={theme.colors.focus}
+                underlineColorAndroid={theme.colors.focus}
               />
             </View>
 

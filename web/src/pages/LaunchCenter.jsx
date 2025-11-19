@@ -4,6 +4,8 @@ import axios from 'axios';
 import API_URL from '../config/api';
 import LaunchFilters from '../components/LaunchFilters';
 import { buildLaunchFilters } from '../utils/filters';
+import { getLaunchSlug } from '../utils/slug';
+import RedDotLoader from '../components/common/RedDotLoader';
 
 // Use this exact image for 100% match
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
@@ -243,11 +245,7 @@ function LaunchCenter() {
   }, [selectedTab, upcomingLaunch, launches]);
 
   if (loading && launches.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-xl">Loading launches...</div>
-      </div>
-    );
+    return <RedDotLoader fullScreen={true} size="large" />;
   }
 
   const launchesByMonth = groupLaunchesByMonth(launches);
@@ -426,7 +424,7 @@ function LaunchCenter() {
                 return (
                 <Link
                   key={idx}
-                  to={`/launches/${launch.id}`}
+                  to={`/launches/${getLaunchSlug(launch)}`}
                   className="relative h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
                 >
                   <div 
@@ -558,7 +556,7 @@ function LaunchCenter() {
                 return (
                 <Link
                   key={idx}
-                  to={`/launches/${launch.id}`}
+                  to={`/launches/${getLaunchSlug(launch)}`}
                   className="relative h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
                 >
                   <div 

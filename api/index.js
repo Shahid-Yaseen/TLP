@@ -146,11 +146,15 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+// Listen on 0.0.0.0 to accept connections from all network interfaces (including mobile devices)
+app.listen(PORT, '0.0.0.0', () => {
   console.log('═'.repeat(60));
   console.log('🚀 TLP Platform API Server');
   console.log('═'.repeat(60));
   console.log(`📡 Server running on port ${PORT}`);
+  console.log(`🌐 Listening on all interfaces (0.0.0.0:${PORT})`);
+  console.log(`   Accessible from: http://localhost:${PORT}`);
+  console.log(`   Accessible from network: http://YOUR_IP:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`💾 Database: ${process.env.DB_DATABASE || 'tlp_db'}@${process.env.DB_HOST || 'localhost'}`);
   console.log('═'.repeat(60));

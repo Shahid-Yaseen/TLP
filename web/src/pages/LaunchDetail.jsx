@@ -1,25 +1,44 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import API_URL from '../config/api';
+import CommentItem from '../components/CommentItem';
+import { getLaunchComments, createLaunchComment } from '../services/comments';
+import { useAuth } from '../contexts/AuthContext';
+import { getLaunchSlug } from '../utils/slug';
+import { IoRocket } from 'react-icons/io5';
+import RedDotLoader from '../components/common/RedDotLoader';
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
 const LaunchDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [launch, setLaunch] = useState(null);
   const [relatedStories, setRelatedStories] = useState([]);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [activeTab, setActiveTab] = useState('OVERVIEW');
+  const [activeTab, setActiveTab] = useState('ROCKET');
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  
+  // Comments state
+  const [comments, setComments] = useState([]);
+  const [commentSort, setCommentSort] = useState('newest');
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsTotal, setCommentsTotal] = useState(0);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [authorImageError, setAuthorImageError] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
 
-  const tabs = ['OVERVIEW', 'LAUNCH SERVICE PROVIDER', 'ROCKET', 'MISSION', 'PAD', 'PAYLOADS', 'CREW', 'RECOVERY', 'HAZARDS', 'UPDATES', 'TIMELINE', 'MEDIA', 'STATISTICS', 'PROGRAM', 'PATCHES'];
+  const tabs = ['PAYLOAD', 'CREW', 'ROCKET', 'ENGINE', 'PROVIDER', 'PAD', 'HAZARDS', 'STATS'];
 
   useEffect(() => {
     fetchLaunch();
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     if (launch?.net) {
@@ -40,21 +59,165 @@ const LaunchDetail = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const fetchComments = async () => {
+    // Use database_id (numeric) for API calls
+    // If database_id is not available, try to extract numeric ID from id field
+    let launchId = launch?.database_id;
+    
+    // If database_id is not set, check if id is numeric
+    if (!launchId && launch?.id) {
+      const idStr = launch.id.toString();
+      if (/^\d+$/.test(idStr)) {
+        launchId = parseInt(idStr);
+      }
+    }
+    
+    if (!launchId) {
+      console.warn('No numeric launch ID available for comments API');
+      return;
+    }
+    
+    setCommentsLoading(true);
+    try {
+      const response = await getLaunchComments(launchId, commentSort);
+      setComments(response.comments || []);
+      setCommentsTotal(response.total || 0);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      setComments([]);
+      setCommentsTotal(0);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  // Fetch comments when launch or sort changes
+  useEffect(() => {
+    const launchId = launch?.database_id || launch?.id;
+    if (launchId) {
+      fetchComments();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [launch?.database_id, launch?.id, commentSort]);
+
+  // Scroll to comments section if hash is present in URL
+  useEffect(() => {
+    if (location.hash === '#comments' && !loading) {
+      setTimeout(() => {
+        const commentsElement = document.getElementById('comments');
+        if (commentsElement) {
+          commentsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
+  }, [location.hash, loading]);
+
+
   const fetchLaunch = async () => {
     try {
-      const [launchRes, storiesRes] = await Promise.all([
-        axios.get(`${API_URL}/api/launches/${id}`),
-        axios.get(`${API_URL}/api/news?limit=4&status=published`),
-      ]);
-
-      setLaunch(launchRes.data);
+      let launchId;
+      let launchData;
       
+      // Check if slug is numeric (old ID format) - if so, use ID directly
+      const isNumericSlug = /^\d+$/.test(slug);
+      
+      if (isNumericSlug) {
+        // If slug is numeric, use it as ID
+        launchId = parseInt(slug);
+      } else {
+        // For non-numeric slug, try multiple approaches
+        try {
+          // First, try fetching by slug directly
+          try {
+            const slugRes = await axios.get(`${API_URL}/api/launches/${slug}`);
+            const slugData = slugRes.data;
+            
+            if (slugData) {
+              launchData = slugData;
+              // Extract numeric database ID
+              if (slugData.database_id) {
+                launchId = slugData.database_id;
+              } else if (slugData.id && /^\d+$/.test(slugData.id.toString())) {
+                launchId = parseInt(slugData.id);
+              }
+            }
+          } catch (directSlugError) {
+            // If direct slug fetch fails, try using the list endpoint to find the launch
+            console.log('Direct slug fetch failed, trying list endpoint...');
+            try {
+              const listRes = await axios.get(`${API_URL}/api/launches?slug=${encodeURIComponent(slug)}`);
+              const listData = listRes.data;
+              
+              if (listData && listData.data && listData.data.length > 0) {
+                const foundLaunch = listData.data[0];
+                // Found the launch via list endpoint
+                // The list response has numeric id field (database ID)
+                if (foundLaunch.id && /^\d+$/.test(foundLaunch.id.toString())) {
+                  launchId = parseInt(foundLaunch.id);
+                  // Fetch complete data by numeric ID to get full formatted response
+                  try {
+                    const idRes = await axios.get(`${API_URL}/api/launches/${launchId}`);
+                    launchData = idRes.data;
+                    // Ensure database_id is set
+                    if (!launchData.database_id && launchId) {
+                      launchData.database_id = launchId;
+                    }
+                  } catch (idError) {
+                    // If fetching by ID fails, use list data and add database_id
+                    launchData = foundLaunch;
+                    launchData.database_id = launchId;
+                  }
+                } else {
+                  // Use the list data directly if we can't get numeric ID
+                  launchData = foundLaunch;
+                }
+              } else {
+                throw directSlugError;
+              }
+            } catch (listError) {
+              console.error('List endpoint also failed:', listError);
+              throw directSlugError;
+            }
+          }
+          
+          if (!launchData) {
+            throw new Error('Launch not found - no data in response');
+          }
+        } catch (slugError) {
+          console.error('Error fetching launch by slug:', slugError);
+          throw new Error('Launch not found');
+        }
+      }
+      
+      // If we don't have launchData yet (numeric slug case), fetch it
+      if (!launchData && isNumericSlug) {
+        const launchRes = await axios.get(`${API_URL}/api/launches/${launchId}`);
+        launchData = launchRes.data;
+      }
+      
+      if (!launchData) {
+        throw new Error('Launch data not found');
+      }
+      
+      // Update URL to use slug if we accessed via numeric ID
+      if (isNumericSlug) {
+        const launchSlug = getLaunchSlug(launchData);
+        if (launchSlug && launchSlug !== slug) {
+          window.history.replaceState(null, '', `/launches/${launchSlug}`);
+        }
+      }
+      
+      setLaunch(launchData);
+      
+      // Fetch related stories
+      const storiesRes = await axios.get(`${API_URL}/api/news?limit=4&status=published`);
       const storiesData = Array.isArray(storiesRes.data) 
         ? storiesRes.data 
         : storiesRes.data?.data || [];
       setRelatedStories(storiesData.slice(0, 4));
     } catch (error) {
       console.error('Error fetching launch:', error);
+      setLaunch(null);
     } finally {
       setLoading(false);
     }
@@ -79,6 +242,91 @@ const LaunchDetail = () => {
       }
     }, 1000);
     return () => clearInterval(interval);
+  };
+
+  const handleSubmitComment = async () => {
+    if (!user) {
+      // Redirect to login with returnUrl pointing to comments section
+      const currentUrl = location.pathname + location.search;
+      const returnUrl = encodeURIComponent(`${currentUrl}#comments`);
+      navigate(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+
+    if (!newComment.trim()) {
+      alert('Please enter a comment');
+      return;
+    }
+
+    try {
+      const launchId = launch?.database_id || launch?.id;
+      const comment = await createLaunchComment(launchId, newComment.trim());
+      setNewComment('');
+      // Refresh comments
+      await fetchComments();
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      alert(error.response?.data?.error || 'Failed to post comment');
+    }
+  };
+
+  const handleReply = async () => {
+    if (!user) {
+      // Redirect to login with returnUrl pointing to comments section
+      const currentUrl = location.pathname + location.search;
+      const returnUrl = encodeURIComponent(`${currentUrl}#comments`);
+      navigate(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+
+    if (!replyContent.trim()) {
+      alert('Please enter a reply');
+      return;
+    }
+
+    try {
+      const launchId = launch?.database_id || launch?.id;
+      await createLaunchComment(launchId, replyContent.trim(), replyingTo.id);
+      setReplyContent('');
+      setReplyingTo(null);
+      // Refresh comments
+      await fetchComments();
+    } catch (error) {
+      console.error('Error creating reply:', error);
+      alert(error.response?.data?.error || 'Failed to post reply');
+    }
+  };
+
+  const handleCommentUpdate = (updatedComment) => {
+    // Update comment in the list
+    const updateCommentInTree = (comments) => {
+      return comments.map(comment => {
+        if (comment.id === updatedComment.id) {
+          return { ...comment, ...updatedComment };
+        }
+        if (comment.replies && comment.replies.length > 0) {
+          return { ...comment, replies: updateCommentInTree(comment.replies) };
+        }
+        return comment;
+      });
+    };
+    setComments(updateCommentInTree(comments));
+  };
+
+  const handleCommentDelete = (commentId) => {
+    // Remove comment from the list
+    const removeCommentFromTree = (comments) => {
+      return comments
+        .filter(comment => comment.id !== commentId)
+        .map(comment => {
+          if (comment.replies && comment.replies.length > 0) {
+            return { ...comment, replies: removeCommentFromTree(comment.replies) };
+          }
+          return comment;
+        });
+    };
+    setComments(removeCommentFromTree(comments));
+    setCommentsTotal(prev => Math.max(0, prev - 1));
   };
 
   const getLaunchImageUrl = (launch) => {
@@ -138,9 +386,7 @@ const LaunchDetail = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="max-w-7xl mx-auto px-6 py-12 text-center text-gray-400">
-          Loading launch details...
-        </div>
+        <RedDotLoader fullScreen={true} size="large" />
       </Layout>
     );
   }
@@ -166,9 +412,6 @@ const LaunchDetail = () => {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
     });
   };
 
@@ -178,8 +421,124 @@ const LaunchDetail = () => {
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      timeZoneName: 'short',
+      hour12: true,
+    }).toLowerCase();
+  };
+
+  const formatDateTimeLine = (dateString, launchPad = null) => {
+    if (!dateString) return 'TBD';
+    
+    // Parse the date string - handle ISO format strings
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateString);
+      return 'TBD';
+    }
+    
+    // Format: "Tuesday, April 29, 2025"
+    const datePart = date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
+    
+    // Determine timezone based on launch location
+    // Default to America/Denver (MDT) for US launches
+    let timeZone = 'America/Denver'; // Default to MDT
+    if (launchPad && launchPad.location) {
+      // Map common launch locations to timezones
+      const locationName = launchPad.location.name || '';
+      if (locationName.includes('Kennedy') || locationName.includes('Florida') || locationName.includes('Cape Canaveral')) {
+        timeZone = 'America/New_York'; // EDT/EST
+      } else if (locationName.includes('Vandenberg') || locationName.includes('California')) {
+        timeZone = 'America/Los_Angeles'; // PDT/PST
+      } else if (locationName.includes('Texas')) {
+        timeZone = 'America/Chicago'; // CDT/CST
+      }
+    }
+    
+    // Format: "7:37am"
+    const timePart = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: timeZone,
+    }).toLowerCase().replace(/\s/g, '');
+    
+    // Get timezone abbreviation (MDT, EST, etc.)
+    const timezonePart = date.toLocaleTimeString('en-US', {
+      timeZoneName: 'short',
+      timeZone: timeZone,
+    }).split(' ').pop();
+    
+    // Format UTC: "23:23" - get UTC hours and minutes directly
+    // The date object stores time in UTC internally, so getUTCHours/getUTCMinutes should work
+    const utcHours = date.getUTCHours();
+    const utcMinutes = date.getUTCMinutes();
+    
+    const utcPart = `${String(utcHours).padStart(2, '0')}:${String(utcMinutes).padStart(2, '0')}`;
+    
+    return `${datePart} | ${timePart} ${timezonePart} (${utcPart} UTC)`;
+  };
+
+  // Format window time with timezone (matching mobile app format)
+  const formatWindowTimeWithTimezone = (dateString, timezone = null) => {
+    if (!dateString) return { local: 'TBD', utc: 'TBD' };
+    const date = new Date(dateString);
+    
+    try {
+      // Format local time with timezone
+      const options = { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true
+      };
+      
+      if (timezone) {
+        options.timeZone = timezone;
+      }
+      
+      const localTime = date.toLocaleTimeString('en-US', options);
+      
+      // Get timezone abbreviation
+      let timeZoneName = '';
+      if (timezone) {
+        const parts = new Intl.DateTimeFormat('en-US', { 
+          timeZone: timezone, 
+          timeZoneName: 'short' 
+        }).formatToParts(date);
+        timeZoneName = parts.find(part => part.type === 'timeZoneName')?.value || '';
+      } else {
+        // Try to get timezone from the date string or use local timezone
+        const timeString = date.toLocaleTimeString('en-US', { 
+          timeZoneName: 'short', 
+          hour12: true 
+        });
+        const parts = timeString.split(' ');
+        timeZoneName = parts[parts.length - 1] || '';
+      }
+      
+      const localTimeWithTZ = timeZoneName ? `${localTime} ${timeZoneName}` : localTime;
+      
+      // Format UTC time
+      const utcTime = date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'UTC'
+      });
+      
+      return {
+        local: localTimeWithTZ,
+        utc: `(${utcTime} UTC)`
+      };
+    } catch (error) {
+      console.error('Error formatting window time:', error);
+      return { local: 'TBD', utc: 'TBD' };
+    }
   };
 
   const getLaunchName = () => {
@@ -254,10 +613,14 @@ const LaunchDetail = () => {
   const infographic = launch.infographic || parseJsonb(launch.infographic_json) || {};
   const program = launch.program || parseJsonb(launch.program_json) || [];
 
+  // Format date/time line with pad information for timezone
+  const formattedDateTimeLine = formatDateTimeLine(launch.net, pad);
+
   // Debug: Log data structure
   if (launch && Object.keys(launch).length > 0) {
     console.log('[LaunchDetail] Received launch data:', {
       id: launch.id,
+      database_id: launch.database_id,
       name: launch.name,
       hasLaunchServiceProvider: !!(launch.launch_service_provider || launch.launch_service_provider_json),
       launchServiceProvider: launchServiceProvider,
@@ -273,8 +636,12 @@ const LaunchDetail = () => {
         timeline: `${launch.timeline ? launch.timeline.length : 0} items`,
         vid_urls: `${launch.vid_urls ? launch.vid_urls.length : 0} items`,
         info_urls: `${launch.info_urls ? launch.info_urls.length : 0} items`,
-        mission_patches: `${launch.mission_patches ? launch.mission_patches.length : 0} items`
+        mission_patches: `${launch.mission_patches ? launch.mission_patches.length : 0} items`,
+        payloads: `${launch.payloads ? launch.payloads.length : 0} items`,
+        crew: `${launch.crew ? launch.crew.length : 0} items`,
+        hazards: `${launch.hazards ? launch.hazards.length : 0} items`
       },
+      payloadsSample: launch.payloads && launch.payloads.length > 0 ? launch.payloads[0] : null,
       statistics: {
         orbital_launch_attempt_count: launch.orbital_launch_attempt_count,
         pad_launch_attempt_count: launch.pad_launch_attempt_count,
@@ -299,8 +666,78 @@ const LaunchDetail = () => {
   const youtubeUrl = launch ? getYouTubeUrl() : null;
   const youtubeVideoId = youtubeUrl ? getYouTubeVideoId(youtubeUrl) : null;
 
+  // Helper function to extract social media links from launch data
+  const getSocialMediaLinks = () => {
+    const links = {
+      twitter: null,
+      facebook: null,
+      linkedin: null,
+      url: null
+    };
+
+    // Check launch_service_provider for social media links
+    if (launchServiceProvider) {
+      // Check if social_media_links array exists
+      if (launchServiceProvider.social_media_links && Array.isArray(launchServiceProvider.social_media_links)) {
+        launchServiceProvider.social_media_links.forEach(link => {
+          const url = typeof link === 'string' ? link : link.url;
+          if (url) {
+            if (url.includes('twitter.com') || url.includes('x.com')) {
+              links.twitter = url;
+            } else if (url.includes('facebook.com')) {
+              links.facebook = url;
+            } else if (url.includes('linkedin.com')) {
+              links.linkedin = url;
+            }
+          }
+        });
+      }
+      
+      // Check for direct URL field
+      if (launchServiceProvider.url) {
+        links.url = launchServiceProvider.url;
+      }
+    }
+
+    // Check launch URL field
+    if (launch.url) {
+      links.url = launch.url;
+    }
+
+    return links;
+  };
+
+  // Get social media links
+  const socialLinks = getSocialMediaLinks();
+  const currentPageUrl = window.location.href;
+  const shareText = `${launch.name} - The Launch Pad`;
+
+  // Generate share URLs
+  const getTwitterShareUrl = () => {
+    if (socialLinks.twitter) {
+      return socialLinks.twitter;
+    }
+    return `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentPageUrl)}&text=${encodeURIComponent(shareText)}`;
+  };
+
+  const getFacebookShareUrl = () => {
+    if (socialLinks.facebook) {
+      return socialLinks.facebook;
+    }
+    return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentPageUrl)}`;
+  };
+
+  const getLinkedInShareUrl = () => {
+    if (socialLinks.linkedin) {
+      return socialLinks.linkedin;
+    }
+    return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentPageUrl)}`;
+  };
+
   const sectionNav = (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3 sm:gap-0">
+    <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">
+      <div className="flex items-center justify-between">
+        {/* Logo and Title */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="relative" style={{ overflow: 'visible' }}>
           <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black flex items-center justify-center overflow-hidden">
@@ -316,7 +753,31 @@ const LaunchDetail = () => {
         </div>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>LAUNCH</h1>
       </div>
+
+        {/* Desktop Navigation - Left Side */}
+        <div className="hidden lg:flex items-center gap-0 text-xs uppercase flex-1 ml-6">
+          <Link
+            to="/launches/upcoming"
+            className="px-3 py-2 text-gray-400 hover:text-white transition-colors"
+          >
+            UPCOMING
+          </Link>
+          <span className="mx-1 font-bold text-white">|</span>
+          <Link
+            to="/launches/previous"
+            className="px-3 py-2 text-gray-400 hover:text-white transition-colors"
+          >
+            PREVIOUS
+          </Link>
+          <span className="mx-1 font-bold text-white">|</span>
+          <button className="px-3 py-2 text-gray-400 hover:text-white transition-colors">EVENTS</button>
+          <span className="mx-1 font-bold text-white">|</span>
+          <button className="px-3 py-2 text-gray-400 hover:text-white transition-colors">STATISTICS</button>
+        </div>
+
+        {/* Desktop YouTube Button - Right Side */}
       {youtubeUrl && (
+          <div className="hidden lg:block">
         <a
           href={youtubeUrl}
           target="_blank"
@@ -325,7 +786,9 @@ const LaunchDetail = () => {
         >
           Watch On Youtube
         </a>
+          </div>
       )}
+      </div>
     </div>
   );
 
@@ -340,54 +803,29 @@ const LaunchDetail = () => {
           backgroundSize: 'cover',
         }}
       >
-        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-black/80"></div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 min-h-[400px] sm:min-h-[450px] md:min-h-[500px]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-            <div className="text-xs sm:text-sm text-gray-400 mb-2">{formatDate(launch.net)}</div>
+        {/* Hero Content - Centered */}
+        <div className="relative z-10 min-h-[450px] sm:min-h-[500px] md:min-h-[550px] flex items-center justify-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full">
+            <div className="flex flex-col items-center text-center">
+              <div className="text-xs sm:text-sm text-white mb-2">
+                {formattedDateTimeLine}
+              </div>
             <div className="mb-3 sm:mb-4">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold">{launchName.firstLine}</h1>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white">{launchName.firstLine}</h1>
               {launchName.secondLine && (
                 <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-300 mt-2">{launchName.secondLine}</h2>
               )}
             </div>
-            <div className="text-sm sm:text-base lg:text-lg text-gray-300 mb-3 sm:mb-4">
-              {launchServiceProvider.name || 'Provider TBD'} | {rocket.configuration?.name || 'Rocket TBD'}
-            </div>
-            <div className="text-sm sm:text-base lg:text-lg text-gray-400 mb-4 sm:mb-6">
-              {pad.location?.name || 'Location TBD'} | {pad.country_code || pad.location?.country_code || 'Country TBD'}
+              <div className="text-sm sm:text-base lg:text-lg text-gray-300 mb-6 sm:mb-8">
+                {pad.name || 'Launch Pad TBD'} | {pad.location?.name || 'Location TBD'}, {pad.country_code || pad.location?.country_code || 'Country TBD'}
             </div>
 
-            {/* Mission Description */}
-            {mission.description && (
-              <div className="max-w-3xl mb-6">
-                <p className="text-gray-300 leading-relaxed">{mission.description}</p>
-              </div>
-            )}
-            
-            {/* Status Badge */}
-            {status.name && (
-              <div className="inline-block mb-4">
-                <span className={`px-4 py-2 text-sm font-bold ${
-                  status.abbrev === 'Success' ? 'bg-green-600 text-white' :
-                  status.abbrev === 'Failure' ? 'bg-red-600 text-white' :
-                  status.abbrev === 'Partial' ? 'bg-orange-600 text-white' :
-                  'bg-gray-600 text-white'
-                }`}>
-                  {status.name.toUpperCase()}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Countdown Timer - Only for upcoming launches */}
+              {/* Countdown Timer - Centered */}
         {isUpcoming && (
-          <div className="relative z-10 border-b border-gray-800 py-6 sm:py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              <div className="text-center mb-3 sm:mb-4 text-gray-400 uppercase text-xs sm:text-sm tracking-widest">Time Until Launch</div>
-              <div className="flex justify-center items-center gap-2 sm:gap-3 md:gap-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold">
+                <div className="mt-6 sm:mt-8">
+                  <div className="flex justify-center items-center gap-2 sm:gap-3 md:gap-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold">
                 <div className="text-center">
                   <div className="text-white">{String(countdown.days).padStart(2, '0')}</div>
                   <div className="text-[10px] sm:text-xs md:text-sm text-gray-400 mt-1 sm:mt-2">DAYS</div>
@@ -406,310 +844,203 @@ const LaunchDetail = () => {
                 <div className="text-center">
                   <div className="text-white">{String(countdown.seconds).padStart(2, '0')}</div>
                   <div className="text-[10px] sm:text-xs md:text-sm text-gray-400 mt-1 sm:mt-2">SECONDS</div>
-                </div>
               </div>
             </div>
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Video Player and Sidebar - Side by Side */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
-          {/* Main Content */}
-          <div className="md:col-span-2">
-            {/* Mission Image/Infographic or YouTube Embed */}
-            {youtubeVideoId ? (
-              <div className="bg-gray-900 p-4 sm:p-6 mb-4 sm:mb-6">
-                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">MISSION VIDEO</h3>
-                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                  <iframe
-                    className="absolute top-0 left-0 w-full h-full rounded"
-                    src={`https://www.youtube.com/embed/${youtubeVideoId}`}
-                    title="Mission Video"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-              </div>
-            ) : (image.image_url || infographic.image_url) && (
-              <div className="bg-gray-900 p-4 sm:p-6 mb-4 sm:mb-6">
-                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">MISSION IMAGE</h3>
-                <img 
-                  src={image.image_url || infographic.image_url} 
-                  alt={launch.name}
-                  className="w-full h-auto rounded"
+        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8">
+          {/* Left Column - Video Player */}
+          <div className="lg:col-span-8">
+            <div className="bg-[#121212] p-4 sm:p-6">
+              <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+                {/* Red Border - Inside container, left border extends to top, top border has gap from left border */}
+                {/* Left border - extends to top */}
+                <div className="absolute top-0 left-4 sm:left-5 bottom-4 sm:bottom-5 w-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+                {/* Top border - starts after left border with gap, increased padding for visibility */}
+                <div className="absolute top-8 sm:top-10 left-12 sm:left-14 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+                {/* Right border */}
+                <div className="absolute top-8 sm:top-10 right-4 sm:right-5 bottom-4 sm:bottom-5 w-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+                {/* Bottom border */}
+                <div className="absolute bottom-4 sm:bottom-5 left-4 sm:left-5 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+                
+                {/* Background Image */}
+                <div 
+                  className="absolute top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: `url('${launchImageUrl}')`,
+                    backgroundPosition: 'center',
+                    backgroundSize: 'cover',
+                  }}
+                >
+                  {/* Dark Overlay - Full Image - Hide when video is playing */}
+                  {!isVideoPlaying && (
+                    <div className="absolute top-0 left-0 w-full h-full bg-black/85 z-10"></div>
+                  )}
+                  
+                  {/* YouTube Video - Only render when playing to improve performance */}
+                  {youtubeVideoId && isVideoPlaying && (
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full z-20"
+                      src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
+                      title="Launch Video"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    ></iframe>
+                  )}
+                  
+                  {/* Branding - Top Left - Above border */}
+                  <div className="absolute top-0 left-4 sm:left-5 z-20 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black flex items-center justify-center overflow-hidden">
+                      <img 
+                        src="/TLP Helmet.png" 
+                        alt="TLP Logo" 
+                        className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
                 />
               </div>
-            )}
+                    <div className="text-white text-sm sm:text-base md:text-lg font-semibold uppercase tracking-wide" style={{ fontFamily: 'Nasalization, sans-serif' }}>THE LAUNCH PAD</div>
+                </div>
 
+                  {/* Website - Top Right - Outside border */}
+                  <div className="absolute top-1 sm:top-2 right-0 z-20 text-white text-[10px] sm:text-xs font-semibold uppercase pr-1 sm:pr-2" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                    TLPNETWORK.COM
+                  </div>
+
+                  {/* Pause/Close Button - Show when video is playing */}
+                  {isVideoPlaying && youtubeVideoId && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsVideoPlaying(false);
+                      }}
+                      className="absolute top-4 sm:top-5 right-4 sm:right-5 z-50 bg-black/80 hover:bg-black/90 text-white p-2 sm:p-3 rounded-full transition-all shadow-lg backdrop-blur-sm"
+                      aria-label="Stop video"
+                      title="Stop video"
+                    >
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 6h12v12H6z"/>
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Launch Name with Play Button - Centered - Hide when video is playing */}
+                  {!isVideoPlaying && (
+                    <div className="absolute inset-0 flex items-center justify-center z-30">
+                      <div className="text-center relative">
+                        {(() => {
+                          const fullName = launchName.firstLine.toUpperCase();
+                          // Try to extract prefix (like "CFT" from "CFT STARLINER")
+                          const parts = fullName.split(' ');
+                          let mainName = fullName;
+                          let prefix = '';
+                          
+                          if (parts.length > 1 && parts[0].length <= 5) {
+                            // Likely a prefix like "CFT", "ISS", etc.
+                            prefix = parts[0];
+                            mainName = parts.slice(1).join(' ');
+                          }
+                          
+                          return (
+                            <>
+                              {/* Background prefix text (semi-transparent, larger) */}
+                              {prefix && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="text-[#222222]/60 text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-bold leading-none" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                                    {prefix}
+                      </div>
+                      </div>
+                    )}
+
+                              {/* Complete Launch Name */}
+                              <div className="relative flex flex-col items-center justify-center">
+                                {/* Title with Play Button Overlay */}
+                                <div className="relative">
+                                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-none drop-shadow-lg" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                                    {mainName}
+                      </div>
+                                  
+                                  {/* Rectangular Play Button - On Top of Title */}
+                                  {youtubeVideoId && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setIsVideoPlaying(true);
+                                      }}
+                                      className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-12 sm:w-24 sm:h-14 md:w-28 md:h-16 bg-black/80 hover:bg-black/90 flex items-center justify-center shadow-lg backdrop-blur-sm transition-all cursor-pointer z-40"
+                                      style={{ borderRadius: '4px' }}
+                                      aria-label="Play video"
+                                    >
+                                      <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                      </svg>
+                                    </button>
+                                  )}
+                      </div>
+
+                                {/* Countdown to Launch - Under Title */}
+                                <div className="mt-4 sm:mt-6 z-20 relative">
+                                  <div 
+                                    className="bg-[#8B1A1A] px-6 sm:px-8 md:px-10 py-2 sm:py-2.5 text-white text-sm sm:text-base md:text-lg font-bold uppercase text-center tracking-wider"
+                                    style={{ 
+                                      fontFamily: 'Nasalization, sans-serif',
+                                      clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
+                                      boxShadow: '0 0 10px rgba(139, 26, 26, 0.5)'
+                                    }}
+                                  >
+                                    COUNTDOWN TO LAUNCH
+                      </div>
+                      </div>
+                      </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                      </div>
+                    )}
+                      </div>
+                      </div>
+                      </div>
+                  
             {/* Tabs */}
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+            <div className="bg-[#8B1A1A] flex flex-wrap mb-4 sm:mb-6 mt-6">
               {tabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm transition-colors ${
+                  className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold uppercase transition-colors ${
                     activeTab === tab
-                      ? 'bg-[#8B1A1A] text-white font-semibold'
-                      : 'bg-gray-900 text-gray-400 hover:text-white'
+                      ? 'bg-white text-black'
+                      : 'text-white hover:bg-[#A02A2A]'
                   }`}
                 >
                   {tab}
                 </button>
               ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="bg-gray-900 p-4 sm:p-6 min-h-[400px]">
-              {activeTab === 'OVERVIEW' && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    {launch.id && (
-                      <div>
-                        <span className="text-gray-400">Launch ID:</span>{' '}
-                        <span className="font-semibold text-white">{launch.id}</span>
-                      </div>
-                    )}
-                    {launch.name && (
-                      <div>
-                        <span className="text-gray-400">Name:</span>{' '}
-                        <span className="font-semibold text-white">{launch.name}</span>
-                      </div>
-                    )}
-                    {launch.slug && (
-                      <div>
-                        <span className="text-gray-400">Slug:</span>{' '}
-                        <span className="font-semibold text-white">{launch.slug}</span>
-                      </div>
-                    )}
-                    {launch.launch_designator && (
-                      <div>
-                        <span className="text-gray-400">Launch Designator:</span>{' '}
-                        <span className="font-semibold text-white">{launch.launch_designator}</span>
-                      </div>
-                    )}
-                    {launch.url && (
-                      <div>
-                        <span className="text-gray-400">Launch URL:</span>{' '}
-                        <a 
-                          href={launch.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                        >
-                          View Details
-                        </a>
-                      </div>
-                    )}
-                    {launch.response_mode && (
-                      <div>
-                        <span className="text-gray-400">Response Mode:</span>{' '}
-                        <span className="font-semibold text-white">{launch.response_mode}</span>
-                      </div>
-                    )}
-                    {launch.last_updated && (
-                      <div>
-                        <span className="text-gray-400">Last Updated:</span>{' '}
-                        <span className="font-semibold text-white">{formatDate(launch.last_updated)}</span>
-                      </div>
-                    )}
-                    {status && (
-                      <>
-                        {status.id && (
-                          <div>
-                            <span className="text-gray-400">Status ID:</span>{' '}
-                            <span className="font-semibold text-white">{status.id}</span>
-                          </div>
-                        )}
-                        {status.name && (
-                          <div>
-                            <span className="text-gray-400">Status:</span>{' '}
-                            <span className="font-semibold text-white">{status.name}</span>
-                          </div>
-                        )}
-                        {status.abbrev && (
-                          <div>
-                            <span className="text-gray-400">Status Abbreviation:</span>{' '}
-                            <span className="font-semibold text-white">{status.abbrev}</span>
-                          </div>
-                        )}
-                        {status.description && (
-                          <div>
-                            <span className="text-gray-400">Status Description:</span>{' '}
-                            <span className="font-semibold text-white">{status.description}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {launch.net && (
-                      <div>
-                        <span className="text-gray-400">Launch Date (NET):</span>{' '}
-                        <span className="font-semibold text-white">{formatDate(launch.net)}</span>
-                      </div>
-                    )}
-                    {launch.net_precision && (
-                      <div>
-                        <span className="text-gray-400">NET Precision:</span>{' '}
-                        <span className="font-semibold text-white">
-                          {typeof launch.net_precision === 'object' 
-                            ? launch.net_precision.name || launch.net_precision.abbrev || launch.net_precision 
-                            : launch.net_precision}
-                        </span>
-                      </div>
-                    )}
-                    {launch.window_start && (
-                      <div>
-                        <span className="text-gray-400">Window Start:</span>{' '}
-                        <span className="font-semibold text-white">{formatDate(launch.window_start)}</span>
-                      </div>
-                    )}
-                    {launch.window_end && (
-                      <div>
-                        <span className="text-gray-400">Window End:</span>{' '}
-                        <span className="font-semibold text-white">{formatDate(launch.window_end)}</span>
-                      </div>
-                    )}
-                    {launch.probability !== null && launch.probability !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Probability:</span>{' '}
-                        <span className="font-semibold text-white">{launch.probability}%</span>
-                      </div>
-                    )}
-                    {launch.weather_concerns && (
-                      <div>
-                        <span className="text-gray-400">Weather Concerns:</span>{' '}
-                        <span className="font-semibold text-white">
-                          {typeof launch.weather_concerns === 'string' 
-                            ? launch.weather_concerns 
-                            : typeof launch.weather_concerns === 'object' 
-                              ? JSON.stringify(launch.weather_concerns) 
-                              : 'N/A'}
-                        </span>
-                      </div>
-                    )}
-                    {launch.failreason && (
-                      <div>
-                        <span className="text-gray-400">Fail Reason:</span>{' '}
-                        <span className="font-semibold text-red-500">{launch.failreason}</span>
-                      </div>
-                    )}
-                    {launch.hashtag && (
-                      <div>
-                        <span className="text-gray-400">Hashtag:</span>{' '}
-                        <span className="font-semibold text-white">
-                          {typeof launch.hashtag === 'string' 
-                            ? launch.hashtag 
-                            : typeof launch.hashtag === 'object' 
-                              ? JSON.stringify(launch.hashtag) 
-                              : 'N/A'}
-                        </span>
-                      </div>
-                    )}
-                    {launch.webcast_live !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Webcast Live:</span>{' '}
-                        <span className="font-semibold text-white">{launch.webcast_live ? 'Yes' : 'No'}</span>
-                      </div>
-                    )}
-                    {launch.flightclub_url && (
-                      <div>
-                        <span className="text-gray-400">Flight Club URL:</span>{' '}
-                        <a 
-                          href={launch.flightclub_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                        >
-                          View on Flight Club
-                        </a>
-                      </div>
-                    )}
-                    {launch.pad_turnaround && (
-                      <div>
-                        <span className="text-gray-400">Pad Turnaround:</span>{' '}
-                        <span className="font-semibold text-white">{launch.pad_turnaround}</span>
-                      </div>
-                    )}
-                    {launch.orbital_launch_attempt_count !== null && launch.orbital_launch_attempt_count !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Orbital Launch Attempt Count:</span>{' '}
-                        <span className="font-semibold text-white">{launch.orbital_launch_attempt_count}</span>
-                      </div>
-                    )}
-                    {launch.location_launch_attempt_count !== null && launch.location_launch_attempt_count !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Location Launch Attempt Count:</span>{' '}
-                        <span className="font-semibold text-white">{launch.location_launch_attempt_count}</span>
-                      </div>
-                    )}
-                    {launch.pad_launch_attempt_count !== null && launch.pad_launch_attempt_count !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Pad Launch Attempt Count:</span>{' '}
-                        <span className="font-semibold text-white">{launch.pad_launch_attempt_count}</span>
-                      </div>
-                    )}
-                    {launch.agency_launch_attempt_count !== null && launch.agency_launch_attempt_count !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Agency Launch Attempt Count:</span>{' '}
-                        <span className="font-semibold text-white">{launch.agency_launch_attempt_count}</span>
-                      </div>
-                    )}
-                    {launch.orbital_launch_attempt_count_year !== null && launch.orbital_launch_attempt_count_year !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Orbital Launch Attempt Count (Year):</span>{' '}
-                        <span className="font-semibold text-white">{launch.orbital_launch_attempt_count_year}</span>
-                      </div>
-                    )}
-                    {launch.location_launch_attempt_count_year !== null && launch.location_launch_attempt_count_year !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Location Launch Attempt Count (Year):</span>{' '}
-                        <span className="font-semibold text-white">{launch.location_launch_attempt_count_year}</span>
-                      </div>
-                    )}
-                    {launch.pad_launch_attempt_count_year !== null && launch.pad_launch_attempt_count_year !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Pad Launch Attempt Count (Year):</span>{' '}
-                        <span className="font-semibold text-white">{launch.pad_launch_attempt_count_year}</span>
-                      </div>
-                    )}
-                    {launch.agency_launch_attempt_count_year !== null && launch.agency_launch_attempt_count_year !== undefined && (
-                      <div>
-                        <span className="text-gray-400">Agency Launch Attempt Count (Year):</span>{' '}
-                        <span className="font-semibold text-white">{launch.agency_launch_attempt_count_year}</span>
-                      </div>
-                    )}
                   </div>
                   
-                  {mission.description && (
-                    <div>
-                      <h4 className="text-lg font-bold mb-2">Mission Description</h4>
-                      <p className="text-gray-300 leading-relaxed">{mission.description}</p>
-                    </div>
-                  )}
-
-                  {launch.probability !== null && launch.probability !== undefined && (
-                    <div>
-                      <h4 className="text-lg font-bold mb-2">Launch Success Probability</h4>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1 bg-gray-800 rounded-full h-4">
-                          <div 
-                            className="bg-[#8B1A1A] h-4 rounded-full"
-                            style={{ width: `${launch.probability}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-gray-300 font-semibold">{launch.probability}%</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'PAYLOADS' && (
+            {/* Tab Content */}
+            <div className="bg-[#121212] p-6 sm:p-8 min-h-[400px]">
+              {activeTab === 'PAYLOAD' && (
                 <div className="space-y-4">
-                  {launch.payloads && launch.payloads.length > 0 ? (
-                    launch.payloads.map((payload, idx) => (
-                      <div key={idx} className="border-b border-gray-800 pb-4 last:border-0">
+                  {(() => {
+                    // Debug: Log payloads
+                    console.log('[LaunchDetail] PAYLOAD tab - launch.payloads:', launch.payloads);
+                    console.log('[LaunchDetail] PAYLOAD tab - Array check:', Array.isArray(launch.payloads));
+                    console.log('[LaunchDetail] PAYLOAD tab - Length:', launch.payloads?.length);
+                    
+                    const payloads = launch.payloads;
+                    if (payloads && Array.isArray(payloads) && payloads.length > 0) {
+                      return payloads.map((payload, idx) => (
+                        <div key={payload.id || idx} className="border-b border-[#222222] pb-4 last:border-0">
                         <h4 className="text-lg font-bold mb-3">{payload.name || 'Unnamed Payload'}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                           {payload.type && (
@@ -724,6 +1055,12 @@ const LaunchDetail = () => {
                               <span className="font-semibold text-white">{payload.mass_kg} kg</span>
                             </div>
                           )}
+                            {payload.mass_lb && (
+                              <div>
+                                <span className="text-gray-400">Mass (lb):</span>{' '}
+                                <span className="font-semibold text-white">{payload.mass_lb} lb</span>
+                            </div>
+                          )}
                           {payload.orbit && (
                             <div>
                               <span className="text-gray-400">Orbit:</span>{' '}
@@ -733,7 +1070,11 @@ const LaunchDetail = () => {
                           {payload.nationality && (
                             <div>
                               <span className="text-gray-400">Nationality:</span>{' '}
-                              <span className="font-semibold text-white">{payload.nationality}</span>
+                              <span className="font-semibold text-white">
+                                {typeof payload.nationality === 'string' 
+                                  ? payload.nationality 
+                                  : payload.nationality?.name || payload.nationality?.nationality_name || JSON.stringify(payload.nationality)}
+                              </span>
                             </div>
                           )}
                           {payload.manufacturer && (
@@ -748,15 +1089,22 @@ const LaunchDetail = () => {
                               <span className="font-semibold text-white">{payload.customers.join(', ')}</span>
                             </div>
                           )}
+                            {payload.destination && (
+                              <div>
+                                <span className="text-gray-400">Destination:</span>{' '}
+                                <span className="font-semibold text-white">{payload.destination}</span>
+                            </div>
+                          )}
                         </div>
                         {payload.description && (
                           <p className="text-sm text-gray-400 mt-3 leading-relaxed">{payload.description}</p>
                         )}
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-400">No payload information available.</p>
-                )}
+                      ));
+                    } else {
+                      return <p className="text-gray-400">No payload information available.</p>;
+                    }
+                  })()}
               </div>
               )}
               
@@ -764,7 +1112,7 @@ const LaunchDetail = () => {
                 <div className="space-y-4">
                   {launch.crew && launch.crew.length > 0 ? (
                     launch.crew.map((member, idx) => (
-                      <div key={idx} className="border-b border-gray-800 pb-4 last:border-0">
+                      <div key={idx} className="border-b border-[#222222] pb-4 last:border-0">
                         <h4 className="text-lg font-bold mb-3">{member.name || 'Unknown'}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                           {member.role && (
@@ -776,7 +1124,11 @@ const LaunchDetail = () => {
                           {member.nationality && (
                             <div>
                               <span className="text-gray-400">Nationality:</span>{' '}
-                              <span className="font-semibold text-white">{member.nationality}</span>
+                              <span className="font-semibold text-white">
+                                {typeof member.nationality === 'string' 
+                                  ? member.nationality 
+                                  : member.nationality?.name || member.nationality?.nationality_name || JSON.stringify(member.nationality)}
+                              </span>
                             </div>
                           )}
                           {member.date_of_birth && (
@@ -815,21 +1167,58 @@ const LaunchDetail = () => {
               
               {activeTab === 'ROCKET' && (
                 <div className="space-y-6">
-                  <h4 className="text-lg font-bold mb-3">Rocket Information</h4>
+                  {/* Article-style content */}
+                  {mission.description && (
+                    <div className="prose prose-invert max-w-none">
+                      <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {mission.description.split('\n').map((paragraph, idx) => (
+                          paragraph.trim() && (
+                            <p key={idx} className="mb-4 text-base">
+                              {paragraph.split(' ').map((word, wordIdx, words) => {
+                                // Add tooltip for specific terms
+                                const tooltipTerms = {
+                                  'solicitation': 'Solicitation: The act to get something that benefits you and nobody else.',
+                                  'HALO': 'Hybrid Acquisition for Proliferated LEO',
+                                  'SDA': 'Space Development Agency',
+                                  'LEO': 'Low Earth Orbit'
+                                };
+                                
+                                const lowerWord = word.toLowerCase().replace(/[.,!?;:]/g, '');
+                                if (tooltipTerms[lowerWord]) {
+                                  return (
+                                    <span key={wordIdx} className="relative group inline-block">
+                                      <span className="underline decoration-dotted cursor-help text-[#8B1A1A]">
+                                        {word}
+                        </span>
+                                      <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700">
+                                        {tooltipTerms[lowerWord]}
+                                        <span className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-black"></span>
+                                      </span>
+                                    </span>
+                                  );
+                                }
+                                return <span key={wordIdx}>{word} </span>;
+                              })}
+                            </p>
+                          )
+                        ))}
+                      </div>
+                      </div>
+                    )}
+                  
+                  <h4 className="text-lg font-bold mb-3 mt-6">Rocket Information</h4>
                   {rocket && (rocket.configuration || rocket.id || rocket.name || (typeof rocket === 'object' && Object.keys(rocket).length > 0)) ? (
                     <>
                       {rocket.configuration ? (
-                        <div>
+                        <div className="space-y-4">
                           <h5 className="text-md font-semibold mb-3 text-gray-300">Rocket Configuration</h5>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                          {/* Always show rocket ID if available */}
                           {rocket.id && (
                             <div>
                               <span className="text-gray-400">Rocket ID:</span>{' '}
                               <span className="font-semibold text-white">{rocket.id}</span>
                             </div>
                           )}
-                          {/* Always show rocket name from configuration or top level */}
                           {(rocket.configuration.name || rocket.name) && (
                             <div>
                               <span className="text-gray-400">Name:</span>{' '}
@@ -848,126 +1237,28 @@ const LaunchDetail = () => {
                               <span className="font-semibold text-white">{rocket.configuration.full_name}</span>
                             </div>
                           )}
-                          {rocket.configuration.url && (
+                            {rocket.configuration.variant && (
                             <div>
-                              <span className="text-gray-400">Configuration URL:</span>{' '}
-                              <a 
-                                href={rocket.configuration.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                              >
-                                View Details
-                              </a>
+                                <span className="text-gray-400">Variant:</span>{' '}
+                                <span className="font-semibold text-white">{rocket.configuration.variant}</span>
                             </div>
                           )}
-                          {rocket.configuration.response_mode && (
-                            <div>
-                              <span className="text-gray-400">Response Mode:</span>{' '}
-                              <span className="font-semibold text-white">{rocket.configuration.response_mode}</span>
-                            </div>
-                          )}
-                          {rocket.configuration.manufacturer?.name && (
-                            <div>
-                              <span className="text-gray-400">Manufacturer:</span>{' '}
-                              <span className="font-semibold text-white">{rocket.configuration.manufacturer.name}</span>
-                            </div>
-                          )}
-                          {rocket.configuration.families && Array.isArray(rocket.configuration.families) && rocket.configuration.families.length > 0 && (
-                            <div className="col-span-2">
-                              <span className="text-gray-400">Families:</span>
-                              <div className="mt-2 space-y-2">
-                                {rocket.configuration.families.map((family, idx) => (
-                                  <div key={idx} className="border-b border-gray-800 pb-2 last:border-0">
-                                    <div className="font-semibold text-white mb-1">{family.name || 'Unknown Family'}</div>
-                                    {family.manufacturer && Array.isArray(family.manufacturer) && family.manufacturer.length > 0 && (
-                                      <div className="ml-4 text-sm text-gray-300">
-                                        <span className="text-gray-400">Manufacturers: </span>
-                                        {family.manufacturer.map((m, mIdx) => (
-                                          <span key={mIdx}>
-                                            {m.name || m.abbrev || m}
-                                            {mIdx < family.manufacturer.length - 1 ? ', ' : ''}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {family.parent && (
-                                      <div className="ml-4 text-xs text-gray-400">
-                                        Parent: {family.parent.name || family.parent}
-                                      </div>
-                                    )}
-                                    {family.description && (
-                                      <div className="ml-4 text-xs text-gray-400 mt-1">{family.description}</div>
-                                    )}
-                                    {family.active !== undefined && (
-                                      <div className="ml-4 text-xs text-gray-400">
-                                        Active: {family.active ? 'Yes' : 'No'}
-                                      </div>
-                                    )}
-                                    {family.maiden_flight && (
-                                      <div className="ml-4 text-xs text-gray-400">
-                                        Maiden Flight: {family.maiden_flight}
-                                      </div>
-                                    )}
-                                    {family.total_launch_count !== null && (
-                                      <div className="ml-4 text-xs text-gray-400">
-                                        Total Launches: {family.total_launch_count}
-                                      </div>
-                                    )}
-                                    {family.successful_launches !== null && (
-                                      <div className="ml-4 text-xs text-gray-400">
-                                        Successful: {family.successful_launches}
-                                      </div>
-                                    )}
-                                    {family.failed_launches !== null && (
-                                      <div className="ml-4 text-xs text-gray-400">
-                                        Failed: {family.failed_launches}
-                                      </div>
-                                    )}
-                                    {family.consecutive_successful_launches !== null && (
-                                      <div className="ml-4 text-xs text-gray-400">
-                                        Consecutive Successful: {family.consecutive_successful_launches}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {!rocket.configuration.families && rocket.configuration.family && (
+                            {rocket.configuration.family && (
                             <div>
                               <span className="text-gray-400">Family:</span>{' '}
                               <span className="font-semibold text-white">{rocket.configuration.family}</span>
-                            </div>
-                          )}
-                        {rocket.configuration.variant && (
-                          <div>
-                            <span className="text-gray-400">Variant:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.variant}</span>
                           </div>
                         )}
                         {rocket.configuration.length && (
                           <div>
                             <span className="text-gray-400">Length:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.length} m</span>
+                                <span className="font-semibold text-white">{rocket.configuration.length}m</span>
                           </div>
                         )}
                         {rocket.configuration.diameter && (
                           <div>
                             <span className="text-gray-400">Diameter:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.diameter} m</span>
-                          </div>
-                        )}
-                        {rocket.configuration.maiden_flight && (
-                          <div>
-                            <span className="text-gray-400">Maiden Flight:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.maiden_flight}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.launch_cost && (
-                          <div>
-                            <span className="text-gray-400">Launch Cost:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.launch_cost}</span>
+                                <span className="font-semibold text-white">{rocket.configuration.diameter}m</span>
                           </div>
                         )}
                         {rocket.configuration.launch_mass && (
@@ -988,34 +1279,10 @@ const LaunchDetail = () => {
                             <span className="font-semibold text-white">{rocket.configuration.gto_capacity} kg</span>
                           </div>
                         )}
-                        {rocket.configuration.geo_capacity && (
+                            {rocket.configuration.to_thrust && (
                           <div>
-                            <span className="text-gray-400">GEO Capacity:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.geo_capacity} kg</span>
-                          </div>
-                        )}
-                        {rocket.configuration.sso_capacity && (
-                          <div>
-                            <span className="text-gray-400">SSO Capacity:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.sso_capacity} kg</span>
-                          </div>
-                        )}
-                        {rocket.configuration.active !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Active:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.active ? 'Yes' : 'No'}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.is_placeholder !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Is Placeholder:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.is_placeholder ? 'Yes' : 'No'}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.fastest_turnaround && (
-                          <div>
-                            <span className="text-gray-400">Fastest Turnaround:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.fastest_turnaround}</span>
+                                <span className="text-gray-400">Takeoff Thrust:</span>{' '}
+                                <span className="font-semibold text-white">{rocket.configuration.to_thrust} kN</span>
                           </div>
                         )}
                         {rocket.configuration.reusable !== null && rocket.configuration.reusable !== undefined && (
@@ -1024,183 +1291,46 @@ const LaunchDetail = () => {
                             <span className="font-semibold text-white">{rocket.configuration.reusable ? 'Yes' : 'No'}</span>
                           </div>
                         )}
+                          </div>
+                          {(rocket.configuration.total_launch_count !== null && rocket.configuration.total_launch_count !== undefined) ||
+                           (rocket.configuration.successful_launches !== null && rocket.configuration.successful_launches !== undefined) ||
+                           (rocket.configuration.failed_launches !== null && rocket.configuration.failed_launches !== undefined) ? (
+                            <div className="mt-4">
+                              <h6 className="text-md font-semibold mb-3 text-gray-300">Launch Statistics</h6>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                         {rocket.configuration.total_launch_count !== null && rocket.configuration.total_launch_count !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Total Launches:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.total_launch_count}</span>
+                                  <div className="bg-[#222222] p-3 rounded">
+                                    <span className="text-gray-400 block mb-1">Total Launches</span>
+                                    <span className="text-xl font-bold text-white">{rocket.configuration.total_launch_count}</span>
                           </div>
                         )}
                         {rocket.configuration.successful_launches !== null && rocket.configuration.successful_launches !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Successful Launches:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.successful_launches}</span>
+                                  <div className="bg-[#222222] p-3 rounded">
+                                    <span className="text-gray-400 block mb-1">Successful</span>
+                                    <span className="text-xl font-bold text-green-400">{rocket.configuration.successful_launches}</span>
                           </div>
                         )}
                         {rocket.configuration.failed_launches !== null && rocket.configuration.failed_launches !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Failed Launches:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.failed_launches}</span>
+                                  <div className="bg-[#222222] p-3 rounded">
+                                    <span className="text-gray-400 block mb-1">Failed</span>
+                                    <span className="text-xl font-bold text-red-400">{rocket.configuration.failed_launches}</span>
                           </div>
                         )}
-                        {rocket.configuration.pending_launches !== null && rocket.configuration.pending_launches !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Pending Launches:</span>{' '}
-                            <span className="font-semibold text-yellow-500">{rocket.configuration.pending_launches}</span>
                           </div>
-                        )}
-                        {rocket.configuration.consecutive_successful_launches !== null && rocket.configuration.consecutive_successful_launches !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Consecutive Successful:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.consecutive_successful_launches}</span>
                           </div>
-                        )}
-                        {/* Landing Statistics */}
-                        {(rocket.configuration.attempted_landings !== null || rocket.configuration.successful_landings !== null || rocket.configuration.failed_landings !== null) && (
-                          <div className="col-span-2 mt-2">
-                            <h5 className="text-sm font-semibold text-gray-400 mb-2">Landing Statistics</h5>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              {rocket.configuration.attempted_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Attempted:</span>{' '}
-                                  <span className="font-semibold text-white">{rocket.configuration.attempted_landings}</span>
-                                </div>
-                              )}
-                              {rocket.configuration.successful_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Successful:</span>{' '}
-                                  <span className="font-semibold text-green-500">{rocket.configuration.successful_landings}</span>
-                                </div>
-                              )}
-                              {rocket.configuration.failed_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Failed:</span>{' '}
-                                  <span className="font-semibold text-red-500">{rocket.configuration.failed_landings}</span>
-                                </div>
-                              )}
-                              {rocket.configuration.consecutive_successful_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Consecutive Successful:</span>{' '}
-                                  <span className="font-semibold text-white">{rocket.configuration.consecutive_successful_landings}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {/* Program Array */}
-                        {rocket.configuration.program && Array.isArray(rocket.configuration.program) && rocket.configuration.program.length > 0 && (
-                          <div className="col-span-2 mt-2">
-                            <h5 className="text-sm font-semibold text-gray-400 mb-2">Programs</h5>
-                            <div className="space-y-2">
-                              {rocket.configuration.program.map((prog, idx) => (
-                                <div key={idx} className="text-sm text-gray-300">
-                                  {prog.name || prog.id || 'Program'}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {rocket.configuration.alias && (
-                          <div>
-                            <span className="text-gray-400">Alias:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.alias}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.min_stage !== null && (
-                          <div>
-                            <span className="text-gray-400">Min Stages:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.min_stage}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.max_stage !== null && (
-                          <div>
-                            <span className="text-gray-400">Max Stages:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.max_stage}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.to_thrust && (
-                          <div>
-                            <span className="text-gray-400">Thrust:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.to_thrust}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.apogee && (
-                          <div>
-                            <span className="text-gray-400">Apogee:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.apogee}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.vehicle_range && (
-                          <div>
-                            <span className="text-gray-400">Vehicle Range:</span>{' '}
-                            <span className="font-semibold text-white">{rocket.configuration.vehicle_range}</span>
-                          </div>
-                        )}
-                        {rocket.configuration.image_url && (
-                          <div>
-                            <span className="text-gray-400">Image:</span>{' '}
-                            <a 
-                              href={rocket.configuration.image_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                            >
-                              View Image
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                      {rocket.configuration.description && (
+                          ) : null}
+                          {(rocket.configuration.info_url || rocket.configuration.wiki_url) && (
                         <div className="mt-4">
-                          <h5 className="text-md font-bold mb-2">Description</h5>
-                          <p className="text-sm text-gray-300 leading-relaxed">{rocket.configuration.description}</p>
-                        </div>
-                      )}
-                      {(rocket.launcher_stage || rocket.spacecraft_stage) && (
-                        <div className="mt-4">
-                          <h5 className="text-md font-bold mb-2">Stage Information</h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                            {rocket.launcher_stage && (
-                              <div>
-                                <span className="text-gray-400">Launcher Stage:</span>{' '}
-                                <span className="font-semibold text-white">
-                                  {typeof rocket.launcher_stage === 'object' 
-                                    ? JSON.stringify(rocket.launcher_stage) 
-                                    : rocket.launcher_stage}
-                                </span>
-                              </div>
-                            )}
-                            {rocket.spacecraft_stage && (
-                              <div>
-                                <span className="text-gray-400">Spacecraft Stage:</span>{' '}
-                                <span className="font-semibold text-white">
-                                  {typeof rocket.spacecraft_stage === 'object' 
-                                    ? JSON.stringify(rocket.spacecraft_stage) 
-                                    : rocket.spacecraft_stage}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      <div className="mt-4 flex flex-wrap gap-4">
-                        {rocket.configuration.url && (
-                          <a 
-                            href={rocket.configuration.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                          >
-                            Configuration URL →
-                          </a>
-                        )}
+                              <h6 className="text-md font-semibold mb-3 text-gray-300">Links</h6>
+                              <div className="flex flex-wrap gap-3">
                         {rocket.configuration.info_url && (
                           <a 
                             href={rocket.configuration.info_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
+                                    className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
                           >
-                            More Information →
+                                    More Info →
                           </a>
                         )}
                         {rocket.configuration.wiki_url && (
@@ -1208,15 +1338,22 @@ const LaunchDetail = () => {
                             href={rocket.configuration.wiki_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
+                                    className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
                           >
                             Wikipedia →
                           </a>
                         )}
                       </div>
+                            </div>
+                          )}
+                          {rocket.configuration.description && (
+                            <div className="mt-4">
+                              <h6 className="text-md font-semibold mb-3 text-gray-300">Description</h6>
+                              <p className="text-gray-300 leading-relaxed">{rocket.configuration.description}</p>
+                            </div>
+                          )}
                     </div>
                       ) : (
-                        /* Rocket-level fields (when configuration doesn't exist) */
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                           {rocket.id && (
                             <div>
@@ -1230,45 +1367,6 @@ const LaunchDetail = () => {
                               <span className="font-semibold text-white">{rocket.name}</span>
                             </div>
                           )}
-                          {rocket.url && (
-                            <div>
-                              <span className="text-gray-400">URL:</span>{' '}
-                              <a 
-                                href={rocket.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                              >
-                                View Details
-                              </a>
-                            </div>
-                          )}
-                          {rocket.response_mode && (
-                            <div>
-                              <span className="text-gray-400">Response Mode:</span>{' '}
-                              <span className="font-semibold text-white">{rocket.response_mode}</span>
-                            </div>
-                          )}
-                          {rocket.launcher_stage && (
-                            <div className="col-span-2">
-                              <span className="text-gray-400">Launcher Stage:</span>{' '}
-                              <span className="font-semibold text-white">
-                                {typeof rocket.launcher_stage === 'object' 
-                                  ? JSON.stringify(rocket.launcher_stage) 
-                                  : rocket.launcher_stage}
-                              </span>
-                            </div>
-                          )}
-                          {rocket.spacecraft_stage && (
-                            <div className="col-span-2">
-                              <span className="text-gray-400">Spacecraft Stage:</span>{' '}
-                              <span className="font-semibold text-white">
-                                {typeof rocket.spacecraft_stage === 'object' 
-                                  ? JSON.stringify(rocket.spacecraft_stage) 
-                                  : rocket.spacecraft_stage}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       )}
                     </>
@@ -1278,456 +1376,189 @@ const LaunchDetail = () => {
                 </div>
               )}
 
-              {activeTab === 'MISSION' && (
-                <div className="space-y-6">
-                  {mission && Object.keys(mission).length > 0 ? (
-                    <>
-                      {/* Mission Image */}
-                      {mission.image?.image_url && (
-                        <div className="mb-4">
-                          <img 
-                            src={mission.image.image_url} 
-                            alt={mission.name || 'Mission Image'}
-                            className="max-w-md h-auto rounded"
-                          />
-                          {mission.image.credit && (
-                            <p className="text-xs text-gray-400 mt-1">Credit: {mission.image.credit}</p>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                        {mission.id && (
-                          <div>
-                            <span className="text-gray-400">Mission ID:</span>{' '}
-                            <span className="font-semibold text-white">{mission.id}</span>
-                          </div>
-                        )}
-                        {mission.name && (
-                          <div>
-                            <span className="text-gray-400">Mission Name:</span>{' '}
-                            <span className="font-semibold text-white">{mission.name}</span>
-                          </div>
-                        )}
-                        {mission.type && (
-                          <div>
-                            <span className="text-gray-400">Mission Type:</span>{' '}
-                            <span className="font-semibold text-white">{mission.type}</span>
-                          </div>
-                        )}
-                        {mission.orbit?.id && (
-                          <div>
-                            <span className="text-gray-400">Orbit ID:</span>{' '}
-                            <span className="font-semibold text-white">{mission.orbit.id}</span>
-                          </div>
-                        )}
-                        {mission.orbit?.name && (
-                          <div>
-                            <span className="text-gray-400">Orbit Name:</span>{' '}
-                            <span className="font-semibold text-white">{mission.orbit.name}</span>
-                          </div>
-                        )}
-                        {mission.orbit?.abbrev && (
-                          <div>
-                            <span className="text-gray-400">Orbit Code:</span>{' '}
-                            <span className="font-semibold text-white">{mission.orbit.abbrev}</span>
-                          </div>
-                        )}
-                        {mission.orbit?.celestial_body && (
-                          <>
-                            {mission.orbit.celestial_body.name && (
-                              <div>
-                                <span className="text-gray-400">Celestial Body:</span>{' '}
-                                <span className="font-semibold text-white">{mission.orbit.celestial_body.name}</span>
-                              </div>
-                            )}
-                            {mission.orbit.celestial_body.type && (
-                              <div>
-                                <span className="text-gray-400">Body Type:</span>{' '}
-                                <span className="font-semibold text-white">
-                                  {typeof mission.orbit.celestial_body.type === 'object' 
-                                    ? mission.orbit.celestial_body.type.name || mission.orbit.celestial_body.type 
-                                    : mission.orbit.celestial_body.type}
-                                </span>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                      {mission.description && (
-                        <div className="mt-4">
-                          <h5 className="text-md font-bold mb-2">Mission Description</h5>
-                          <p className="text-sm text-gray-300 leading-relaxed">{mission.description}</p>
-                        </div>
-                      )}
-
-                      {mission.agencies && Array.isArray(mission.agencies) && mission.agencies.length > 0 && (
-                        <div className="mt-4">
-                          <h5 className="text-md font-bold mb-3">Mission Agencies</h5>
-                          <div className="space-y-6">
-                            {mission.agencies.map((agency, idx) => (
-                              <div key={idx} className="border-b border-gray-800 pb-4 last:border-0">
-                                {/* Agency Logo/Image */}
-                                {(agency.logo?.image_url || agency.image?.image_url) && (
-                                  <div className="mb-3">
-                                    {agency.logo?.image_url && (
-                                      <div className="mb-2">
-                                        <img 
-                                          src={agency.logo.image_url} 
-                                          alt={`${agency.name} Logo`}
-                                          className="max-w-xs h-auto rounded"
-                                        />
-                                        {agency.logo.credit && (
-                                          <p className="text-xs text-gray-400 mt-1">Credit: {agency.logo.credit}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                    {agency.image?.image_url && (
-                                      <div>
-                                        <img 
-                                          src={agency.image.image_url} 
-                                          alt={`${agency.name} Image`}
-                                          className="max-w-xs h-auto rounded"
-                                        />
-                                        {agency.image.credit && (
-                                          <p className="text-xs text-gray-400 mt-1">Credit: {agency.image.credit}</p>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
+              {activeTab === 'ENGINE' && (
+                <div className="space-y-4">
+                  {(() => {
+                    // Use engines from API response if available, otherwise fallback to rocket.launcher_stage
+                    let engines = [];
+                    
+                    // Primary: Check launch.engines (from API response)
+                    if (launch.engines && Array.isArray(launch.engines) && launch.engines.length > 0) {
+                      engines = launch.engines;
+                      console.log('[LaunchDetail] Using engines from launch.engines:', engines.length);
+                    }
+                    // Fallback 1: Check rocket.launcher_stage
+                    else if (rocket && rocket.launcher_stage && Array.isArray(rocket.launcher_stage) && rocket.launcher_stage.length > 0) {
+                      engines = rocket.launcher_stage.flatMap((stage, stageIdx) => 
+                        (stage.engines || []).map((engine, engineIdx) => ({
+                          ...engine,
+                          stage: stageIdx + 1,
+                          stage_type: stage.type || `Stage ${stageIdx + 1}`,
+                          reusable: stage.reusable || false
+                        }))
+                      );
+                      console.log('[LaunchDetail] Using engines from rocket.launcher_stage:', engines.length);
+                    }
+                    // Fallback 2: Check rocket.configuration.launcher_stage
+                    else if (rocket && rocket.configuration && rocket.configuration.launcher_stage && Array.isArray(rocket.configuration.launcher_stage) && rocket.configuration.launcher_stage.length > 0) {
+                      engines = rocket.configuration.launcher_stage.flatMap((stage, stageIdx) => 
+                        (stage.engines || []).map((engine, engineIdx) => ({
+                          ...engine,
+                          stage: stageIdx + 1,
+                          stage_type: stage.type || `Stage ${stageIdx + 1}`,
+                          reusable: stage.reusable || false
+                        }))
+                      );
+                      console.log('[LaunchDetail] Using engines from rocket.configuration.launcher_stage:', engines.length);
+                    }
+                    
+                    if (engines.length === 0) {
+                      console.warn('[LaunchDetail] No engines found. Launch data:', {
+                        hasLaunchEngines: !!(launch.engines && Array.isArray(launch.engines)),
+                        launchEnginesLength: launch.engines?.length || 0,
+                        hasRocket: !!rocket,
+                        hasRocketLauncherStage: !!(rocket?.launcher_stage),
+                        hasRocketConfigLauncherStage: !!(rocket?.configuration?.launcher_stage),
+                        rocketKeys: rocket ? Object.keys(rocket) : []
+                      });
+                    }
+                    
+                    if (engines.length > 0) {
+                      // Group engines by stage
+                      const enginesByStage = engines.reduce((acc, engine) => {
+                        const stageKey = engine.stage || engine.stage_type || 'Unknown';
+                        if (!acc[stageKey]) {
+                          acc[stageKey] = {
+                            stage: engine.stage || null,
+                            stage_type: engine.stage_type || stageKey,
+                            reusable: engine.reusable || false,
+                            engines: []
+                          };
+                        }
+                        acc[stageKey].engines.push(engine);
+                        return acc;
+                      }, {});
+                      
+                      return Object.values(enginesByStage).map((stageGroup, stageIdx) => (
+                        <div key={stageIdx} className="border-b border-[#222222] pb-6 last:border-0">
+                          <h4 className="text-xl font-bold mb-4">
+                            {stageGroup.stage_type}
+                            {stageGroup.reusable && <span className="ml-2 text-sm text-green-400">(Reusable)</span>}
+                          </h4>
+                          <div className="space-y-4">
+                            {stageGroup.engines.map((engine, engineIdx) => (
+                              <div key={engineIdx} className="bg-[#222222] p-4 rounded-lg">
+                                <h5 className="text-lg font-semibold mb-3">{engine.engine_name || engine.name || engine.type || engine.engine_type || engine.configuration || 'Engine'}</h5>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                  {agency.id && (
-                                    <div>
-                                      <span className="text-gray-400">Agency ID:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.id}</span>
-                                    </div>
-                                  )}
-                                  {agency.name && (
-                                    <div>
-                                      <span className="text-gray-400">Name:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.name}</span>
-                                    </div>
-                                  )}
-                                  {agency.abbrev && (
-                                    <div>
-                                      <span className="text-gray-400">Abbreviation:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.abbrev}</span>
-                                    </div>
-                                  )}
-                                  {agency.type && (
+                                  {engine.engine_type && (
                                     <div>
                                       <span className="text-gray-400">Type:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.engine_type}</span>
+                                    </div>
+                                  )}
+                                  {engine.engine_configuration && (
+                                    <div>
+                                      <span className="text-gray-400">Configuration:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.engine_configuration}</span>
+                                    </div>
+                                  )}
+                                  {engine.engine_layout && (
+                                    <div>
+                                      <span className="text-gray-400">Layout:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.engine_layout}</span>
+                                    </div>
+                                  )}
+                                  {engine.engine_version && (
+                                    <div>
+                                      <span className="text-gray-400">Version:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.engine_version}</span>
+                                    </div>
+                                  )}
+                                  {(engine.isp_sea_level || engine.isp_vacuum) && (
+                                    <div>
+                                      <span className="text-gray-400">ISP:</span>{' '}
                                       <span className="font-semibold text-white">
-                                        {typeof agency.type === 'object' 
-                                          ? agency.type.name || agency.type 
-                                          : agency.type}
+                                        {engine.isp_sea_level ? `Sea Level: ${engine.isp_sea_level}s` : ''}
+                                        {engine.isp_sea_level && engine.isp_vacuum ? ' | ' : ''}
+                                        {engine.isp_vacuum ? `Vacuum: ${engine.isp_vacuum}s` : ''}
                                       </span>
                                     </div>
                                   )}
-                                  {agency.country && Array.isArray(agency.country) && agency.country.length > 0 && (
+                                  {engine.thrust_sea_level_kn && (
                                     <div>
-                                      <span className="text-gray-400">Country:</span>{' '}
-                                      <span className="font-semibold text-white">
-                                        {agency.country.map(c => c.name || c.alpha_2_code || c).join(', ')}
-                                      </span>
+                                      <span className="text-gray-400">Thrust (Sea Level):</span>{' '}
+                                      <span className="font-semibold text-white">{engine.thrust_sea_level_kn} kN</span>
                                     </div>
                                   )}
-                                  {agency.founding_year && (
+                                  {engine.thrust_vacuum_kn && (
                                     <div>
-                                      <span className="text-gray-400">Founded:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.founding_year}</span>
+                                      <span className="text-gray-400">Thrust (Vacuum):</span>{' '}
+                                      <span className="font-semibold text-white">{engine.thrust_vacuum_kn} kN</span>
                                     </div>
                                   )}
-                                  {agency.administrator && (
+                                  {engine.number_of_engines && (
                                     <div>
-                                      <span className="text-gray-400">Administrator:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.administrator}</span>
+                                      <span className="text-gray-400">Number of Engines:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.number_of_engines}</span>
                                     </div>
                                   )}
-                                  {agency.launchers && (
+                                  {engine.propellant_1 && (
                                     <div>
-                                      <span className="text-gray-400">Launchers:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.launchers}</span>
+                                      <span className="text-gray-400">Propellant 1:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.propellant_1}</span>
                                     </div>
                                   )}
-                                  {agency.spacecraft && (
+                                  {engine.propellant_2 && (
                                     <div>
-                                      <span className="text-gray-400">Spacecraft:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.spacecraft}</span>
+                                      <span className="text-gray-400">Propellant 2:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.propellant_2}</span>
                                     </div>
                                   )}
-                                  {agency.featured !== undefined && (
+                                  {engine.engine_loss_max && (
                                     <div>
-                                      <span className="text-gray-400">Featured:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.featured ? 'Yes' : 'No'}</span>
+                                      <span className="text-gray-400">Engine Loss Max:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.engine_loss_max}</span>
                                     </div>
                                   )}
-                                  {agency.response_mode && (
+                                  {engine.stage_thrust_kn && (
                                     <div>
-                                      <span className="text-gray-400">Response Mode:</span>{' '}
-                                      <span className="font-semibold text-white">{agency.response_mode}</span>
+                                      <span className="text-gray-400">Stage Thrust:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.stage_thrust_kn} kN</span>
                                     </div>
                                   )}
-                                  {agency.parent && (
-                                    <div>
-                                      <span className="text-gray-400">Parent Agency:</span>{' '}
-                                      <span className="font-semibold text-white">
-                                        {typeof agency.parent === 'object' 
-                                          ? agency.parent.name || agency.parent.abbrev || 'N/A'
-                                          : agency.parent}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Agency Statistics */}
-                                {(agency.total_launch_count !== null || agency.successful_launches !== null || agency.failed_launches !== null) && (
-                                  <div className="mt-3">
-                                    <h6 className="text-sm font-bold mb-2">Statistics</h6>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {agency.total_launch_count !== null && (
+                                  {engine.stage_fuel_amount_tons && (
                                         <div>
-                                          <span className="text-gray-400">Total Launches:</span>{' '}
-                                          <span className="font-semibold text-white">{agency.total_launch_count}</span>
+                                      <span className="text-gray-400">Fuel Amount:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.stage_fuel_amount_tons} tons</span>
                                         </div>
                                       )}
-                                      {agency.successful_launches !== null && (
+                                  {engine.stage_burn_time_sec && (
                                         <div>
-                                          <span className="text-gray-400">Successful:</span>{' '}
-                                          <span className="font-semibold text-green-500">{agency.successful_launches}</span>
+                                      <span className="text-gray-400">Burn Time:</span>{' '}
+                                      <span className="font-semibold text-white">{engine.stage_burn_time_sec} seconds</span>
                                         </div>
                                       )}
-                                      {agency.failed_launches !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Failed:</span>{' '}
-                                          <span className="font-semibold text-red-500">{agency.failed_launches}</span>
-                                        </div>
-                                      )}
-                                      {agency.pending_launches !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Pending:</span>{' '}
-                                          <span className="font-semibold text-yellow-500">{agency.pending_launches}</span>
-                                        </div>
-                                      )}
-                                      {agency.consecutive_successful_launches !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Consecutive Successful:</span>{' '}
-                                          <span className="font-semibold text-white">{agency.consecutive_successful_launches}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {agency.description && (
-                                  <p className="text-sm text-gray-300 mt-3 leading-relaxed">{agency.description}</p>
-                                )}
-
-                                <div className="mt-3 flex flex-wrap gap-4">
-                                  {agency.url && (
-                                    <a 
-                                      href={agency.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                                    >
-                                      Agency URL →
-                                    </a>
-                                  )}
-                                  {agency.info_url && (
-                                    <a 
-                                      href={agency.info_url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                                    >
-                                      More Information →
-                                    </a>
-                                  )}
-                                  {agency.wiki_url && (
-                                    <a 
-                                      href={agency.wiki_url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                                    >
-                                      Wikipedia →
-                                    </a>
-                                  )}
                                 </div>
                               </div>
                             ))}
                           </div>
                         </div>
-                      )}
-
-                      {((launch.info_urls && Array.isArray(launch.info_urls) && launch.info_urls.length > 0) || 
-                       (mission.info_urls && Array.isArray(mission.info_urls) && mission.info_urls.length > 0)) ? (
-                        <div className="mt-4">
-                          <h5 className="text-md font-bold mb-3">Mission Information URLs</h5>
-                          <div className="space-y-4">
-                            {[
-                              ...(launch.info_urls && Array.isArray(launch.info_urls) && launch.info_urls.length > 0 ? launch.info_urls : []),
-                              ...(mission.info_urls && Array.isArray(mission.info_urls) && mission.info_urls.length > 0 ? mission.info_urls : [])
-                            ].map((urlObj, idx) => {
-                              const url = typeof urlObj === 'string' ? urlObj : urlObj.url;
-                              const title = typeof urlObj === 'object' ? urlObj.title : null;
-                              const description = typeof urlObj === 'object' ? urlObj.description : null;
-                              const source = typeof urlObj === 'object' ? urlObj.source : null;
-                              const priority = typeof urlObj === 'object' ? urlObj.priority : null;
-                              const type = typeof urlObj === 'object' ? urlObj.type : null;
-                              const language = typeof urlObj === 'object' ? urlObj.language : null;
-                              
-                              return (
-                                <div key={idx} className="border-b border-gray-800 pb-3 last:border-0">
-                                  <a 
-                                    href={url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="block text-[#8B1A1A] hover:text-[#A02A2A] underline font-semibold mb-1"
-                                  >
-                                    {title || url}
-                                  </a>
-                                  {description && (
-                                    <p className="text-sm text-gray-300 mb-1">{description}</p>
-                                  )}
-                                  <div className="flex flex-wrap gap-2 text-xs text-gray-400">
-                                    {source && <span>Source: {source}</span>}
-                                    {priority !== null && priority !== undefined && <span>Priority: {priority}</span>}
-                                    {type?.name && <span>Type: {type.name}</span>}
-                                    {language?.name && <span>Language: {language.name}</span>}
+                      ));
+                    } else {
+                      return <div className="text-gray-400">Engine information not available for this launch.</div>;
+                    }
+                  })()}
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {((launch.vid_urls && Array.isArray(launch.vid_urls) && launch.vid_urls.length > 0) || 
-                       (mission.vid_urls && Array.isArray(mission.vid_urls) && mission.vid_urls.length > 0)) ? (
-                        <div className="mt-4">
-                          <h5 className="text-md font-bold mb-3">Mission Video URLs</h5>
-                          <div className="space-y-4">
-                            {[
-                              ...(launch.vid_urls && Array.isArray(launch.vid_urls) && launch.vid_urls.length > 0 ? launch.vid_urls : []),
-                              ...(mission.vid_urls && Array.isArray(mission.vid_urls) && mission.vid_urls.length > 0 ? mission.vid_urls : [])
-                            ].map((urlObj, idx) => {
-                              const url = typeof urlObj === 'string' ? urlObj : urlObj.url;
-                              const title = typeof urlObj === 'object' ? urlObj.title : null;
-                              const description = typeof urlObj === 'object' ? urlObj.description : null;
-                              const publisher = typeof urlObj === 'object' ? urlObj.publisher : null;
-                              const source = typeof urlObj === 'object' ? urlObj.source : null;
-                              const priority = typeof urlObj === 'object' ? urlObj.priority : null;
-                              const type = typeof urlObj === 'object' ? urlObj.type : null;
-                              const language = typeof urlObj === 'object' ? urlObj.language : null;
-                              const startTime = typeof urlObj === 'object' ? urlObj.start_time : null;
-                              const endTime = typeof urlObj === 'object' ? urlObj.end_time : null;
-                              const live = typeof urlObj === 'object' ? urlObj.live : false;
-                              
-                              return (
-                                <div key={idx} className="border-b border-gray-800 pb-3 last:border-0">
-                                  <a 
-                                    href={url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="block text-[#8B1A1A] hover:text-[#A02A2A] underline font-semibold mb-1"
-                                  >
-                                    {title || url}
-                                  </a>
-                                  {description && (
-                                    <p className="text-sm text-gray-300 mb-1">{description}</p>
-                                  )}
-                                  <div className="flex flex-wrap gap-2 text-xs text-gray-400">
-                                    {publisher && <span>Publisher: {publisher}</span>}
-                                    {source && <span>Source: {source}</span>}
-                                    {priority !== null && priority !== undefined && <span>Priority: {priority}</span>}
-                                    {type?.name && <span>Type: {type.name}</span>}
-                                    {language?.name && <span>Language: {language.name}</span>}
-                                    {startTime && <span>Start: {new Date(startTime).toLocaleString()}</span>}
-                                    {endTime && <span>End: {new Date(endTime).toLocaleString()}</span>}
-                                    {live && <span className="text-red-500">LIVE</span>}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ) : null}
-                    </>
-                  ) : (
-                    <p className="text-gray-400">No mission information available.</p>
-                  )}
-                </div>
               )}
-              
-              {activeTab === 'LAUNCH SERVICE PROVIDER' && (
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-lg font-bold mb-3">Launch Service Provider</h4>
-                    {launchServiceProvider && Object.keys(launchServiceProvider).length > 0 ? (
-                      <>
-                        {/* Logo/Image/Social Logo Display */}
-                        {(launchServiceProvider.logo?.image_url || launchServiceProvider.image?.image_url || launchServiceProvider.social_logo?.image_url) && (
-                          <div className="mb-4">
-                            {launchServiceProvider.logo?.image_url && (
-                              <div className="mb-2">
-                                <h5 className="text-sm font-semibold text-gray-400 mb-1">Logo</h5>
-                                <img 
-                                  src={launchServiceProvider.logo.image_url} 
-                                  alt={`${launchServiceProvider.name} Logo`}
-                                  className="max-w-xs h-auto rounded"
-                                />
-                                {launchServiceProvider.logo.credit && (
-                                  <p className="text-xs text-gray-400 mt-1">Credit: {launchServiceProvider.logo.credit}</p>
-                                )}
-                              </div>
-                            )}
-                            {launchServiceProvider.image?.image_url && (
-                              <div className="mb-2">
-                                <h5 className="text-sm font-semibold text-gray-400 mb-1">Image</h5>
-                                <img 
-                                  src={launchServiceProvider.image.image_url} 
-                                  alt={`${launchServiceProvider.name} Image`}
-                                  className="max-w-xs h-auto rounded"
-                                />
-                                {launchServiceProvider.image.credit && (
-                                  <p className="text-xs text-gray-400 mt-1">Credit: {launchServiceProvider.image.credit}</p>
-                                )}
-                              </div>
-                            )}
-                            {launchServiceProvider.social_logo?.image_url && (
-                              <div>
-                                <h5 className="text-sm font-semibold text-gray-400 mb-1">Social Logo</h5>
-                                <img 
-                                  src={launchServiceProvider.social_logo.image_url} 
-                                  alt={`${launchServiceProvider.name} Social Logo`}
-                                  className="max-w-xs h-auto rounded"
-                                />
-                                {launchServiceProvider.social_logo.credit && (
-                                  <p className="text-xs text-gray-400 mt-1">Credit: {launchServiceProvider.social_logo.credit}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
+              {activeTab === 'PROVIDER' && (
+                <div className="space-y-4">
+                  {launchServiceProvider && (launchServiceProvider.name || launchServiceProvider.id) ? (
+                    <>
+                      <h3 className="text-2xl font-bold mb-4">{launchServiceProvider.name || 'Launch Service Provider'}</h3>
+                      {launchServiceProvider.description && (
+                        <p className="text-gray-300 leading-relaxed mb-6">{launchServiceProvider.description}</p>
+                      )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                          {launchServiceProvider.id && (
-                            <div>
-                              <span className="text-gray-400">ID:</span>{' '}
-                              <span className="font-semibold text-white">{launchServiceProvider.id}</span>
-                            </div>
-                          )}
-                          {launchServiceProvider.name && (
-                            <div>
-                              <span className="text-gray-400">Name:</span>{' '}
-                              <span className="font-semibold text-white">{launchServiceProvider.name}</span>
-                            </div>
-                          )}
                           {launchServiceProvider.abbrev && (
                             <div>
                               <span className="text-gray-400">Abbreviation:</span>{' '}
@@ -1739,29 +1570,21 @@ const LaunchDetail = () => {
                               <span className="text-gray-400">Type:</span>{' '}
                               <span className="font-semibold text-white">
                                 {typeof launchServiceProvider.type === 'object' 
-                                  ? launchServiceProvider.type.name || launchServiceProvider.type 
+                                ? launchServiceProvider.type.name || JSON.stringify(launchServiceProvider.type)
                                   : launchServiceProvider.type}
                               </span>
                             </div>
                           )}
-                          {launchServiceProvider.country && Array.isArray(launchServiceProvider.country) && launchServiceProvider.country.length > 0 && (
+                        {launchServiceProvider.founding_year && (
                             <div>
-                              <span className="text-gray-400">Country:</span>{' '}
-                              <span className="font-semibold text-white">
-                                {launchServiceProvider.country.map(c => c.name || c.alpha_2_code || c).join(', ')}
-                              </span>
+                            <span className="text-gray-400">Founded:</span>{' '}
+                            <span className="font-semibold text-white">{launchServiceProvider.founding_year}</span>
                             </div>
                           )}
-                          {!launchServiceProvider.country && launchServiceProvider.country_code && (
+                        {launchServiceProvider.country_code && (
                             <div>
-                              <span className="text-gray-400">Country Code:</span>{' '}
+                            <span className="text-gray-400">Country:</span>{' '}
                               <span className="font-semibold text-white">{launchServiceProvider.country_code}</span>
-                            </div>
-                          )}
-                          {launchServiceProvider.founding_year && (
-                            <div>
-                              <span className="text-gray-400">Founded:</span>{' '}
-                              <span className="font-semibold text-white">{launchServiceProvider.founding_year}</span>
                             </div>
                           )}
                           {launchServiceProvider.administrator && (
@@ -1770,176 +1593,19 @@ const LaunchDetail = () => {
                               <span className="font-semibold text-white">{launchServiceProvider.administrator}</span>
                             </div>
                           )}
-                          {launchServiceProvider.launchers && (
-                            <div>
-                              <span className="text-gray-400">Launchers:</span>{' '}
-                              <span className="font-semibold text-white">{launchServiceProvider.launchers}</span>
                             </div>
-                          )}
-                          {launchServiceProvider.spacecraft && (
-                            <div>
-                              <span className="text-gray-400">Spacecraft:</span>{' '}
-                              <span className="font-semibold text-white">{launchServiceProvider.spacecraft}</span>
-                            </div>
-                          )}
-                          {launchServiceProvider.featured !== undefined && (
-                            <div>
-                              <span className="text-gray-400">Featured:</span>{' '}
-                              <span className="font-semibold text-white">{launchServiceProvider.featured ? 'Yes' : 'No'}</span>
-                            </div>
-                          )}
-                          {launchServiceProvider.response_mode && (
-                            <div>
-                              <span className="text-gray-400">Response Mode:</span>{' '}
-                              <span className="font-semibold text-white">{launchServiceProvider.response_mode}</span>
-                            </div>
-                          )}
-                          {launchServiceProvider.parent && (
-                            <div>
-                              <span className="text-gray-400">Parent Agency:</span>{' '}
-                              <span className="font-semibold text-white">
-                                {typeof launchServiceProvider.parent === 'object' 
-                                  ? launchServiceProvider.parent.name || launchServiceProvider.parent.abbrev || 'N/A'
-                                  : launchServiceProvider.parent}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Statistics */}
-                        {(launchServiceProvider.total_launch_count !== null || launchServiceProvider.successful_launches !== null || launchServiceProvider.failed_launches !== null) && (
-                          <div className="mt-4">
-                            <h5 className="text-md font-bold mb-2">Launch Statistics</h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                              {launchServiceProvider.total_launch_count !== null && (
-                                <div>
-                                  <span className="text-gray-400">Total Launches:</span>{' '}
-                                  <span className="font-semibold text-white">{launchServiceProvider.total_launch_count}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.successful_launches !== null && (
-                                <div>
-                                  <span className="text-gray-400">Successful Launches:</span>{' '}
-                                  <span className="font-semibold text-green-500">{launchServiceProvider.successful_launches}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.failed_launches !== null && (
-                                <div>
-                                  <span className="text-gray-400">Failed Launches:</span>{' '}
-                                  <span className="font-semibold text-red-500">{launchServiceProvider.failed_launches}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.pending_launches !== null && (
-                                <div>
-                                  <span className="text-gray-400">Pending Launches:</span>{' '}
-                                  <span className="font-semibold text-yellow-500">{launchServiceProvider.pending_launches}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.consecutive_successful_launches !== null && (
-                                <div>
-                                  <span className="text-gray-400">Consecutive Successful:</span>{' '}
-                                  <span className="font-semibold text-white">{launchServiceProvider.consecutive_successful_launches}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Landing Statistics */}
-                        {(launchServiceProvider.successful_landings !== null || launchServiceProvider.failed_landings !== null || launchServiceProvider.attempted_landings !== null) && (
-                          <div className="mt-4">
-                            <h5 className="text-md font-bold mb-2">Landing Statistics</h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                              {launchServiceProvider.attempted_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Attempted Landings:</span>{' '}
-                                  <span className="font-semibold text-white">{launchServiceProvider.attempted_landings}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.successful_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Successful Landings:</span>{' '}
-                                  <span className="font-semibold text-green-500">{launchServiceProvider.successful_landings}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.failed_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Failed Landings:</span>{' '}
-                                  <span className="font-semibold text-red-500">{launchServiceProvider.failed_landings}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.consecutive_successful_landings !== null && (
-                                <div>
-                                  <span className="text-gray-400">Consecutive Successful Landings:</span>{' '}
-                                  <span className="font-semibold text-white">{launchServiceProvider.consecutive_successful_landings}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.successful_landings_spacecraft !== null && (
-                                <div>
-                                  <span className="text-gray-400">Successful Spacecraft Landings:</span>{' '}
-                                  <span className="font-semibold text-green-500">{launchServiceProvider.successful_landings_spacecraft}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.failed_landings_spacecraft !== null && (
-                                <div>
-                                  <span className="text-gray-400">Failed Spacecraft Landings:</span>{' '}
-                                  <span className="font-semibold text-red-500">{launchServiceProvider.failed_landings_spacecraft}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.attempted_landings_spacecraft !== null && (
-                                <div>
-                                  <span className="text-gray-400">Attempted Spacecraft Landings:</span>{' '}
-                                  <span className="font-semibold text-white">{launchServiceProvider.attempted_landings_spacecraft}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.successful_landings_payload !== null && (
-                                <div>
-                                  <span className="text-gray-400">Successful Payload Landings:</span>{' '}
-                                  <span className="font-semibold text-green-500">{launchServiceProvider.successful_landings_payload}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.failed_landings_payload !== null && (
-                                <div>
-                                  <span className="text-gray-400">Failed Payload Landings:</span>{' '}
-                                  <span className="font-semibold text-red-500">{launchServiceProvider.failed_landings_payload}</span>
-                                </div>
-                              )}
-                              {launchServiceProvider.attempted_landings_payload !== null && (
-                                <div>
-                                  <span className="text-gray-400">Attempted Payload Landings:</span>{' '}
-                                  <span className="font-semibold text-white">{launchServiceProvider.attempted_landings_payload}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {launchServiceProvider.description && (
-                          <div className="mt-4">
-                            <h5 className="text-md font-bold mb-2">Description</h5>
-                            <p className="text-sm text-gray-300 leading-relaxed">{launchServiceProvider.description}</p>
-                          </div>
-                        )}
-
-                        <div className="mt-4 flex flex-wrap gap-4">
+                      {(launchServiceProvider.url || launchServiceProvider.wiki_url || launchServiceProvider.info_url) && (
+                        <div className="mt-6 space-y-2">
+                          <h4 className="text-lg font-semibold mb-3">Links</h4>
+                          <div className="flex flex-wrap gap-3">
                           {launchServiceProvider.url && (
                             <a 
                               href={launchServiceProvider.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
+                                className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
                             >
-                              Provider URL →
-                            </a>
-                          )}
-                          {launchServiceProvider.info_url && (
-                            <a 
-                              href={launchServiceProvider.info_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                            >
-                              More Information →
+                                Official Website →
                             </a>
                           )}
                           {launchServiceProvider.wiki_url && (
@@ -1947,114 +1613,71 @@ const LaunchDetail = () => {
                               href={launchServiceProvider.wiki_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
+                                className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
                             >
                               Wikipedia →
                             </a>
                           )}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-gray-400">No launch service provider information available.</p>
+                            {launchServiceProvider.info_url && (
+                            <a 
+                                href={launchServiceProvider.info_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                                className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
+                            >
+                                More Info →
+                            </a>
                     )}
                   </div>
                 </div>
               )}
-              
-              {activeTab === 'PAD' && (
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-lg font-bold mb-3">Launch Pad Information</h4>
-                    {pad && Object.keys(pad).length > 0 ? (
-                      <>
-                        {/* Pad Image */}
-                        {pad.image?.image_url && (
-                          <div className="mb-4">
-                            <img 
-                              src={pad.image.image_url} 
-                              alt={pad.name || 'Pad Image'}
-                              className="max-w-md h-auto rounded"
-                            />
-                            {pad.image.credit && (
-                              <p className="text-xs text-gray-400 mt-1">Credit: {pad.image.credit}</p>
-                            )}
-                            {pad.image.thumbnail_url && (
-                              <div className="mt-2">
-                                <img 
-                                  src={pad.image.thumbnail_url} 
-                                  alt={`${pad.name} Thumbnail`}
-                                  className="max-w-xs h-auto rounded"
+                      {launchServiceProvider.logo_url && (
+                        <div className="mt-6">
+                          <img 
+                            src={launchServiceProvider.logo_url} 
+                            alt={`${launchServiceProvider.name} logo`}
+                            className="max-w-xs h-auto"
                                 />
                               </div>
                             )}
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                          {pad.id && (
-                            <div>
-                              <span className="text-gray-400">Pad ID:</span>{' '}
-                              <span className="font-semibold text-white">{pad.id}</span>
+                    </>
+                  ) : (
+                    <div className="text-gray-400">Provider information not available.</div>
+                  )}
                             </div>
                           )}
-                          {pad.name && (
+              {activeTab === 'PAD' && (
+                <div className="space-y-4">
+                  {pad && (pad.name || pad.id) ? (
+                    <>
+                      <h3 className="text-2xl font-bold mb-4">{pad.name || 'Launch Pad'}</h3>
+                      {pad.description && (
+                        <p className="text-gray-300 leading-relaxed mb-6">{pad.description}</p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
+                        {pad.location && pad.location.name && (
                             <div>
-                              <span className="text-gray-400">Pad Name:</span>{' '}
-                              <span className="font-semibold text-white">{pad.name}</span>
+                            <span className="text-gray-400">Location:</span>{' '}
+                            <span className="font-semibold text-white">{pad.location.name}</span>
                             </div>
                           )}
-                          {pad.url && (
+                        {pad.country_code && (
                             <div>
-                              <span className="text-gray-400">Pad URL:</span>{' '}
-                              <a 
-                                href={pad.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                              >
-                                View Details
-                              </a>
-                            </div>
-                          )}
-                          {pad.active !== undefined && (
-                            <div>
-                              <span className="text-gray-400">Active:</span>{' '}
-                              <span className={`font-semibold ${pad.active ? 'text-green-500' : 'text-red-500'}`}>
-                                {pad.active ? 'Yes' : 'No'}
-                              </span>
-                            </div>
-                          )}
-                          {pad.agency_id && (
-                            <div>
-                              <span className="text-gray-400">Agency ID:</span>{' '}
-                              <span className="font-semibold text-white">{pad.agency_id}</span>
-                            </div>
-                          )}
-                          {pad.country?.alpha_2_code && (
-                            <div>
-                              <span className="text-gray-400">Country Code:</span>{' '}
-                              <span className="font-semibold text-white">{pad.country.alpha_2_code}</span>
-                            </div>
-                          )}
-                          {!pad.country?.alpha_2_code && pad.country_code && (
-                            <div>
-                              <span className="text-gray-400">Country Code:</span>{' '}
+                            <span className="text-gray-400">Country:</span>{' '}
                               <span className="font-semibold text-white">{pad.country_code}</span>
                             </div>
                           )}
-                          {pad.country?.name && (
+                        {pad.latitude && pad.longitude && (
+                          <>
                             <div>
-                              <span className="text-gray-400">Country:</span>{' '}
-                              <span className="font-semibold text-white">{pad.country.name}</span>
+                              <span className="text-gray-400">Latitude:</span>{' '}
+                              <span className="font-semibold text-white">{pad.latitude}°</span>
                             </div>
-                          )}
-                          {pad.latitude && pad.longitude && (
                             <div>
-                              <span className="text-gray-400">Coordinates:</span>{' '}
-                              <span className="font-semibold text-white">
-                                {pad.latitude}, {pad.longitude}
-                              </span>
+                              <span className="text-gray-400">Longitude:</span>{' '}
+                              <span className="font-semibold text-white">{pad.longitude}°</span>
                             </div>
+                          </>
                           )}
                           {pad.total_launch_count !== null && pad.total_launch_count !== undefined && (
                             <div>
@@ -2068,379 +1691,27 @@ const LaunchDetail = () => {
                               <span className="font-semibold text-white">{pad.orbital_launch_attempt_count}</span>
                             </div>
                           )}
-                          {pad.fastest_turnaround && (
-                            <div>
-                              <span className="text-gray-400">Fastest Turnaround:</span>{' '}
-                              <span className="font-semibold text-white">{pad.fastest_turnaround}</span>
                             </div>
-                          )}
-                        </div>
-
-                        {pad.description && (
-                          <div className="mt-4">
-                            <h5 className="text-md font-bold mb-2">Description</h5>
-                            <p className="text-sm text-gray-300 leading-relaxed">{pad.description}</p>
-                          </div>
-                        )}
-
-                        {/* Pad Agencies */}
-                        {pad.agencies && Array.isArray(pad.agencies) && pad.agencies.length > 0 && (
-                          <div className="mt-4">
-                            <h5 className="text-md font-bold mb-3">Pad Agencies</h5>
-                            <div className="space-y-4">
-                              {pad.agencies.map((agency, idx) => (
-                                <div key={idx} className="border-b border-gray-800 pb-3 last:border-0">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                    {agency.id && (
-                                      <div>
-                                        <span className="text-gray-400">Agency ID:</span>{' '}
-                                        <span className="font-semibold text-white">{agency.id}</span>
-                                      </div>
-                                    )}
-                                    {agency.name && (
-                                      <div>
-                                        <span className="text-gray-400">Name:</span>{' '}
-                                        <span className="font-semibold text-white">{agency.name}</span>
-                                      </div>
-                                    )}
-                                    {agency.abbrev && (
-                                      <div>
-                                        <span className="text-gray-400">Abbreviation:</span>{' '}
-                                        <span className="font-semibold text-white">{agency.abbrev}</span>
-                                      </div>
-                                    )}
-                                    {agency.type && (
-                                      <div>
-                                        <span className="text-gray-400">Type:</span>{' '}
-                                        <span className="font-semibold text-white">
-                                          {typeof agency.type === 'object' 
-                                            ? agency.type.name || agency.type 
-                                            : agency.type}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                  {agency.url && (
-                                    <a 
-                                      href={agency.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm mt-2 inline-block"
-                                    >
-                                      Agency URL →
-                                    </a>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Location Information */}
-                        {pad.location && (
-                          <div className="mt-4">
-                            <h5 className="text-md font-bold mb-3">Location Information</h5>
-                            
-                            {/* Location Image */}
-                            {pad.location.image?.image_url && (
-                              <div className="mb-3">
-                                <img 
-                                  src={pad.location.image.image_url} 
-                                  alt={pad.location.name || 'Location Image'}
-                                  className="max-w-md h-auto rounded"
-                                />
-                                {pad.location.image.credit && (
-                                  <p className="text-xs text-gray-400 mt-1">Credit: {pad.location.image.credit}</p>
-                                )}
-                                {pad.location.image.thumbnail_url && (
-                                  <div className="mt-2">
-                                    <img 
-                                      src={pad.location.image.thumbnail_url} 
-                                      alt={`${pad.location.name} Thumbnail`}
-                                      className="max-w-xs h-auto rounded"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                              {pad.location.id && (
-                                <div>
-                                  <span className="text-gray-400">Location ID:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.id}</span>
-                                </div>
-                              )}
-                              {pad.location.name && (
-                                <div>
-                                  <span className="text-gray-400">Location Name:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.name}</span>
-                                </div>
-                              )}
-                              {pad.location.url && (
-                                <div>
-                                  <span className="text-gray-400">Location URL:</span>{' '}
-                                  <a 
-                                    href={pad.location.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                                  >
-                                    View Details
-                                  </a>
-                                </div>
-                              )}
-                              {pad.location.active !== undefined && (
-                                <div>
-                                  <span className="text-gray-400">Active:</span>{' '}
-                                  <span className={`font-semibold ${pad.location.active ? 'text-green-500' : 'text-red-500'}`}>
-                                    {pad.location.active ? 'Yes' : 'No'}
-                                  </span>
-                                </div>
-                              )}
-                              {pad.location.country?.name && (
-                                <div>
-                                  <span className="text-gray-400">Country:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.country.name}</span>
-                                </div>
-                              )}
-                              {pad.location.country?.alpha_2_code && (
-                                <div>
-                                  <span className="text-gray-400">Country Code:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.country.alpha_2_code}</span>
-                                </div>
-                              )}
-                              {pad.location.latitude && pad.location.longitude && (
-                                <div>
-                                  <span className="text-gray-400">Coordinates:</span>{' '}
-                                  <span className="font-semibold text-white">
-                                    {pad.location.latitude}, {pad.location.longitude}
-                                  </span>
-                                </div>
-                              )}
-                              {pad.location.timezone_name && (
-                                <div>
-                                  <span className="text-gray-400">Timezone:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.timezone_name}</span>
-                                </div>
-                              )}
-                              {pad.location.total_launch_count !== null && pad.location.total_launch_count !== undefined && (
-                                <div>
-                                  <span className="text-gray-400">Total Launches:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.total_launch_count}</span>
-                                </div>
-                              )}
-                              {pad.location.total_landing_count !== null && pad.location.total_landing_count !== undefined && (
-                                <div>
-                                  <span className="text-gray-400">Total Landings:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.total_landing_count}</span>
-                                </div>
-                              )}
-                              {pad.location.response_mode && (
-                                <div>
-                                  <span className="text-gray-400">Response Mode:</span>{' '}
-                                  <span className="font-semibold text-white">{pad.location.response_mode}</span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Celestial Body */}
-                            {pad.location.celestial_body && (
-                              <div className="mt-3">
-                                <h6 className="text-sm font-bold mb-2">Celestial Body</h6>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                  {pad.location.celestial_body.name && (
-                                    <div>
-                                      <span className="text-gray-400">Name:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.name}</span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.type && (
-                                    <div>
-                                      <span className="text-gray-400">Type:</span>{' '}
-                                      <span className="font-semibold text-white">
-                                        {typeof pad.location.celestial_body.type === 'object' 
-                                          ? pad.location.celestial_body.type.name || pad.location.celestial_body.type 
-                                          : pad.location.celestial_body.type}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.mass && (
-                                    <div>
-                                      <span className="text-gray-400">Mass:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.mass.toExponential(2)} kg</span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.diameter && (
-                                    <div>
-                                      <span className="text-gray-400">Diameter:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.diameter.toLocaleString()} m</span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.gravity && (
-                                    <div>
-                                      <span className="text-gray-400">Gravity:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.gravity} m/s²</span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.atmosphere !== undefined && (
-                                    <div>
-                                      <span className="text-gray-400">Atmosphere:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.atmosphere ? 'Yes' : 'No'}</span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.length_of_day && (
-                                    <div>
-                                      <span className="text-gray-400">Length of Day:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.length_of_day}</span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.wiki_url && (
-                                    <div>
-                                      <span className="text-gray-400">Wikipedia:</span>{' '}
-                                      <a 
-                                        href={pad.location.celestial_body.wiki_url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-[#8B1A1A] hover:text-[#A02A2A] underline"
-                                      >
-                                        View
-                                      </a>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.id && (
-                                    <div>
-                                      <span className="text-gray-400">Celestial Body ID:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.id}</span>
-                                    </div>
-                                  )}
-                                  {pad.location.celestial_body.response_mode && (
-                                    <div>
-                                      <span className="text-gray-400">Response Mode:</span>{' '}
-                                      <span className="font-semibold text-white">{pad.location.celestial_body.response_mode}</span>
-                                    </div>
-                                  )}
-                                </div>
-                                {pad.location.celestial_body.description && (
-                                  <p className="text-sm text-gray-300 mt-2 leading-relaxed">{pad.location.celestial_body.description}</p>
-                                )}
-                                {pad.location.celestial_body.image?.image_url && (
-                                  <div className="mt-2">
-                                    <img 
-                                      src={pad.location.celestial_body.image.image_url} 
-                                      alt={pad.location.celestial_body.name || 'Celestial Body Image'}
-                                      className="max-w-xs h-auto rounded"
-                                    />
-                                    {pad.location.celestial_body.image.credit && (
-                                      <p className="text-xs text-gray-400 mt-1">Credit: {pad.location.celestial_body.image.credit}</p>
-                                    )}
-                                  </div>
-                                )}
-                                {/* Celestial Body Statistics */}
-                                {(pad.location.celestial_body.total_attempted_launches !== null || 
-                                  pad.location.celestial_body.successful_launches !== null || 
-                                  pad.location.celestial_body.failed_launches !== null) && (
-                                  <div className="mt-3">
-                                    <h6 className="text-sm font-bold mb-2">Celestial Body Launch Statistics</h6>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                      {pad.location.celestial_body.total_attempted_launches !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Total Attempted Launches:</span>{' '}
-                                          <span className="font-semibold text-white">{pad.location.celestial_body.total_attempted_launches}</span>
-                                        </div>
-                                      )}
-                                      {pad.location.celestial_body.successful_launches !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Successful Launches:</span>{' '}
-                                          <span className="font-semibold text-green-500">{pad.location.celestial_body.successful_launches}</span>
-                                        </div>
-                                      )}
-                                      {pad.location.celestial_body.failed_launches !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Failed Launches:</span>{' '}
-                                          <span className="font-semibold text-red-500">{pad.location.celestial_body.failed_launches}</span>
-                                        </div>
-                                      )}
-                                      {pad.location.celestial_body.total_attempted_landings !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Total Attempted Landings:</span>{' '}
-                                          <span className="font-semibold text-white">{pad.location.celestial_body.total_attempted_landings}</span>
-                                        </div>
-                                      )}
-                                      {pad.location.celestial_body.successful_landings !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Successful Landings:</span>{' '}
-                                          <span className="font-semibold text-green-500">{pad.location.celestial_body.successful_landings}</span>
-                                        </div>
-                                      )}
-                                      {pad.location.celestial_body.failed_landings !== null && (
-                                        <div>
-                                          <span className="text-gray-400">Failed Landings:</span>{' '}
-                                          <span className="font-semibold text-red-500">{pad.location.celestial_body.failed_landings}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {pad.location.description && (
-                              <p className="text-sm text-gray-300 mt-3 leading-relaxed">{pad.location.description}</p>
-                            )}
-
-                            {pad.location.map_image && (
-                              <div className="mt-3">
-                                <h6 className="text-sm font-bold mb-2">Map Image</h6>
-                                <img 
-                                  src={pad.location.map_image} 
-                                  alt={`${pad.location.name} Map`}
-                                  className="max-w-md h-auto rounded"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Map Image */}
-                        {pad.map_image && (
-                          <div className="mt-4">
-                            <h5 className="text-md font-bold mb-2">Pad Map Image</h5>
-                            <img 
-                              src={pad.map_image} 
-                              alt={`${pad.name} Map`}
-                              className="max-w-md h-auto rounded"
-                            />
-                          </div>
-                        )}
-
-                        <div className="mt-4 flex flex-wrap gap-4">
-                          {pad.url && (
-                            <a 
-                              href={pad.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                            >
-                              Pad URL →
-                            </a>
-                          )}
+                      {(pad.info_url || pad.wiki_url || pad.map_url) && (
+                        <div className="mt-6 space-y-2">
+                          <h4 className="text-lg font-semibold mb-3">Links</h4>
+                          <div className="flex flex-wrap gap-3">
                           {pad.info_url && (
                             <a 
                               href={pad.info_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                            >
-                              More Information →
-                            </a>
-                          )}
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
+                                    >
+                                More Info →
+                                    </a>
+                                  )}
                           {pad.wiki_url && (
                             <a 
                               href={pad.wiki_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
                             >
                               Wikipedia →
                             </a>
@@ -2448,615 +1719,714 @@ const LaunchDetail = () => {
                           {pad.map_url && (
                             <a 
                               href={pad.map_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm underline"
-                            >
-                              Map →
-                            </a>
-                          )}
-                        </div>
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm"
+                                      >
+                                View Map →
+                                      </a>
+                                  )}
+                                    </div>
+                                    </div>
+                                  )}
+                        {pad.map_image && (
+                        <div className="mt-6">
+                            <img 
+                              src={pad.map_image} 
+                            alt={`Map of ${pad.name}`}
+                            className="max-w-full h-auto rounded"
+                            />
+                          </div>
+                        )}
                       </>
                     ) : (
-                      <p className="text-gray-400">No launch pad information available.</p>
+                    <div className="text-gray-400">Pad information not available.</div>
                     )}
-                  </div>
                 </div>
               )}
-
-              {activeTab === 'RECOVERY' && (
-                <div className="space-y-4">
-                  {launch.recovery ? (
-                    <div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                        {launch.recovery.landing_location && (
-                          <div>
-                            <span className="text-gray-400">Landing Location:</span>{' '}
-                            <span className="font-semibold text-white">{launch.recovery.landing_location}</span>
-                          </div>
-                        )}
-                        {launch.recovery.landing_type && (
-                          <div>
-                            <span className="text-gray-400">Landing Type:</span>{' '}
-                            <span className="font-semibold text-white">{launch.recovery.landing_type}</span>
-                          </div>
-                        )}
-                        {launch.recovery.landed !== null && launch.recovery.landed !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Landed:</span>{' '}
-                            <span className={`font-semibold ${launch.recovery.landed ? 'text-green-500' : 'text-red-500'}`}>
-                              {launch.recovery.landed ? 'Yes' : 'No'}
-                            </span>
-                          </div>
-                        )}
-                        {launch.recovery.landing_attempt !== null && launch.recovery.landing_attempt !== undefined && (
-                          <div>
-                            <span className="text-gray-400">Landing Attempt:</span>{' '}
-                            <span className="font-semibold text-white">{launch.recovery.landing_attempt ? 'Yes' : 'No'}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-400">No recovery information available.</p>
-                  )}
-                </div>
-              )}
-              
               {activeTab === 'HAZARDS' && (
                 <div className="space-y-4">
-                  {launch.hazards && launch.hazards.length > 0 ? (
+                  {launch.hazards && Array.isArray(launch.hazards) && launch.hazards.length > 0 ? (
                     launch.hazards.map((hazard, idx) => (
-                      <div key={idx} className="border-b border-gray-800 pb-4 last:border-0">
-                        <h4 className="text-lg font-bold mb-2 text-yellow-500">{hazard.name || 'Hazard'}</h4>
+                      <div key={idx} className="border-b border-[#222222] pb-4 last:border-0">
+                        <div className="bg-[#222222] p-4 rounded-lg">
                         {hazard.description && (
-                          <p className="text-sm text-gray-300 leading-relaxed">{hazard.description}</p>
-                        )}
-                        {hazard.severity && (
-                          <div className="mt-2">
-                            <span className="text-gray-400 text-sm">Severity: </span>
-                            <span className="font-semibold text-white">{hazard.severity}</span>
+                            <p className="text-gray-300 leading-relaxed mb-3">{hazard.description}</p>
+                          )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            {hazard.type && (
+                          <div>
+                                <span className="text-gray-400">Type:</span>{' '}
+                                <span className="font-semibold text-white">{hazard.type}</span>
                           </div>
                         )}
+                            {hazard.severity && (
+                          <div>
+                                <span className="text-gray-400">Severity:</span>{' '}
+                                <span className="font-semibold text-white">{hazard.severity}</span>
+                          </div>
+                        )}
+                            {hazard.source && (
+                          <div>
+                                <span className="text-gray-400">Source:</span>{' '}
+                                <span className="font-semibold text-white">{hazard.source}</span>
+                          </div>
+                        )}
+                          </div>
+                      </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-400">No hazard information available.</p>
+                    <div className="text-gray-400">No hazards reported for this launch.</div>
                   )}
                 </div>
               )}
-              
-              {activeTab === 'STATISTICS' && (
-                <div className="space-y-6">
-                  <h4 className="text-lg font-bold mb-4">Launch Statistics</h4>
+              {activeTab === 'STATS' && (
+                <div className="space-y-4">
+                  {(launch.orbital_launch_attempt_count !== null && launch.orbital_launch_attempt_count !== undefined) ||
+                   (launch.location_launch_attempt_count !== null && launch.location_launch_attempt_count !== undefined) ||
+                   (launch.pad_launch_attempt_count !== null && launch.pad_launch_attempt_count !== undefined) ||
+                   (launch.agency_launch_attempt_count !== null && launch.agency_launch_attempt_count !== undefined) ||
+                   (launch.orbital_launch_attempt_count_year !== null && launch.orbital_launch_attempt_count_year !== undefined) ||
+                   (launch.location_launch_attempt_count_year !== null && launch.location_launch_attempt_count_year !== undefined) ||
+                   (launch.pad_launch_attempt_count_year !== null && launch.pad_launch_attempt_count_year !== undefined) ||
+                   (launch.agency_launch_attempt_count_year !== null && launch.agency_launch_attempt_count_year !== undefined) ||
+                   launch.pad_turnaround ? (
+                    <>
+                      <h3 className="text-2xl font-bold mb-4">Launch Statistics</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     {launch.orbital_launch_attempt_count !== null && launch.orbital_launch_attempt_count !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Orbital Launch Attempt Count:</span>{' '}
-                          <span className="font-semibold text-white">{launch.orbital_launch_attempt_count}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Orbital Launch Attempt Count</span>
+                            <span className="text-2xl font-bold text-white">{launch.orbital_launch_attempt_count.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.location_launch_attempt_count !== null && launch.location_launch_attempt_count !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Location Launch Attempt Count:</span>{' '}
-                          <span className="font-semibold text-white">{launch.location_launch_attempt_count}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Location Launch Attempt Count</span>
+                            <span className="text-2xl font-bold text-white">{launch.location_launch_attempt_count.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.pad_launch_attempt_count !== null && launch.pad_launch_attempt_count !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Pad Launch Attempt Count:</span>{' '}
-                          <span className="font-semibold text-white">{launch.pad_launch_attempt_count}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Pad Launch Attempt Count</span>
+                            <span className="text-2xl font-bold text-white">{launch.pad_launch_attempt_count.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.agency_launch_attempt_count !== null && launch.agency_launch_attempt_count !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Agency Launch Attempt Count:</span>{' '}
-                          <span className="font-semibold text-white">{launch.agency_launch_attempt_count}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Agency Launch Attempt Count</span>
+                            <span className="text-2xl font-bold text-white">{launch.agency_launch_attempt_count.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.orbital_launch_attempt_count_year !== null && launch.orbital_launch_attempt_count_year !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Orbital Launches This Year:</span>{' '}
-                          <span className="font-semibold text-white">{launch.orbital_launch_attempt_count_year}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Orbital Launch Attempts (This Year)</span>
+                            <span className="text-2xl font-bold text-white">{launch.orbital_launch_attempt_count_year.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.location_launch_attempt_count_year !== null && launch.location_launch_attempt_count_year !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Location Launches This Year:</span>{' '}
-                          <span className="font-semibold text-white">{launch.location_launch_attempt_count_year}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Location Launch Attempts (This Year)</span>
+                            <span className="text-2xl font-bold text-white">{launch.location_launch_attempt_count_year.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.pad_launch_attempt_count_year !== null && launch.pad_launch_attempt_count_year !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Pad Launches This Year:</span>{' '}
-                          <span className="font-semibold text-white">{launch.pad_launch_attempt_count_year}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Pad Launch Attempts (This Year)</span>
+                            <span className="text-2xl font-bold text-white">{launch.pad_launch_attempt_count_year.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.agency_launch_attempt_count_year !== null && launch.agency_launch_attempt_count_year !== undefined && (
-                        <div>
-                          <span className="text-gray-400">Agency Launches This Year:</span>{' '}
-                          <span className="font-semibold text-white">{launch.agency_launch_attempt_count_year}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Agency Launch Attempts (This Year)</span>
+                            <span className="text-2xl font-bold text-white">{launch.agency_launch_attempt_count_year.toLocaleString()}</span>
                         </div>
                       )}
                       {launch.pad_turnaround && (
-                        <div>
-                          <span className="text-gray-400">Pad Turnaround:</span>{' '}
-                          <span className="font-semibold text-white">{launch.pad_turnaround}</span>
+                          <div className="bg-[#222222] p-4 rounded-lg">
+                            <span className="text-gray-400 block mb-1">Pad Turnaround</span>
+                            <span className="text-2xl font-bold text-white">{launch.pad_turnaround}</span>
                         </div>
                       )}
                     </div>
-                </div>
-              )}
-
-              {activeTab === 'UPDATES' && (
-                <div className="space-y-4">
-                  <h4 className="text-lg font-bold mb-3">Launch Updates</h4>
-                  {launch.updates && Array.isArray(launch.updates) && launch.updates.length > 0 ? (
-                    launch.updates.map((update, idx) => (
-                      <div key={update.id || idx} className="border-b border-gray-800 pb-4 last:border-0">
-                        <div className="flex items-start gap-4 mb-2">
-                          {update.profile_image && (
-                            <img 
-                              src={update.profile_image} 
-                              alt={update.created_by || 'Profile'} 
-                              className="w-12 h-12 rounded-full"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                {update.created_by && (
-                                  <div className="text-sm font-semibold text-white mb-1">{update.created_by}</div>
-                                )}
-                                {update.created_on && (
-                                  <span className="text-xs text-gray-400">{new Date(update.created_on).toLocaleString()}</span>
-                                )}
-                              </div>
-                            </div>
-                            {update.comment && (
-                              <p className="text-sm text-gray-300 leading-relaxed mb-2">{update.comment}</p>
-                            )}
-                            {update.info_url && (
-                              <a 
-                                href={update.info_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm inline-block"
-                              >
-                                More Information →
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                    </>
                   ) : (
-                    <div className="text-gray-400">
-                      <p>No updates available for this launch.</p>
-                      <p className="text-sm text-gray-500 mt-2">Check back later for launch status updates.</p>
-                    </div>
+                    <div className="text-gray-400">Statistics not available for this launch.</div>
                   )}
                 </div>
               )}
+                        </div>
 
-              {activeTab === 'TIMELINE' && (
-                <div className="space-y-4">
-                  <h4 className="text-lg font-bold mb-3">Launch Timeline</h4>
-                  {launch.timeline && Array.isArray(launch.timeline) && launch.timeline.length > 0 ? (
-                    launch.timeline.map((event, idx) => (
-                      <div key={idx} className="border-b border-gray-800 pb-4 last:border-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            {event.type ? (
-                              <>
-                                {event.type.abbrev && (
-                                  <h4 className="text-lg font-bold">{event.type.abbrev}</h4>
-                                )}
-                                {event.type.description && (
-                                  <p className="text-sm text-gray-400 mt-1">{event.type.description}</p>
-                                )}
-                                {event.type.id && (
-                                  <span className="text-xs text-gray-500">Type ID: {event.type.id}</span>
-                                )}
+            {/* Author Information Section */}
+            <div className="bg-[#121212] p-6 mt-6 border-t-4 border-[#8B1A1A]">
+              
+              <div className="flex items-start gap-4">
+                {/* Profile Picture with red border */}
+                <div className="w-20 h-20 rounded-full shrink-0 border-4 border-[#8B1A1A] overflow-hidden">
+                  {!authorImageError ? (
+                    <img
+                      src="https://i.imgur.com/zachary-aubert-profile.jpg"
+                      alt="Zachary Aubert"
+                      className="w-full h-full object-cover"
+                      onError={() => setAuthorImageError(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#222222] flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-12 w-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                              </div>
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <div className="mb-3">
+                    <h3 className="text-xl font-bold inline text-[#8B1A1A] uppercase tracking-wide">ZACHARY AUBERT</h3>
+                    <span className="text-xl italic text-white uppercase tracking-wide ml-2">SPACE NEWS JOURNALIST</span>
+                  </div>
+                  <p className="text-sm text-white italic mb-3 leading-relaxed">
+                    Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.
+                  </p>
+                  <p className="text-sm text-white italic mb-3 leading-relaxed">
+                    He doesn't have a book yet but is working on the <span className="italic">Astro Guide: An UnOfficial Guide To The America Space Coast</span>
+                  </p>
+                  <Link
+                    to="/news?author=zac-aubert"
+                    className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm mt-2 inline-block font-semibold transition-colors"
+                  >
+                    More by Zac Aubert
+                  </Link>
+                          </div>
+                        </div>
+                      </div>
+
+            {/* Comments Section */}
+            <div id="comments" className="bg-[#121212] p-6 mt-6 border-t-4 border-[#8B1A1A]">
+              
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white">
+                  {commentsTotal} {commentsTotal === 1 ? 'Comment' : 'Comments'}
+                </h3>
+                {user && (
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span className="text-white">{user.full_name || user.username || 'User'}</span>
+                  </div>
+                )}
+                    </div>
+
+            {/* Comment Input */}
+              {user ? (
+                <>
+                  {replyingTo ? (
+                    <div className="mb-4 p-3 bg-[#222222] rounded border border-[#383838]">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-400">Replying to {replyingTo.username || 'comment'}</span>
+                        <button
+                          onClick={() => {
+                            setReplyingTo(null);
+                            setReplyContent('');
+                          }}
+                          className="text-gray-400 hover:text-white text-sm"
+                        >
+                          Cancel
+                        </button>
+                        </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center shrink-0 border border-[#383838]">
+                          {user.profile_image_url ? (
+                            <img 
+                              src={user.profile_image_url} 
+                              alt={user.username} 
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-6 w-6 text-gray-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                            )}
+                          </div>
+                        <div className="flex-1">
+                          <textarea
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            placeholder="Write a reply..."
+                            className="w-full bg-[#222222] text-white p-3 rounded focus:outline-none focus:ring-2 focus:ring-[#8B1A1A] border border-[#383838] resize-none"
+                            rows={3}
+                          />
+                          <button
+                            onClick={handleReply}
+                            disabled={!replyContent.trim()}
+                            className="mt-2 px-4 py-2 bg-[#8B1A1A] text-white rounded hover:bg-[#A02A2A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Post Reply
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-[#222222] flex items-center justify-center shrink-0 border border-[#383838]">
+                        {user.profile_image_url ? (
+                          <img 
+                            src={user.profile_image_url} 
+                            alt={user.username} 
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                      )}
+                    </div>
+                      <div className="flex-1">
+                        <textarea
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder="Join the discussion..."
+                          className="w-full bg-[#222222] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B1A1A] border border-[#383838] resize-none"
+                          rows={3}
+                        />
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-2 text-gray-400 text-sm">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span>Share</span>
+                          </div>
+                        <button
+                          onClick={handleSubmitComment}
+                            disabled={!newComment.trim()}
+                            className="px-4 py-2 bg-[#8B1A1A] text-white rounded hover:bg-[#A02A2A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Post Comment
+                        </button>
+                        </div>
+                          </div>
+                    </div>
+                  )}
                               </>
                             ) : (
-                              <p className="text-sm text-gray-400">Timeline Event</p>
-                            )}
-                          </div>
-                          {event.relative_time && (
-                            <span className="text-xs text-gray-400 font-mono">{event.relative_time}</span>
-                          )}
+                <div className="mb-4 p-4 bg-[#222222] rounded border border-[#383838] text-center">
+                  <p className="text-gray-400 mb-2">Please log in to join the discussion.</p>
+                  <Link
+                    to={`/login?returnUrl=${encodeURIComponent(location.pathname + location.search + '#comments')}`}
+                    className="text-[#8B1A1A] hover:text-[#A02A2A] font-semibold"
+                  >
+                    Log In
+                  </Link>
+                    </div>
+                  )}
+
+              {/* Sort Options */}
+              <div className="flex items-center justify-end gap-4 mb-4 pb-4 border-b border-[#222222]">
+                <button
+                  onClick={() => setCommentSort('best')}
+                  className={`text-sm transition-colors px-1 pb-1 ${
+                    commentSort === 'best'
+                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Best
+                </button>
+                <button
+                  onClick={() => setCommentSort('newest')}
+                  className={`text-sm transition-colors px-1 pb-1 ${
+                    commentSort === 'newest'
+                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Newest
+                </button>
+                <button
+                  onClick={() => setCommentSort('oldest')}
+                  className={`text-sm transition-colors px-1 pb-1 ${
+                    commentSort === 'oldest'
+                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Oldest
+                </button>
+                            </div>
+
+              {/* Comments List */}
+              {commentsLoading ? (
+                <div className="text-center py-8">
+                  <RedDotLoader size="medium" />
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">No comments yet. Be the first to comment!</div>
+              ) : (
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <CommentItem
+                      key={comment.id}
+                      comment={comment}
+                      currentUser={user}
+                      onReply={setReplyingTo}
+                      onUpdate={handleCommentUpdate}
+                      onDelete={handleCommentDelete}
+                    />
+                  ))}
+                    </div>
+                  )}
+                    </div>
+                    </div>
+
+          {/* Right Column - Sidebar */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Social Sharing Icons */}
+            <div className="bg-black p-3 flex gap-2 justify-center">
+                <button
+                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                title="Share on X (Twitter)"
+                onClick={() => {
+                  window.open(getTwitterShareUrl(), '_blank', 'noopener,noreferrer');
+                }}
+              >
+                <span className="text-sm font-bold">X</span>
+                </button>
+              <button 
+                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                title="Share on Facebook"
+                onClick={() => {
+                  window.open(getFacebookShareUrl(), '_blank', 'noopener,noreferrer');
+                }}
+              >
+                <span className="text-sm font-bold">f</span>
+              </button>
+              <button 
+                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                title="Share on LinkedIn"
+                onClick={() => {
+                  window.open(getLinkedInShareUrl(), '_blank', 'noopener,noreferrer');
+                }}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </button>
+              <button 
+                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                title="Share"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: launch.name,
+                      text: shareText,
+                      url: currentPageUrl
+                    }).catch(err => console.log('Error sharing:', err));
+                  } else {
+                    // Fallback: copy to clipboard
+                    navigator.clipboard.writeText(currentPageUrl);
+                    alert('Link copied to clipboard!');
+                  }
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                </svg>
+              </button>
+              <button 
+                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                title="Email"
+                onClick={() => {
+                  window.location.href = `mailto:?subject=${encodeURIComponent(launch.name)}&body=${encodeURIComponent(currentPageUrl)}`;
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </button>
+              <button 
+                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                title="Copy link"
+                onClick={() => {
+                  navigator.clipboard.writeText(currentPageUrl);
+                  alert('Link copied to clipboard!');
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </button>
+                            </div>
+
+            {/* Launch Overview */}
+            <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
+              <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">LAUNCH OVERVIEW</h3>
+              <div className="p-4 space-y-4">
+                {/* Launch Window Bar */}
+                {(launch.window_start || launch.window_end || launch.launch_date || launch.net) && (
+                  <div className="my-4">
+                    {/* Progress Bar with Rocket Icon */}
+                  <div className="mb-4">
+                      <div className="relative w-full h-2">
+                        {/* Background bar (dark gray) */}
+                        <div className="absolute inset-0 bg-[#333333] rounded"></div>
+                        {/* Foreground bar (dark red) */}
+                        <div className="absolute inset-0 bg-[#8B1A1A] rounded"></div>
+                        {/* Rocket Icon - positioned on the left, rotated -45deg like mobile app */}
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10">
+                          <IoRocket 
+                            size={20} 
+                            color="#FFFFFF" 
+                            style={{ transform: 'rotate(-45deg)' }}
+                          />
+                      </div>
+                    </div>
+                </div>
+
+                    {/* Window Open and Close Boxes */}
+                    <div className="flex gap-2 justify-between">
+                      <div className="bg-[#1a1a1a] rounded-lg p-3 w-fit">
+                        <div className="text-[10px] text-white mb-1 font-normal">Window Open</div>
+                        <div className="text-[10px] text-white font-bold mb-0.5">
+                          {formatWindowTimeWithTimezone(
+                            launch.window_start || launch.launch_date || launch.net,
+                            pad.location?.timezone_name || pad.timezone || null
+                          ).local}
+                        </div>
+                        <div className="text-[10px] text-white font-normal">
+                          {formatWindowTimeWithTimezone(
+                            launch.window_start || launch.launch_date || launch.net,
+                            pad.location?.timezone_name || pad.timezone || null
+                          ).utc}
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-400">
-                      <p>No timeline data available for this launch.</p>
-                      <p className="text-sm text-gray-500 mt-2">Timeline data may not be available from the source API for this launch.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'MEDIA' && (
-                <div className="space-y-6">
-                  <h4 className="text-lg font-bold mb-3">Media</h4>
-                  {image && image.image_url && (
-                    <div>
-                      <h5 className="text-md font-bold mb-3">Launch Image</h5>
-                      <img 
-                        src={image.image_url} 
-                        alt={launch.name}
-                        className="w-full h-auto rounded"
-                      />
-                      {image.credit && (
-                        <p className="text-xs text-gray-400 mt-2">Credit: {image.credit}</p>
-                      )}
-                    </div>
-                  )}
-                  {mission && mission.image && mission.image.image_url && (
-                    <div>
-                      <h5 className="text-md font-bold mb-3">Mission Image</h5>
-                      <img 
-                        src={mission.image.image_url} 
-                        alt={mission.name || 'Mission Image'}
-                        className="w-full h-auto rounded"
-                      />
-                      {mission.image.credit && (
-                        <p className="text-xs text-gray-400 mt-2">Credit: {mission.image.credit}</p>
-                      )}
-                    </div>
-                  )}
-                  {pad && pad.image && pad.image.image_url && (
-                    <div>
-                      <h5 className="text-md font-bold mb-3">Launch Pad Image</h5>
-                      <img 
-                        src={pad.image.image_url} 
-                        alt={pad.name || 'Launch Pad Image'}
-                        className="w-full h-auto rounded"
-                      />
-                      {pad.image.credit && (
-                        <p className="text-xs text-gray-400 mt-2">Credit: {pad.image.credit}</p>
-                      )}
-                    </div>
-                  )}
-                  {infographic && infographic.image_url && (
-                    <div>
-                      <h5 className="text-md font-bold mb-3">Infographic</h5>
-                      <img 
-                        src={infographic.image_url} 
-                        alt={`${launch.name} Infographic`}
-                        className="w-full h-auto rounded"
-                      />
-                      {infographic.credit && (
-                        <p className="text-xs text-gray-400 mt-2">Credit: {infographic.credit}</p>
-                      )}
-                    </div>
-                  )}
-                  {launch.vid_urls && Array.isArray(launch.vid_urls) && launch.vid_urls.length > 0 && (
-                    <div>
-                      <h4 className="text-lg font-bold mb-3">Videos</h4>
-                      <div className="space-y-4">
-                        {launch.vid_urls.map((urlObj, idx) => {
-                          const url = typeof urlObj === 'string' ? urlObj : urlObj.url;
-                          const title = typeof urlObj === 'object' ? urlObj.title : null;
-                          const description = typeof urlObj === 'object' ? urlObj.description : null;
-                          const publisher = typeof urlObj === 'object' ? urlObj.publisher : null;
-                          const featureImage = typeof urlObj === 'object' ? urlObj.feature_image : null;
-                          const live = typeof urlObj === 'object' ? urlObj.live : false;
-                          
-                          return (
-                            <div key={idx} className="border-b border-gray-800 pb-3 last:border-0">
-                              {featureImage && (
-                                <img 
-                                  src={featureImage} 
-                                  alt={title || 'Video thumbnail'}
-                                  className="w-full h-auto rounded mb-2"
-                                />
-                              )}
-                              <a 
-                                href={url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="block text-[#8B1A1A] hover:text-[#A02A2A] underline font-semibold mb-1"
-                              >
-                                {title || url}
-                              </a>
-                              {description && (
-                                <p className="text-sm text-gray-300 mb-1">{description}</p>
-                              )}
-                              {publisher && (
-                                <p className="text-xs text-gray-400">Publisher: {publisher}</p>
-                              )}
-                              {live && (
-                                <span className="inline-block mt-2 px-2 py-1 bg-red-600 text-white text-xs font-bold">LIVE</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {launch.info_urls && Array.isArray(launch.info_urls) && launch.info_urls.length > 0 && (
-                    <div>
-                      <h4 className="text-lg font-bold mb-3">Information Links</h4>
-                      <div className="space-y-4">
-                        {launch.info_urls.map((urlObj, idx) => {
-                          const url = typeof urlObj === 'string' ? urlObj : urlObj.url;
-                          const title = typeof urlObj === 'object' ? urlObj.title : null;
-                          const description = typeof urlObj === 'object' ? urlObj.description : null;
-                          const source = typeof urlObj === 'object' ? urlObj.source : null;
-                          
-                          return (
-                            <div key={idx} className="border-b border-gray-800 pb-3 last:border-0">
-                              <a 
-                                href={url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="block text-[#8B1A1A] hover:text-[#A02A2A] underline font-semibold mb-1"
-                              >
-                                {title || url}
-                              </a>
-                              {description && (
-                                <p className="text-sm text-gray-300 mb-1">{description}</p>
-                              )}
-                              {source && (
-                                <p className="text-xs text-gray-400">Source: {source}</p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-
-              {activeTab === 'PROGRAM' && (
-                <div className="space-y-4">
-                  {program && program.length > 0 ? (
-                    program.map((prog, idx) => (
-                      <div key={idx} className="border-b border-gray-800 pb-4 last:border-0">
-                        <h4 className="text-lg font-bold mb-2">{prog.name || 'Program'}</h4>
-                        {prog.description && (
-                          <p className="text-sm text-gray-300 leading-relaxed">{prog.description}</p>
-                        )}
-                        {prog.agencies && Array.isArray(prog.agencies) && prog.agencies.length > 0 && (
-                          <div className="mt-2">
-                            <span className="text-gray-400 text-sm">Agencies: </span>
-                            <span className="text-white text-sm">{prog.agencies.map(a => a.name || a.abbrev).filter(Boolean).join(', ')}</span>
+                      
+                      <div className="bg-[#1a1a1a] rounded-lg p-3 w-fit">
+                        <div className="text-[10px] text-white mb-1 font-normal">Window Close</div>
+                        <div className="text-[10px] text-white font-bold mb-0.5">
+                          {formatWindowTimeWithTimezone(
+                            launch.window_end || launch.launch_date || launch.net,
+                            pad.location?.timezone_name || pad.timezone || null
+                          ).local}
+                        </div>
+                        <div className="text-[10px] text-white font-normal">
+                          {formatWindowTimeWithTimezone(
+                            launch.window_end || launch.launch_date || launch.net,
+                            pad.location?.timezone_name || pad.timezone || null
+                          ).utc}
+                        </div>
                           </div>
-                        )}
-                        {prog.image_url && (
-                          <img 
-                            src={prog.image_url} 
-                            alt={prog.name}
-                            className="w-full h-auto rounded mt-2"
-                          />
-                        )}
-                        {prog.info_url && (
-                          <a 
-                            href={prog.info_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm mt-2 inline-block"
-                          >
-                            More Information →
-                          </a>
-                        )}
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-400">
-                      <p>No program information available for this launch.</p>
-                      <p className="text-sm text-gray-500 mt-2">This launch may not be part of a formal space program.</p>
                     </div>
                   )}
-                </div>
-              )}
 
-              {activeTab === 'PATCHES' && (
-                <div className="space-y-4">
-                  {launch.mission_patches && launch.mission_patches.length > 0 ? (
-                    launch.mission_patches.map((patch, idx) => (
-                      <div key={idx} className="border-b border-gray-800 pb-4 last:border-0">
-                        {patch.name && (
-                          <h4 className="text-lg font-bold mb-2">{patch.name}</h4>
-                        )}
-                        {patch.image_url && (
-                          <img 
-                            src={patch.image_url} 
-                            alt={patch.name || 'Mission Patch'}
-                            className="w-48 h-48 object-contain rounded mb-2"
-                          />
-                        )}
-                        {patch.agency && (
-                          <div className="text-sm text-gray-300">
-                            <span className="text-gray-400">Agency: </span>
-                            <span className="font-semibold">{patch.agency.name || patch.agency.abbrev}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-400">
-                      <p>No mission patches available for this launch.</p>
-                      <p className="text-sm text-gray-500 mt-2">Mission patches may not be available for all launches.</p>
-                    </div>
+                {/* Launch Facility and Pad */}
+                <div className="space-y-3 text-sm">
+                  {(pad.name || pad.location) && (
+                  <div className="flex items-start">
+                    <span className="text-white font-semibold w-32 shrink-0">LAUNCH FACILITY:</span>
+                    <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                      <div className="text-white whitespace-normal">
+                        {pad.location?.name ? (
+                          pad.location.name.toUpperCase().split(' ').map((word, idx, arr) => {
+                            // Break "NASA KENNEDY SPACE CENTER" into "NASA KENNEDY" and "SPACE CENTER"
+                            if (word === 'SPACE' && arr[idx - 1] === 'KENNEDY') {
+                              return <div key={idx}>{word}</div>;
+                            }
+                            return <span key={idx}>{idx > 0 ? ' ' : ''}{word}</span>;
+                          })
+                        ) : (
+                          <div>TBD</div>
                   )}
                 </div>
-              )}
             </div>
           </div>
-
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            {/* Launch Overview */}
-            <div className="bg-gray-900 p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">LIFT OFF TIME</h3>
-              <div className="text-sm mb-4 text-white">
-                {formatDate(launch.net)}
+                  )}
+                  {pad.name && (
+                  <div className="flex items-start">
+                    <span className="text-white font-semibold w-32 shrink-0">LAUNCH PAD:</span>
+                    <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                      <div className="text-white">
+                        {pad.name?.toUpperCase() || 'TBD'}
               </div>
-              <div className="text-xs text-gray-400">
-                {formatTime(launch.net)}
+              </div>
+            </div>
+                  )}
+              </div>
               </div>
             </div>
 
-            {/* Launch Window */}
-            {(launch.window_start || launch.window_end || launch.launch_window_open || launch.launch_window_close || (launch.windows && launch.windows.length > 0)) && (
-            <div className="bg-gray-900 p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">LAUNCH WINDOW</h3>
-                <div className="text-sm space-y-2">
-                <div>
-                    <span className="text-gray-400">Start:</span>{' '}
-                    <span className="text-white">
-                      {launch.window_start 
-                        ? formatTime(launch.window_start)
-                        : launch.launch_window_open
-                        ? formatTime(launch.launch_window_open)
-                  : launch.windows && launch.windows.length > 0
-                        ? formatTime(launch.windows[0].window_open)
-                  : 'TBD'}
-                  </span>
-              </div>
-                <div>
-                    <span className="text-gray-400">End:</span>{' '}
-                    <span className="text-white">
-                      {launch.window_end
-                        ? formatTime(launch.window_end)
-                        : launch.launch_window_close
-                        ? formatTime(launch.launch_window_close)
-                  : launch.windows && launch.windows.length > 0 && launch.windows[0].window_close
-                        ? formatTime(launch.windows[0].window_close)
-                  : 'TBD'}
-                  </span>
-              </div>
-            </div>
-              </div>
-            )}
-
-            {/* Launch Facility */}
-            <div className="bg-gray-900 p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">LAUNCH FACILITY</h3>
-              <div className="space-y-3 text-sm">
-                {pad.location?.name && (
-                <div>
-                    <span className="text-gray-400">Site:</span>{' '}
-                    <span className="font-semibold text-white">{pad.location.name}</span>
+            {/* Payload Overview */}
+            <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
+              <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">PAYLOAD OVERVIEW</h3>
+              <div className="p-4 space-y-3 text-sm">
+                <div className="flex items-start">
+                  <span className="text-white font-semibold w-32 shrink-0">CUSTOMER:</span>
+                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                    <div className="text-white">
+                      {launch.payloads && launch.payloads.length > 0 && launch.payloads[0]?.customers && Array.isArray(launch.payloads[0].customers) && launch.payloads[0].customers.length > 0
+                        ? launch.payloads[0].customers.join(', ').toUpperCase()
+                        : (launchServiceProvider?.name || 'TBD').toUpperCase()}
                 </div>
-                )}
-                {pad.name && (
-                <div>
-                    <span className="text-gray-400">Pad:</span>{' '}
-                    <span className="font-semibold text-white">{pad.name}</span>
                 </div>
-                )}
-                {pad.country_code && (
-                <div>
-                    <span className="text-gray-400">Country:</span>{' '}
-                    <span className="font-semibold text-white">{pad.country_code}</span>
                 </div>
+                <div className="flex items-start">
+                  <span className="text-white font-semibold w-32 shrink-0">PAYLOAD:</span>
+                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                    <div className="text-white">
+                      {launch.payloads && launch.payloads.length > 0 ? (
+                        launch.payloads.map((p, idx) => (
+                          <div key={idx}>{p.name?.toUpperCase() || 'UNNAMED PAYLOAD'}</div>
+                    ))
+                  ) : (
+                        <div>TBD</div>
                 )}
               </div>
             </div>
-
-            {/* Mission Overview */}
-            <div className="bg-gray-900 p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">MISSION OVERVIEW</h3>
-              <div className="space-y-3 text-sm">
-                {mission.type && (
-                <div>
-                    <span className="text-gray-400">Type:</span>{' '}
-                    <span className="font-semibold text-white">{mission.type}</span>
                 </div>
-                )}
-                {mission.orbit?.name && (
-                  <div>
-                    <span className="text-gray-400">Orbit:</span>{' '}
-                    <span className="font-semibold text-white">{mission.orbit.name}</span>
+                <div className="flex items-start">
+                  <span className="text-white font-semibold w-32 shrink-0">PAYLOAD MASS:</span>
+                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                    <div className="text-white">
+                      {launch.payloads && launch.payloads.length > 0 ? (() => {
+                        const totalMassKg = launch.payloads.reduce((sum, p) => sum + (parseFloat(p.mass_kg) || 0), 0);
+                        if (totalMassKg === 0) return 'TBD';
+                        const totalMassLb = Math.round(totalMassKg * 2.20462);
+                        const formattedKg = totalMassKg.toLocaleString();
+                        const formattedLb = totalMassLb.toLocaleString();
+                        // Format with space after comma: "36, 000lb"
+                        const formattedLbWithSpace = formattedLb.replace(/,(\d{3})/g, ', $1');
+                        return `${formattedKg}kg (${formattedLbWithSpace}lb)`;
+                      })() : 'TBD'}
                   </div>
-                )}
-                {mission.orbit?.abbrev && (
-                  <div>
-                    <span className="text-gray-400">Orbit Code:</span>{' '}
-                    <span className="font-semibold text-white">{mission.orbit.abbrev}</span>
                   </div>
-                )}
+              </div>
+                <div className="flex items-start">
+                  <span className="text-white font-semibold w-32 shrink-0">DESTINATION:</span>
+                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                    <div className="text-white">
+                      {((launch.payloads && launch.payloads.length > 0 && launch.payloads[0]?.orbit?.abbrev) || mission?.orbit?.abbrev || 'TBD').toUpperCase()}
+            </div>
+                </div>
+                </div>
               </div>
             </div>
 
-            {/* Payload Summary */}
-            {launch.payloads && launch.payloads.length > 0 && (
-            <div className="bg-gray-900 p-4 sm:p-6">
-                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">PAYLOAD SUMMARY</h3>
-              <div className="space-y-3 text-sm">
-                <div>
-                    <span className="text-gray-400">Count:</span>{' '}
-                    <span className="font-semibold text-white">{launch.payloads.length}</span>
-                </div>
-                <div>
-                    <span className="text-gray-400">Total Mass:</span>{' '}
-                    <span className="font-semibold text-white">
-                      {launch.payloads.reduce((sum, p) => sum + (parseFloat(p.mass_kg) || 0), 0)} kg
-                    </span>
-                </div>
-                <div>
-                    <span className="text-gray-400">Payloads:</span>
-                    <div className="mt-1 space-y-1">
-                      {launch.payloads.map((p, idx) => (
-                        <div key={idx} className="text-white text-xs">
-                          • {p.name || 'Unnamed Payload'}
-              </div>
-                      ))}
-            </div>
+            {/* Recovery Overview */}
+            <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
+              <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">RECOVERY OVERVIEW</h3>
+              <div className="p-4 space-y-3 text-sm">
+                <div className="flex items-start">
+                  <span className="text-white font-semibold w-32 shrink-0">LANDING LOCATION:</span>
+                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                    <div className="text-white whitespace-normal">
+                      {(() => {
+                        const location = (launch.recovery?.landing_location || 'TBD').toUpperCase();
+                        // Split "JUST READ THE INSTRUCTIONS" into "JUST READ THE" and "INSTRUCTIONS"
+                        if (location.includes('JUST READ THE INSTRUCTIONS')) {
+                          return (
+                            <>
+                              <div>JUST READ THE</div>
+                              <div>INSTRUCTIONS</div>
+                            </>
+                          );
+                        }
+                        // For other locations, try to split intelligently
+                        const words = location.split(' ');
+                        if (words.length > 3) {
+                          // Split into two lines if it's long
+                          const midPoint = Math.ceil(words.length / 2);
+                          return (
+                            <>
+                              <div>{words.slice(0, midPoint).join(' ')}</div>
+                              <div>{words.slice(midPoint).join(' ')}</div>
+                            </>
+                          );
+                        }
+                        return <div>{location}</div>;
+                      })()}
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Recovery Summary */}
-            {launch.recovery && (
-              <div className="bg-gray-900 p-4 sm:p-6">
-                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">RECOVERY</h3>
-                <div className="space-y-2 text-sm">
-                  {launch.recovery.landed !== null && launch.recovery.landed !== undefined && (
-                <div>
-                      <span className={`font-semibold ${launch.recovery.landed ? 'text-green-500' : 'text-red-500'}`}>
-                        {launch.recovery.landed ? '✓ Landed Successfully' : '✗ Landing Failed'}
-                      </span>
+                <div className="flex items-start">
+                  <span className="text-white font-semibold w-32 shrink-0">LANDING TYPE:</span>
+                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
+                    <div className="text-white">
+                      {(launch.recovery?.landing_type || 'TBD').toUpperCase()}
                     </div>
-                  )}
-                  {launch.recovery.landing_location && (
-                    <div className="text-gray-300">{launch.recovery.landing_location}</div>
-                  )}
-                  {launch.recovery.landing_type && (
-                    <div className="text-gray-300">{launch.recovery.landing_type}</div>
-                  )}
                 </div>
               </div>
-            )}
-
+              </div>
+                    </div>
 
             {/* Related Stories */}
-            {relatedStories.length > 0 && (
-              <div className="bg-gray-900 p-4 sm:p-6">
-                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">RELATED STORIES</h3>
-                <div className="space-y-4">
-                  {relatedStories.map((story) => (
+            <div className="bg-[#121212]">
+              <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">RELATED STORIES</h3>
+              <div className="h-0.5 bg-[#8B1A1A]"></div>
+              <div className="p-4 space-y-4">
+                {relatedStories.length > 0 ? (
+                  relatedStories.map((story) => (
                     <Link
                       key={story.id}
                       to={`/news/${story.slug || story.id}`}
-                      className="block hover:opacity-80 transition-opacity"
+                      className="block hover:opacity-80 transition-opacity group"
                     >
-                      <div className="h-24 bg-gray-800 mb-2 rounded"></div>
-                      <div className="text-sm font-semibold line-clamp-2 text-white">{story.title}</div>
-                    </Link>
-                  ))}
+                      <div className="w-full h-24 bg-[#222222] mb-2 overflow-hidden rounded">
+                        {story.featured_image_url || story.hero_image_url ? (
+                          <img 
+                            src={story.featured_image_url || story.hero_image_url} 
+                            alt={story.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
+                            No Image
                 </div>
+                        )}
               </div>
-            )}
+                      <div className="text-sm text-white leading-tight line-clamp-2">
+                        {story.title}
+                      </div>
+                    </Link>
+                    ))
+                  ) : (
+                  <div className="text-sm text-gray-400 text-center py-4">No related stories available.</div>
+                  )}
+                </div>
+            </div>
           </div>
         </div>
       </div>

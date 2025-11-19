@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
+import RedDotLoader from '../components/common/RedDotLoader';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
 
   const handleChange = (e) => {
     setFormData({
@@ -48,7 +51,18 @@ const Register = () => {
     const result = await register(formData.email, formData.password, first_name, last_name);
 
     if (result.success) {
-      navigate('/');
+      // Redirect to returnUrl if provided, otherwise go to home
+      const redirectTo = returnUrl ? decodeURIComponent(returnUrl) : '/';
+      navigate(redirectTo);
+      // Scroll to comments section if hash is present
+      setTimeout(() => {
+        if (redirectTo.includes('#comments')) {
+          const commentsElement = document.getElementById('comments');
+          if (commentsElement) {
+            commentsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, 100);
     } else {
       setError(result.error);
     }
@@ -58,9 +72,10 @@ const Register = () => {
 
   return (
     <Layout>
+      {loading && <RedDotLoader fullScreen={true} size="large" />}
       <div className="min-h-screen flex items-center justify-center px-6 py-12">
         <div className="max-w-md w-full">
-          <div className="bg-gray-900 p-8 rounded-lg border border-gray-800">
+          <div className="bg-[#222222] p-8 rounded-lg border border-[#222222]">
             <h1 className="text-4xl font-bold mb-2 text-center">REGISTER</h1>
             <p className="text-gray-400 text-center mb-8">
               Create your TLP Network account
@@ -84,7 +99,7 @@ const Register = () => {
                   value={formData.full_name}
                   onChange={handleChange}
                   required
-                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-[#8B1A1A] focus:ring-2 focus:ring-[#8B1A1A]"
                   placeholder="John Doe"
                 />
               </div>
@@ -100,7 +115,7 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-[#8B1A1A] focus:ring-2 focus:ring-[#8B1A1A]"
                   placeholder="your.email@example.com"
                 />
               </div>
@@ -117,7 +132,7 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   minLength={8}
-                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-[#8B1A1A] focus:ring-2 focus:ring-[#8B1A1A]"
                   placeholder="••••••••"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -136,7 +151,7 @@ const Register = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500"
+                  className="w-full bg-black border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-[#8B1A1A] focus:ring-2 focus:ring-[#8B1A1A]"
                   placeholder="••••••••"
                 />
               </div>
@@ -144,7 +159,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#8B1A1A] hover:bg-[#A02A2A] text-white font-semibold py-3 px-6 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating Account...' : 'CREATE ACCOUNT'}
               </button>
@@ -153,7 +168,10 @@ const Register = () => {
             <div className="mt-6 text-center">
               <p className="text-gray-400 text-sm">
                 Already have an account?{' '}
-                <Link to="/login" className="text-orange-500 hover:text-orange-400">
+                <Link 
+                  to={returnUrl ? `/login?returnUrl=${returnUrl}` : '/login'} 
+                  className="text-[#8B1A1A] hover:text-[#A02A2A]"
+                >
                   Sign in here
                 </Link>
               </p>

@@ -940,6 +940,7 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
   // Use the stored JSONB fields directly from Space Devs API
   const response = {
     id: launchRow.external_id || launchRow.id.toString(),
+    database_id: launchRow.id, // Include numeric database ID for API calls
     url: launchRow.url || null,
     name: launchRow.name || null,
     slug: launchRow.slug || null,
@@ -980,7 +981,14 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     info_urls: relatedData.info_urls || [],
     vid_urls: relatedData.vid_urls || [],
     timeline: relatedData.timeline || [],
-    mission_patches: relatedData.mission_patches || []
+    mission_patches: relatedData.mission_patches || [],
+    // Additional related data
+    payloads: relatedData.payloads || [],
+    crew: relatedData.crew || [],
+    hazards: relatedData.hazards || [],
+    recovery: relatedData.recovery || null,
+    windows: relatedData.windows || [],
+    engines: relatedData.engines || []
   };
 
   return response;
@@ -994,63 +1002,122 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
 router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
   let apiUnavailable = false;
-
-  // Try to find launch by internal ID first
-  let { rows: launchRows } = await pool.query(`
-    SELECT 
-      launches.*,
-      providers.name as provider,
-      providers.abbrev as provider_abbrev,
-      rockets.name as rocket,
-      orbits.code as orbit,
-      orbits.description as orbit_name,
-      launch_sites.name as site,
-      launch_sites.country as site_country,
-      launch_pads.name as pad_name,
-      mission_types.name as mission_type,
-      launch_statuses.name as status_name,
-      launch_statuses.abbrev as status_abbrev
-    FROM launches
-    LEFT JOIN providers ON launches.provider_id = providers.id
-    LEFT JOIN rockets ON launches.rocket_id = rockets.id
-    LEFT JOIN orbits ON launches.orbit_id = orbits.id
-    LEFT JOIN launch_sites ON launches.site_id = launch_sites.id
-    LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
-    LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
-    LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
-    WHERE launches.id = $1
-  `, [id]);
-
-  // If not found by internal ID, try external_id (UUID)
+  
+  // Determine if ID is UUID, numeric external_id, internal integer ID, or slug
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const isNumeric = /^\d+$/.test(id);
+  const isSlug = !isUUID && !isNumeric; // If it's not UUID or numeric, treat as slug
+  
+  let launchRows = [];
+  
+  // Try to find launch by slug first (if it's not numeric or UUID)
+  if (isSlug) {
+    try {
+      const { rows: slugRows } = await pool.query(`
+        SELECT 
+          launches.*,
+          providers.name as provider,
+          providers.abbrev as provider_abbrev,
+          rockets.name as rocket,
+          orbits.code as orbit,
+          orbits.description as orbit_name,
+          launch_sites.name as site,
+          launch_sites.country as site_country,
+          launch_pads.name as pad_name,
+          mission_types.name as mission_type,
+          launch_statuses.name as status_name,
+          launch_statuses.abbrev as status_abbrev
+        FROM launches
+        LEFT JOIN providers ON launches.provider_id = providers.id
+        LEFT JOIN rockets ON launches.rocket_id = rockets.id
+        LEFT JOIN orbits ON launches.orbit_id = orbits.id
+        LEFT JOIN launch_sites ON launches.site_id = launch_sites.id
+        LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
+        LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
+        LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+        WHERE launches.slug = $1
+      `, [id]);
+      if (slugRows.length) {
+        launchRows = slugRows;
+      }
+    } catch (err) {
+      console.log(`[API] Launch ${id}: Not found by slug, trying other methods...`);
+    }
+  }
+  
+  // Try to find launch by internal integer ID first (if it's numeric)
+  if (!launchRows.length && isNumeric) {
+    try {
+      const { rows: intRows } = await pool.query(`
+        SELECT 
+          launches.*,
+          providers.name as provider,
+          providers.abbrev as provider_abbrev,
+          rockets.name as rocket,
+          orbits.code as orbit,
+          orbits.description as orbit_name,
+          launch_sites.name as site,
+          launch_sites.country as site_country,
+          launch_pads.name as pad_name,
+          mission_types.name as mission_type,
+          launch_statuses.name as status_name,
+          launch_statuses.abbrev as status_abbrev
+        FROM launches
+        LEFT JOIN providers ON launches.provider_id = providers.id
+        LEFT JOIN rockets ON launches.rocket_id = rockets.id
+        LEFT JOIN orbits ON launches.orbit_id = orbits.id
+        LEFT JOIN launch_sites ON launches.site_id = launch_sites.id
+        LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
+        LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
+        LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+        WHERE launches.id = $1::integer
+      `, [id]);
+      launchRows = intRows;
+    } catch (err) {
+      // If integer query fails, continue to try external_id
+      console.log(`[API] Launch ${id}: Not found by internal ID, trying external_id...`);
+    }
+  }
+  
+  // If not found by internal ID, try external_id (UUID type in DB)
   if (!launchRows.length) {
-    const { rows: externalRows } = await pool.query(`
-      SELECT 
-        launches.*,
-        providers.name as provider,
-        providers.abbrev as provider_abbrev,
-        rockets.name as rocket,
-        orbits.code as orbit,
-        orbits.description as orbit_name,
-        launch_sites.name as site,
-        launch_sites.country as site_country,
-        launch_pads.name as pad_name,
-        mission_types.name as mission_type,
-        launch_statuses.name as status_name,
-        launch_statuses.abbrev as status_abbrev
-      FROM launches
-      LEFT JOIN providers ON launches.provider_id = providers.id
-      LEFT JOIN rockets ON launches.rocket_id = rockets.id
-      LEFT JOIN orbits ON launches.orbit_id = orbits.id
-      LEFT JOIN launch_sites ON launches.site_id = launch_sites.id
-      LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
-      LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
-      LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
-      WHERE launches.external_id = $1
-    `, [id]);
+    // Only try external_id if it looks like a UUID
+    if (isUUID) {
+      try {
+        const { rows: externalRows } = await pool.query(`
+          SELECT 
+            launches.*,
+            providers.name as provider,
+            providers.abbrev as provider_abbrev,
+            rockets.name as rocket,
+            orbits.code as orbit,
+            orbits.description as orbit_name,
+            launch_sites.name as site,
+            launch_sites.country as site_country,
+            launch_pads.name as pad_name,
+            mission_types.name as mission_type,
+            launch_statuses.name as status_name,
+            launch_statuses.abbrev as status_abbrev
+          FROM launches
+          LEFT JOIN providers ON launches.provider_id = providers.id
+          LEFT JOIN rockets ON launches.rocket_id = rockets.id
+          LEFT JOIN orbits ON launches.orbit_id = orbits.id
+          LEFT JOIN launch_sites ON launches.site_id = launch_sites.id
+          LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
+          LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
+          LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+          WHERE launches.external_id = $1::uuid
+        `, [id]);
+        if (externalRows.length) {
+          launchRows = externalRows;
+        }
+      } catch (err) {
+        // If UUID query fails, continue to API fetch
+        console.log(`[API] Launch ${id}: Not found by external_id UUID, will try API fetch...`);
+      }
+    }
     
-    if (externalRows.length) {
-      launchRows = externalRows;
-    } else {
+    if (!launchRows.length) {
       // Not found in DB, try fetching from API
       try {
         const apiData = await spaceDevsApi.fetchLauncherById(id);
@@ -1176,12 +1243,78 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     SELECT * FROM launch_windows WHERE launch_id = $1
   `, [launchId]);
 
-  // Get hazards
+  // Get hazards from database table
   const { rows: hazardRows } = await pool.query(`
     SELECT * FROM launch_hazards WHERE launch_id = $1
   `, [launchId]);
+  
+  // Extract hazards from launch object fields (weather_concerns, failreason, probability, status)
+  // According to Space Devs API schema, these are the primary hazard fields
+  const launchHazards = [];
+  
+  // Weather concerns
+  if (launch.weather_concerns) {
+    launchHazards.push({
+      type: 'weather',
+      description: launch.weather_concerns,
+      severity: null,
+      source: 'api-field'
+    });
+  }
+  
+  // Failure reason
+  if (launch.failreason) {
+    launchHazards.push({
+      type: 'failure',
+      description: launch.failreason,
+      severity: 'high',
+      source: 'api-field'
+    });
+  }
+  
+  // Probability (success probability - lower is more hazardous)
+  if (launch.probability !== null && launch.probability !== undefined) {
+    const probabilityHazard = {
+      type: 'probability',
+      description: `Success probability: ${launch.probability}%`,
+      severity: launch.probability < 50 ? 'high' : launch.probability < 80 ? 'medium' : 'low',
+      source: 'api-field',
+      probability: launch.probability
+    };
+    launchHazards.push(probabilityHazard);
+  }
+  
+  // Status-based hazards (if launch failed)
+  if (launch.status_id) {
+    const statusName = launch.status_name || '';
+    if (statusName.toLowerCase().includes('failure') || statusName.toLowerCase().includes('fail')) {
+      launchHazards.push({
+        type: 'status',
+        description: `Launch status: ${statusName}`,
+        severity: 'high',
+        source: 'api-status'
+      });
+    }
+  }
+  
+  // Merge database hazards with launch field hazards
+  const allHazards = [...launchHazards];
+  if (hazardRows && hazardRows.length > 0) {
+    hazardRows.forEach(hazard => {
+      // Only add if not already in allHazards (by description matching)
+      const existing = allHazards.find(h => h.description === hazard.description);
+      if (!existing) {
+        allHazards.push({
+          type: hazard.type || 'unknown',
+          description: hazard.description || null,
+          severity: hazard.severity || null,
+          source: 'database'
+        });
+      }
+    });
+  }
 
-  // Get crew members
+  // Get crew members from database
   const { rows: crewRows } = await pool.query(`
     SELECT 
       astronauts.*,
@@ -1190,6 +1323,176 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     JOIN astronaut_missions ON astronauts.id = astronaut_missions.astronaut_id
     WHERE astronaut_missions.launch_id = $1
   `, [launchId]);
+
+  // Helper to safely parse JSONB
+  const parseJsonb = (value) => {
+    if (!value) return null;
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return null;
+      }
+    }
+    return value;
+  };
+  
+  // Extract crew from external API response (mission JSONB or rocket JSONB)
+  // Space Devs API stores crew in mission.crew or spacecraft_flight.launch_crew
+  let apiCrew = [];
+  const missionJson = parseJsonb(launch.mission_json);
+  const rocketJson = parseJsonb(launch.rocket_json);
+  
+  if (missionJson) {
+    // Check for direct crew array in mission
+    if (missionJson.crew && Array.isArray(missionJson.crew)) {
+      console.log(`[API] Launch ${launchId}: Found ${missionJson.crew.length} crew members in mission.crew`);
+      apiCrew = missionJson.crew.map(member => ({
+        id: member.id || null,
+        name: member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || null,
+        role: member.role || member.job || null,
+        nationality: typeof member.nationality === 'string' 
+          ? member.nationality 
+          : member.nationality?.nationality_name || member.nationality?.name || null,
+        date_of_birth: member.date_of_birth || null,
+        flights_count: member.flights_count || member.flight_count || null,
+        bio: member.bio || member.biography || null,
+        wiki_url: member.wiki_url || member.wiki || null,
+        profile_image: member.profile_image || member.profile_image_thumbnail || null,
+        agency: member.agency || null,
+        _source: 'api-mission'
+      }));
+    }
+    // Check for crew in spacecraft_flight
+    else if (missionJson.spacecraft_flight && Array.isArray(missionJson.spacecraft_flight)) {
+      missionJson.spacecraft_flight.forEach(flight => {
+        if (flight.launch_crew && Array.isArray(flight.launch_crew)) {
+          console.log(`[API] Launch ${launchId}: Found ${flight.launch_crew.length} crew members in spacecraft_flight.launch_crew`);
+          flight.launch_crew.forEach(member => {
+            const crewMember = {
+              id: member.id || null,
+              name: member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || null,
+              role: member.role || member.job || null,
+              nationality: typeof member.nationality === 'string' 
+                ? member.nationality 
+                : member.nationality?.nationality_name || member.nationality?.name || null,
+              date_of_birth: member.date_of_birth || null,
+              flights_count: member.flights_count || member.flight_count || null,
+              bio: member.bio || member.biography || null,
+              wiki_url: member.wiki_url || member.wiki || null,
+              profile_image: member.profile_image || member.profile_image_thumbnail || null,
+              agency: member.agency || null,
+              _source: 'api-spacecraft-flight'
+            };
+            // Only add if not already in apiCrew (by id or name)
+            if (crewMember.id && !apiCrew.find(c => c.id === crewMember.id)) {
+              apiCrew.push(crewMember);
+            } else if (crewMember.name && !apiCrew.find(c => c.name === crewMember.name)) {
+              apiCrew.push(crewMember);
+            }
+          });
+        }
+      });
+    }
+  }
+  
+  // PRIMARY: Fetch crew from astronaut endpoint (correct API-native approach)
+  // According to Space Devs API schema, crew is not in launch object - query astronaut endpoint
+  let astronautEndpointCrew = [];
+  try {
+    // Only fetch if this is a crewed mission (check mission type or if we have external_id)
+    const isCrewedMission = missionJson?.type?.toLowerCase().includes('crew') || 
+                           missionJson?.name?.toLowerCase().includes('crew') ||
+                           launch.name?.toLowerCase().includes('crew');
+    
+    if (isCrewedMission || launch.external_id) {
+      console.log(`[API] Launch ${launchId}: Fetching crew from astronaut endpoint...`);
+      const astronauts = await spaceDevsApi.fetchAstronautsByLaunchId(launch.external_id || launch.id);
+      
+      if (astronauts && Array.isArray(astronauts) && astronauts.length > 0) {
+        console.log(`[API] Launch ${launchId}: Found ${astronauts.length} crew members from astronaut endpoint`);
+        astronautEndpointCrew = astronauts.map(astronaut => {
+          // Find the flight for this launch to get the role
+          const flight = astronaut.flights?.find(f => 
+            f.launch?.id === launch.external_id || 
+            f.launch?.id === launch.id?.toString() ||
+            f.launch?.url?.includes(launch.external_id) ||
+            f.launch?.url?.includes(launch.id?.toString())
+          );
+          
+          return {
+            id: astronaut.id || null,
+            name: astronaut.name || `${astronaut.first_name || ''} ${astronaut.last_name || ''}`.trim() || null,
+            role: flight?.role || astronaut.role || null,
+            nationality: typeof astronaut.nationality === 'string' 
+              ? astronaut.nationality 
+              : astronaut.nationality?.nationality_name || astronaut.nationality?.name || null,
+            date_of_birth: astronaut.date_of_birth || null,
+            flights_count: astronaut.flights_count || (astronaut.flights?.length || 0),
+            bio: astronaut.bio || astronaut.biography || null,
+            wiki_url: astronaut.wiki_url || astronaut.wiki || null,
+            profile_image: astronaut.profile_image || astronaut.profile_image_thumbnail || null,
+            agency: astronaut.agency?.name || null,
+            _source: 'api-astronaut-endpoint'
+          };
+        });
+      }
+    }
+  } catch (error) {
+    console.error(`[API] Launch ${launchId}: Error fetching crew from astronaut endpoint:`, error.message);
+    // Continue with fallback methods
+  }
+  
+  // Merge all crew sources: database > astronaut endpoint > JSONB fallback
+  let allCrew = [];
+  if (crewRows && crewRows.length > 0) {
+    // Use database crew as primary source
+    allCrew = crewRows.map(row => ({
+      id: row.id || null,
+      name: row.full_name || `${row.first_name || ''} ${row.last_name || ''}`.trim() || null,
+      role: row.role || null,
+      nationality: row.nationality || null,
+      date_of_birth: row.birth_date || null,
+      flights_count: row.missions_count || null,
+      bio: row.biography || null,
+      wiki_url: null,
+      profile_image: row.profile_image_url || null,
+      agency: null,
+      _source: 'database'
+    }));
+  }
+  
+  // Add astronaut endpoint crew (if not already in database)
+  if (astronautEndpointCrew.length > 0) {
+    const existingIds = new Set(allCrew.map(c => c.id).filter(Boolean));
+    const existingNames = new Set(allCrew.map(c => c.name?.toLowerCase()).filter(Boolean));
+    astronautEndpointCrew.forEach(member => {
+      if (member.id && !existingIds.has(member.id)) {
+        if (member.name && !existingNames.has(member.name.toLowerCase())) {
+          allCrew.push(member);
+        }
+      } else if (member.name && !existingNames.has(member.name.toLowerCase())) {
+        allCrew.push(member);
+      }
+    });
+  }
+  
+  // Add JSONB crew as fallback (if not already added)
+  if (apiCrew.length > 0) {
+    const existingIds = new Set(allCrew.map(c => c.id).filter(Boolean));
+    const existingNames = new Set(allCrew.map(c => c.name?.toLowerCase()).filter(Boolean));
+    apiCrew.forEach(apiMember => {
+      if (apiMember.id && !existingIds.has(apiMember.id)) {
+        if (apiMember.name && !existingNames.has(apiMember.name.toLowerCase())) {
+          allCrew.push(apiMember);
+        }
+      } else if (apiMember.name && !existingNames.has(apiMember.name.toLowerCase())) {
+        allCrew.push(apiMember);
+      }
+    });
+  }
+  
+  console.log(`[API] Launch ${launchId}: Crew summary - DB: ${crewRows.length}, Astronaut Endpoint: ${astronautEndpointCrew.length}, JSONB: ${apiCrew.length}, Total: ${allCrew.length}`);
 
   // Get updates (after sync, this should have all the latest data)
   const { rows: updateRows } = await pool.query(`
@@ -1224,19 +1527,6 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   
   console.log(`[API] Launch ${launchId}: Fetched array data - Updates: ${updateRows.length}, Timeline: ${timelineRows.length}, Patches: ${patchRows.length}, Info URLs: ${infoUrlRows.length}, Vid URLs: ${vidUrlRows.length}`);
 
-  // Helper to safely parse JSONB
-  const parseJsonb = (value) => {
-    if (!value) return null;
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch (e) {
-        return null;
-      }
-    }
-    return value;
-  };
-  
   // Format updates array
   const updates = updateRows.map(row => ({
     id: row.update_id,
@@ -1303,7 +1593,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   }));
 
   // Fallback: Check mission_json for info_urls and vid_urls if not in separate tables
-  const missionJson = parseJsonb(launch.mission_json);
+  // missionJson is already defined above in crew extraction
   if (infoUrls.length === 0 && missionJson && missionJson.info_urls && Array.isArray(missionJson.info_urls)) {
     infoUrls.push(...missionJson.info_urls);
   }
@@ -1311,13 +1601,294 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     vidUrls.push(...missionJson.vid_urls);
   }
 
+  // Extract payloads from external API response (mission JSONB)
+  // According to Space Devs API schema: launch.mission IS the primary payload
+  // The mission object contains: id, name, type, description, orbit, agencies, vid_urls, info_urls, image
+  let apiPayloads = [];
+  if (missionJson) {
+    console.log(`[API] Launch ${launchId}: Checking mission JSONB for payloads...`);
+    console.log(`[API] Launch ${launchId}: missionJson keys:`, Object.keys(missionJson || {}));
+    
+    // PRIMARY: Extract mission object as the primary payload (this is the correct approach per API schema)
+    if (missionJson.name || missionJson.id) {
+      console.log(`[API] Launch ${launchId}: Found primary mission payload: ${missionJson.name || missionJson.id}`);
+      const primaryPayload = {
+        id: missionJson.id || null,
+        name: missionJson.name || null,
+        type: missionJson.type || null,
+        description: missionJson.description || null,
+        orbit: missionJson.orbit?.name || missionJson.orbit?.abbrev || null,
+        orbit_id: missionJson.orbit?.id || null,
+        agencies: missionJson.agencies || [],
+        customers: missionJson.agencies?.map(a => a.name).filter(Boolean) || [],
+        _source: 'api-mission-primary'
+      };
+      apiPayloads.push(primaryPayload);
+    }
+    
+    // SECONDARY: Also check for spacecraft_flight array (for rideshare/secondary payloads)
+    if (missionJson.spacecraft_flight && Array.isArray(missionJson.spacecraft_flight)) {
+      console.log(`[API] Launch ${launchId}: Found ${missionJson.spacecraft_flight.length} spacecraft_flight entries (secondary payloads)`);
+      missionJson.spacecraft_flight.forEach(flight => {
+        if (flight.spacecraft) {
+          const secondaryPayload = {
+            id: flight.spacecraft?.id || null,
+            name: flight.spacecraft?.name || flight.spacecraft?.configuration?.name || null,
+            type: flight.spacecraft?.spacecraft_type?.name || flight.spacecraft?.spacecraft_type || null,
+            mass_kg: flight.spacecraft?.mass_kg || null,
+            orbit: flight.orbit?.name || flight.orbit?.abbrev || null,
+            nationality: flight.spacecraft?.configuration?.manufacturer?.name || null,
+            manufacturer: flight.spacecraft?.configuration?.manufacturer?.name || null,
+            customers: flight.spacecraft?.configuration?.manufacturer?.name ? [flight.spacecraft.configuration.manufacturer.name] : [],
+            description: flight.spacecraft?.description || flight.spacecraft?.configuration?.description || null,
+            destination: flight.destination || null,
+            launch_customer: flight.launch_customer || null,
+            launch_crew: flight.launch_crew || null,
+            landing: flight.landing || null,
+            docking_events: flight.docking_events || null,
+            _source: 'api-spacecraft-flight'
+          };
+          // Only add if not already in apiPayloads (by name matching)
+          if (secondaryPayload.name && !apiPayloads.find(p => p.name === secondaryPayload.name)) {
+            apiPayloads.push(secondaryPayload);
+          }
+        }
+      });
+    }
+    // Also check for spacecraft as a single object (secondary payload)
+    else if (missionJson.spacecraft && typeof missionJson.spacecraft === 'object' && !Array.isArray(missionJson.spacecraft)) {
+      console.log(`[API] Launch ${launchId}: Found single spacecraft object (secondary payload)`);
+      const spacecraft = missionJson.spacecraft;
+      const secondaryPayload = {
+        id: spacecraft.id || null,
+        name: spacecraft.name || spacecraft.configuration?.name || null,
+        type: spacecraft.spacecraft_type?.name || spacecraft.spacecraft_type || null,
+        mass_kg: spacecraft.mass_kg || null,
+        orbit: missionJson.orbit?.name || missionJson.orbit?.abbrev || null,
+        nationality: spacecraft.configuration?.manufacturer?.name || null,
+        manufacturer: spacecraft.configuration?.manufacturer?.name || null,
+        customers: spacecraft.configuration?.manufacturer?.name ? [spacecraft.configuration.manufacturer.name] : [],
+        description: spacecraft.description || spacecraft.configuration?.description || null,
+        destination: null,
+        _source: 'api-spacecraft'
+      };
+      // Only add if not already in apiPayloads (by name matching)
+      if (secondaryPayload.name && !apiPayloads.find(p => p.name === secondaryPayload.name)) {
+        apiPayloads.push(secondaryPayload);
+      }
+    }
+    // Also check for spacecraft as an array (secondary payloads)
+    else if (missionJson.spacecraft && Array.isArray(missionJson.spacecraft)) {
+      console.log(`[API] Launch ${launchId}: Found ${missionJson.spacecraft.length} spacecraft entries (secondary payloads)`);
+      missionJson.spacecraft.forEach(spacecraft => {
+        const secondaryPayload = {
+          id: spacecraft.id || null,
+          name: spacecraft.name || spacecraft.configuration?.name || null,
+          type: spacecraft.spacecraft_type?.name || spacecraft.spacecraft_type || null,
+          mass_kg: spacecraft.mass_kg || null,
+          orbit: missionJson.orbit?.name || missionJson.orbit?.abbrev || null,
+          nationality: spacecraft.configuration?.manufacturer?.name || null,
+          manufacturer: spacecraft.configuration?.manufacturer?.name || null,
+          customers: spacecraft.configuration?.manufacturer?.name ? [spacecraft.configuration.manufacturer.name] : [],
+          description: spacecraft.description || spacecraft.configuration?.description || null,
+          destination: null,
+          _source: 'api-spacecraft-array'
+        };
+        // Only add if not already in apiPayloads (by name matching)
+        if (secondaryPayload.name && !apiPayloads.find(p => p.name === secondaryPayload.name)) {
+          apiPayloads.push(secondaryPayload);
+        }
+      });
+    }
+    // Also check for direct payloads array (some API versions - secondary payloads)
+    if (missionJson.payloads && Array.isArray(missionJson.payloads)) {
+      console.log(`[API] Launch ${launchId}: Found ${missionJson.payloads.length} direct payloads (secondary payloads)`);
+      missionJson.payloads.forEach(payload => {
+        const secondaryPayload = {
+          id: payload.id || null,
+          name: payload.name || null,
+          type: payload.type || null,
+          mass_kg: payload.mass_kg || null,
+          orbit: payload.orbit?.name || payload.orbit?.abbrev || payload.orbit || null,
+          nationality: payload.nationality || null,
+          manufacturer: payload.manufacturer?.name || payload.manufacturer || null,
+          customers: payload.customers || (payload.customer ? [payload.customer] : []),
+          description: payload.description || null,
+          destination: payload.destination || null,
+          _source: 'api-payloads-array'
+        };
+        // Only add if not already in apiPayloads (by name matching)
+        if (secondaryPayload.name && !apiPayloads.find(p => p.name === secondaryPayload.name)) {
+          apiPayloads.push(secondaryPayload);
+        }
+      });
+    }
+  } else {
+    console.log(`[API] Launch ${launchId}: No mission JSONB available`);
+  }
+  
+  // Also check rocket JSONB for payloads (sometimes stored there)
+  // rocketJson is already defined above in crew extraction
+  if (rocketJson && rocketJson.spacecraft_stage && Array.isArray(rocketJson.spacecraft_stage)) {
+    console.log(`[API] Launch ${launchId}: Found ${rocketJson.spacecraft_stage.length} spacecraft_stage entries in rocket JSONB`);
+    rocketJson.spacecraft_stage.forEach(stage => {
+      if (stage.spacecraft) {
+        const payload = {
+          id: stage.spacecraft.id || null,
+          name: stage.spacecraft.name || stage.spacecraft.configuration?.name || null,
+          type: stage.spacecraft.spacecraft_type?.name || stage.spacecraft.spacecraft_type || null,
+          mass_kg: stage.spacecraft.mass_kg || null,
+          orbit: null,
+          nationality: stage.spacecraft.configuration?.manufacturer?.name || null,
+          manufacturer: stage.spacecraft.configuration?.manufacturer?.name || null,
+          customers: stage.spacecraft.configuration?.manufacturer?.name ? [stage.spacecraft.configuration.manufacturer.name] : [],
+          description: stage.spacecraft.description || stage.spacecraft.configuration?.description || null,
+          _source: 'api-rocket'
+        };
+        // Only add if not already in apiPayloads
+        if (payload.name && !apiPayloads.find(p => p.name === payload.name)) {
+          apiPayloads.push(payload);
+        }
+      }
+    });
+  }
+
+  // Merge database payloads with API payloads
+  // If database has payloads, use those; otherwise use API payloads
+  // If both exist, prefer database but add API ones that aren't in database
+  let allPayloads = [];
+  if (payloadRows && payloadRows.length > 0) {
+    // Use database payloads as primary source
+    allPayloads = payloadRows.map(row => ({
+      id: row.id,
+      name: row.name,
+      type: row.payload_type,
+      mass_kg: row.payload_mass_kg,
+      mass_lb: row.payload_mass_lb,
+      orbit: row.destination_orbit,
+      nationality: null,
+      manufacturer: null,
+      customers: row.customer ? [row.customer] : [],
+      description: row.description,
+      _source: 'database'
+    }));
+    
+    // Add API payloads that don't exist in database (by name matching)
+    const dbPayloadNames = new Set(allPayloads.map(p => p.name?.toLowerCase()));
+    apiPayloads.forEach(apiPayload => {
+      if (apiPayload.name && !dbPayloadNames.has(apiPayload.name.toLowerCase())) {
+        allPayloads.push(apiPayload);
+      }
+    });
+  } else {
+    // No database payloads, use API payloads
+    allPayloads = apiPayloads;
+  }
+
+  // Log payload information
+  console.log(`[API] Launch ${launchId}: Payload summary - DB: ${payloadRows.length}, API: ${apiPayloads.length}, Total: ${allPayloads.length}`);
+  if (allPayloads.length > 0) {
+    console.log(`[API] Launch ${launchId}: Sample payload:`, JSON.stringify(allPayloads[0], null, 2));
+  }
+
+  // Extract engine data from rocket configuration
+  // PRIMARY: Fetch from rocket.configuration.url (correct API-native approach per Space Devs schema)
+  // Extract engine data from multiple possible sources
+  let engineData = [];
+  
+  // Helper function to extract engines from a launcher_stage array
+  const extractEnginesFromStages = (stages, source) => {
+    if (!stages || !Array.isArray(stages)) return [];
+    
+    const extracted = [];
+    stages.forEach((stage, stageIdx) => {
+      if (stage.engines && Array.isArray(stage.engines)) {
+        stage.engines.forEach(engine => {
+          extracted.push({
+            stage: stageIdx + 1,
+            stage_type: stage.type || `Stage ${stageIdx + 1}`,
+            reusable: stage.reusable || false,
+            engine_id: engine.id || null,
+            engine_name: engine.name || null,
+            engine_type: engine.type || null,
+            engine_configuration: engine.configuration || null,
+            engine_layout: engine.layout || null,
+            engine_version: engine.version || null,
+            isp_sea_level: engine.isp?.sea_level || null,
+            isp_vacuum: engine.isp?.vacuum || null,
+            thrust_sea_level_kn: engine.thrust_sea_level?.kn || engine.thrust_sea_level || null,
+            thrust_vacuum_kn: engine.thrust_vacuum?.kn || engine.thrust_vacuum || null,
+            number_of_engines: engine.number_of_engines || stage.engines.length || null,
+            propellant_1: engine.propellant_1 || null,
+            propellant_2: engine.propellant_2 || null,
+            engine_loss_max: engine.engine_loss_max || null,
+            stage_thrust_kn: stage.thrust?.kn || stage.thrust || null,
+            stage_fuel_amount_tons: stage.fuel_amount_tons || null,
+            stage_burn_time_sec: stage.burn_time_sec || null,
+            _source: source
+          });
+        });
+      }
+    });
+    return extracted;
+  };
+  
+  // METHOD 1: Try to fetch from configuration URL first (most complete data)
+  if (rocketJson && rocketJson.configuration && rocketJson.configuration.url) {
+    try {
+      console.log(`[API] Launch ${launchId}: Fetching engine data from configuration URL: ${rocketJson.configuration.url}`);
+      const configData = await spaceDevsApi.fetchLauncherConfiguration(rocketJson.configuration.url);
+      
+      if (configData && configData.launcher_stage && Array.isArray(configData.launcher_stage)) {
+        console.log(`[API] Launch ${launchId}: Found ${configData.launcher_stage.length} launcher_stage entries in configuration`);
+        engineData = extractEnginesFromStages(configData.launcher_stage, 'api-configuration-url');
+      }
+    } catch (error) {
+      console.error(`[API] Launch ${launchId}: Error fetching configuration from URL:`, error.message);
+      // Fall through to JSONB extraction
+    }
+  }
+  
+  // METHOD 2: Extract from rocket.configuration.launcher_stage (if nested in configuration)
+  if (engineData.length === 0 && rocketJson) {
+    const configLauncherStage = rocketJson.configuration?.launcher_stage || null;
+    if (configLauncherStage && Array.isArray(configLauncherStage)) {
+      console.log(`[API] Launch ${launchId}: Found ${configLauncherStage.length} launcher_stage entries in rocket.configuration`);
+      engineData = extractEnginesFromStages(configLauncherStage, 'api-rocket-configuration-jsonb');
+    }
+  }
+  
+  // METHOD 3: Extract from rocket.launcher_stage (direct in rocket object)
+  if (engineData.length === 0 && rocketJson) {
+    if (rocketJson.launcher_stage && Array.isArray(rocketJson.launcher_stage)) {
+      console.log(`[API] Launch ${launchId}: Found ${rocketJson.launcher_stage.length} launcher_stage entries in rocket JSONB`);
+      engineData = extractEnginesFromStages(rocketJson.launcher_stage, 'api-rocket-jsonb');
+    }
+  }
+  
+  // Log detailed information for debugging
+  if (engineData.length === 0 && rocketJson) {
+    console.log(`[API] Launch ${launchId}: No engines found. Rocket JSONB structure:`, {
+      hasRocket: !!rocketJson,
+      hasConfiguration: !!rocketJson.configuration,
+      hasConfigurationUrl: !!(rocketJson.configuration?.url),
+      hasConfigurationLauncherStage: !!(rocketJson.configuration?.launcher_stage),
+      hasLauncherStage: !!rocketJson.launcher_stage,
+      rocketKeys: Object.keys(rocketJson || {}),
+      configurationKeys: Object.keys(rocketJson.configuration || {})
+    });
+  }
+  
+  console.log(`[API] Launch ${launchId}: Engine data - Found ${engineData.length} engines`);
+
   // Prepare related data
   const relatedData = {
-    payloads: payloadRows,
+    payloads: allPayloads,
     recovery: recoveryRows[0] || null,
     windows: windowRows,
-    hazards: hazardRows,
-    crew: crewRows,
+    hazards: allHazards, // Now includes launch field hazards + database hazards
+    crew: allCrew,
+    engines: engineData,
     updates: updates,
     info_urls: infoUrls,
     vid_urls: vidUrls,
@@ -1333,6 +1904,21 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     // Log what we're sending to frontend
     console.log(`[API] Launch ${launchId}: Sending response with arrays - Updates: ${formattedLaunch.updates?.length || 0}, Timeline: ${formattedLaunch.timeline?.length || 0}, Patches: ${formattedLaunch.mission_patches?.length || 0}, Info URLs: ${formattedLaunch.info_urls?.length || 0}, Vid URLs: ${formattedLaunch.vid_urls?.length || 0}`);
     console.log(`[API] Launch ${launchId}: Has launch_service_provider: ${!!formattedLaunch.launch_service_provider}, Has rocket: ${!!formattedLaunch.rocket}, Has mission: ${!!formattedLaunch.mission}, Has pad: ${!!formattedLaunch.pad}`);
+    console.log(`[API] Launch ${launchId}: Payloads in response: ${formattedLaunch.payloads?.length || 0}`);
+    console.log(`[API] Launch ${launchId}: Engines in response: ${formattedLaunch.engines?.length || 0}, Engines type: ${Array.isArray(formattedLaunch.engines) ? 'Array' : typeof formattedLaunch.engines}`);
+    if (formattedLaunch.engines && formattedLaunch.engines.length > 0) {
+      console.log(`[API] Launch ${launchId}: First engine sample:`, JSON.stringify(formattedLaunch.engines[0], null, 2));
+    }
+    console.log(`[API] Launch ${launchId}: Payloads type: ${Array.isArray(formattedLaunch.payloads) ? 'Array' : typeof formattedLaunch.payloads}`);
+    if (formattedLaunch.payloads && formattedLaunch.payloads.length > 0) {
+      console.log(`[API] Launch ${launchId}: First payload in response:`, JSON.stringify(formattedLaunch.payloads[0], null, 2));
+    } else {
+      console.log(`[API] Launch ${launchId}: No payloads in response. relatedData.payloads:`, relatedData.payloads?.length || 0);
+      console.log(`[API] Launch ${launchId}: allPayloads length:`, allPayloads?.length || 0);
+      if (allPayloads && allPayloads.length > 0) {
+        console.log(`[API] Launch ${launchId}: Sample allPayloads[0]:`, JSON.stringify(allPayloads[0], null, 2));
+      }
+    }
     
     // Verify transformation worked
     if (!formattedLaunch.launch_service_provider && launch.launch_service_provider_json) {
@@ -1488,6 +2074,467 @@ router.delete('/:id', authenticate, role('admin'), asyncHandler(async (req, res)
   }
 
   res.json({ deleted: true });
+}));
+
+/**
+ * GET /api/launches/:id/comments
+ * Get all comments for a launch (with nested replies)
+ */
+router.get('/:id/comments', optionalAuth, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { sort = 'newest', approved = 'true', limit = 100, offset = 0 } = req.query;
+  const userId = req.user?.id || null;
+
+  // Verify launch exists
+  const { rows: launchRows } = await pool.query('SELECT id FROM launches WHERE id = $1', [id]);
+  if (!launchRows.length) {
+    return res.status(404).json({ error: 'Launch not found', code: 'NOT_FOUND' });
+  }
+
+  try {
+    // Build query for top-level comments (no parent)
+    let orderClause = '';
+    switch (sort) {
+      case 'oldest':
+        orderClause = 'ORDER BY c.created_at ASC';
+        break;
+      case 'best':
+        // Best = most likes + recency (weighted)
+        orderClause = `ORDER BY 
+          (COALESCE(like_counts.like_count, 0) * 10 + 
+           EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600) DESC`;
+        break;
+      case 'newest':
+      default:
+        orderClause = 'ORDER BY c.created_at DESC';
+        break;
+    }
+
+    const approvedFilter = approved === 'true' ? 'AND c.is_approved = true' : '';
+
+    // Get top-level comments with like counts
+    // Build query differently based on whether user is logged in
+    let comments;
+    if (userId) {
+      // User is logged in - include user_likes check
+      const { rows } = await pool.query(`
+        SELECT 
+          c.id,
+          c.content,
+          c.parent_comment_id,
+          c.is_approved,
+          c.created_at,
+          c.updated_at,
+          u.id as user_id,
+          u.username,
+          u.email,
+          u.profile_image_url,
+          COALESCE(like_counts.like_count, 0) as like_count,
+          CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END as user_liked
+        FROM comments c
+        LEFT JOIN users u ON c.user_id = u.id
+        LEFT JOIN (
+          SELECT comment_id, COUNT(*) as like_count
+          FROM comment_likes
+          GROUP BY comment_id
+        ) like_counts ON c.id = like_counts.comment_id
+        LEFT JOIN (
+          SELECT comment_id, user_id
+          FROM comment_likes
+          WHERE user_id = $1
+        ) user_likes ON c.id = user_likes.comment_id
+        WHERE c.launch_id = $2 
+          AND c.parent_comment_id IS NULL
+          ${approvedFilter}
+        ${orderClause}
+        LIMIT $3 OFFSET $4
+      `, [userId, id, parseInt(limit), parseInt(offset)]);
+      comments = rows;
+    } else {
+      // User is not logged in - no user_likes check needed
+      const { rows } = await pool.query(`
+        SELECT 
+          c.id,
+          c.content,
+          c.parent_comment_id,
+          c.is_approved,
+          c.created_at,
+          c.updated_at,
+          u.id as user_id,
+          u.username,
+          u.email,
+          u.profile_image_url,
+          COALESCE(like_counts.like_count, 0) as like_count,
+          false as user_liked
+        FROM comments c
+        LEFT JOIN users u ON c.user_id = u.id
+        LEFT JOIN (
+          SELECT comment_id, COUNT(*) as like_count
+          FROM comment_likes
+          GROUP BY comment_id
+        ) like_counts ON c.id = like_counts.comment_id
+        WHERE c.launch_id = $1 
+          AND c.parent_comment_id IS NULL
+          ${approvedFilter}
+        ${orderClause}
+        LIMIT $2 OFFSET $3
+      `, [id, parseInt(limit), parseInt(offset)]);
+      comments = rows;
+    }
+
+    // Get nested replies for each comment
+    const commentIds = comments.map(c => c.id);
+    let replies = [];
+    if (commentIds.length > 0) {
+      if (userId) {
+        // User is logged in - include user_likes check
+        const { rows: replyRows } = await pool.query(`
+          SELECT 
+            c.id,
+            c.content,
+            c.parent_comment_id,
+            c.is_approved,
+            c.created_at,
+            c.updated_at,
+            u.id as user_id,
+            u.username,
+            u.email,
+            u.profile_image_url,
+            COALESCE(like_counts.like_count, 0) as like_count,
+            CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END as user_liked
+          FROM comments c
+          LEFT JOIN users u ON c.user_id = u.id
+          LEFT JOIN (
+            SELECT comment_id, COUNT(*) as like_count
+            FROM comment_likes
+            GROUP BY comment_id
+          ) like_counts ON c.id = like_counts.comment_id
+          LEFT JOIN (
+            SELECT comment_id, user_id
+            FROM comment_likes
+            WHERE user_id = $1
+          ) user_likes ON c.id = user_likes.comment_id
+          WHERE c.launch_id = $2 
+            AND c.parent_comment_id = ANY($3::int[])
+            ${approvedFilter}
+          ORDER BY c.created_at ASC
+        `, [userId, id, commentIds]);
+        replies = replyRows;
+      } else {
+        // User is not logged in - no user_likes check needed
+        const { rows: replyRows } = await pool.query(`
+          SELECT 
+            c.id,
+            c.content,
+            c.parent_comment_id,
+            c.is_approved,
+            c.created_at,
+            c.updated_at,
+            u.id as user_id,
+            u.username,
+            u.email,
+            u.profile_image_url,
+            COALESCE(like_counts.like_count, 0) as like_count,
+            false as user_liked
+          FROM comments c
+          LEFT JOIN users u ON c.user_id = u.id
+          LEFT JOIN (
+            SELECT comment_id, COUNT(*) as like_count
+            FROM comment_likes
+            GROUP BY comment_id
+          ) like_counts ON c.id = like_counts.comment_id
+          WHERE c.launch_id = $1 
+            AND c.parent_comment_id = ANY($2::int[])
+            ${approvedFilter}
+          ORDER BY c.created_at ASC
+        `, [id, commentIds]);
+        replies = replyRows;
+      }
+    }
+
+    // Organize replies under their parent comments
+    const repliesByParent = {};
+    replies.forEach(reply => {
+      if (!repliesByParent[reply.parent_comment_id]) {
+        repliesByParent[reply.parent_comment_id] = [];
+      }
+      repliesByParent[reply.parent_comment_id].push(reply);
+    });
+
+    // Attach replies to comments
+    const commentsWithReplies = comments.map(comment => ({
+      ...comment,
+      replies: repliesByParent[comment.id] || []
+    }));
+
+    // Get total count
+    const { rows: countRows } = await pool.query(`
+      SELECT COUNT(*) as count
+      FROM comments c
+      WHERE c.launch_id = $1 AND c.parent_comment_id IS NULL ${approvedFilter}
+    `, [id]);
+
+    res.json({
+      comments: commentsWithReplies,
+      total: parseInt(countRows[0].count),
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+  } catch (error) {
+    console.error('[Comments] Error fetching comments:', error);
+    throw error; // Let asyncHandler catch it
+  }
+}));
+
+/**
+ * POST /api/launches/:id/comments
+ * Create a new comment (requires authentication)
+ */
+router.post('/:id/comments', authenticate, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { content, parent_comment_id } = req.body;
+  const userId = req.user.id;
+
+  if (!content || content.trim().length === 0) {
+    return res.status(400).json({
+      error: 'Comment content is required',
+      code: 'VALIDATION_ERROR'
+    });
+  }
+
+  if (content.length > 5000) {
+    return res.status(400).json({
+      error: 'Comment content must be less than 5000 characters',
+      code: 'VALIDATION_ERROR'
+    });
+  }
+
+  // Verify launch exists
+  const { rows: launchRows } = await pool.query('SELECT id FROM launches WHERE id = $1', [id]);
+  if (!launchRows.length) {
+    return res.status(404).json({ error: 'Launch not found', code: 'NOT_FOUND' });
+  }
+
+  // If parent_comment_id is provided, verify it exists and belongs to this launch
+  if (parent_comment_id) {
+    const { rows: parentRows } = await pool.query(
+      'SELECT id FROM comments WHERE id = $1 AND launch_id = $2',
+      [parent_comment_id, id]
+    );
+    if (!parentRows.length) {
+      return res.status(404).json({
+        error: 'Parent comment not found',
+        code: 'NOT_FOUND'
+      });
+    }
+  }
+
+  // Check email verification if required (optional - can be configured)
+  // For now, we'll allow comments without email verification
+
+  // Insert comment (auto-approve all comments - no moderation required)
+  const isApproved = true;
+
+  const { rows } = await pool.query(`
+    INSERT INTO comments (launch_id, user_id, parent_comment_id, content, is_approved, email_verified)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING id, content, parent_comment_id, is_approved, created_at, updated_at
+  `, [id, userId, parent_comment_id || null, content.trim(), isApproved, req.user.email_verified || false]);
+
+  const comment = rows[0];
+
+  // Fetch full comment with user info
+  const { rows: fullCommentRows } = await pool.query(`
+    SELECT 
+      c.id,
+      c.content,
+      c.parent_comment_id,
+      c.is_approved,
+      c.created_at,
+      c.updated_at,
+      u.id as user_id,
+      u.username,
+      u.email,
+      u.profile_image_url,
+      0 as like_count,
+      false as user_liked
+    FROM comments c
+    LEFT JOIN users u ON c.user_id = u.id
+    WHERE c.id = $1
+  `, [comment.id]);
+
+  res.status(201).json(fullCommentRows[0]);
+}));
+
+/**
+ * PATCH /api/comments/:id
+ * Update own comment (owner or moderator/admin)
+ */
+router.patch('/comments/:id', authenticate, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body;
+  const userId = req.user.id;
+
+  if (!content || content.trim().length === 0) {
+    return res.status(400).json({
+      error: 'Comment content is required',
+      code: 'VALIDATION_ERROR'
+    });
+  }
+
+  if (content.length > 5000) {
+    return res.status(400).json({
+      error: 'Comment content must be less than 5000 characters',
+      code: 'VALIDATION_ERROR'
+    });
+  }
+
+  // Check if user is moderator or admin
+  const { rows: roleRows } = await pool.query(
+    `SELECT r.name FROM user_roles ur
+     JOIN roles r ON ur.role_id = r.id
+     WHERE ur.user_id = $1`,
+    [userId]
+  );
+  const userRoles = roleRows.map(r => r.name);
+  const isModerator = userRoles.includes('moderator') || userRoles.includes('admin');
+
+  // Get comment and verify ownership or moderator status
+  const { rows: commentRows } = await pool.query(
+    'SELECT id, user_id FROM comments WHERE id = $1',
+    [id]
+  );
+
+  if (!commentRows.length) {
+    return res.status(404).json({ error: 'Comment not found', code: 'NOT_FOUND' });
+  }
+
+  const comment = commentRows[0];
+  if (comment.user_id !== userId && !isModerator) {
+    return res.status(403).json({
+      error: 'You do not have permission to edit this comment',
+      code: 'FORBIDDEN'
+    });
+  }
+
+  // Update comment
+  const { rows: updatedRows } = await pool.query(`
+    UPDATE comments 
+    SET content = $1, updated_at = NOW()
+    WHERE id = $2
+    RETURNING id, content, parent_comment_id, is_approved, created_at, updated_at
+  `, [content.trim(), id]);
+
+  // Fetch full comment with user info
+  const { rows: fullCommentRows } = await pool.query(`
+    SELECT 
+      c.id,
+      c.content,
+      c.parent_comment_id,
+      c.is_approved,
+      c.created_at,
+      c.updated_at,
+      u.id as user_id,
+      u.username,
+      u.email,
+      u.profile_image_url,
+      COALESCE(like_counts.like_count, 0) as like_count,
+      CASE WHEN user_likes.user_id IS NOT NULL THEN true ELSE false END as user_liked
+    FROM comments c
+    LEFT JOIN users u ON c.user_id = u.id
+    LEFT JOIN (
+      SELECT comment_id, COUNT(*) as like_count
+      FROM comment_likes
+      GROUP BY comment_id
+    ) like_counts ON c.id = like_counts.comment_id
+    LEFT JOIN (
+      SELECT comment_id, user_id
+      FROM comment_likes
+      ${userId ? 'WHERE user_id = $1' : 'WHERE FALSE'}
+    ) user_likes ON c.id = user_likes.comment_id
+    WHERE c.id = $2
+  `, [userId, id]);
+
+  res.json(fullCommentRows[0]);
+}));
+
+/**
+ * DELETE /api/comments/:id
+ * Delete comment (owner, moderator, or admin)
+ */
+router.delete('/comments/:id', authenticate, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  // Check if user is moderator or admin
+  const { rows: roleRows } = await pool.query(
+    `SELECT r.name FROM user_roles ur
+     JOIN roles r ON ur.role_id = r.id
+     WHERE ur.user_id = $1`,
+    [userId]
+  );
+  const userRoles = roleRows.map(r => r.name);
+  const isModerator = userRoles.includes('moderator') || userRoles.includes('admin');
+
+  // Get comment and verify ownership or moderator status
+  const { rows: commentRows } = await pool.query(
+    'SELECT id, user_id FROM comments WHERE id = $1',
+    [id]
+  );
+
+  if (!commentRows.length) {
+    return res.status(404).json({ error: 'Comment not found', code: 'NOT_FOUND' });
+  }
+
+  const comment = commentRows[0];
+  if (comment.user_id !== userId && !isModerator) {
+    return res.status(403).json({
+      error: 'You do not have permission to delete this comment',
+      code: 'FORBIDDEN'
+    });
+  }
+
+  // Delete comment (CASCADE will handle replies and likes)
+  await pool.query('DELETE FROM comments WHERE id = $1', [id]);
+
+  res.json({ deleted: true });
+}));
+
+/**
+ * POST /api/comments/:id/like
+ * Like or unlike a comment
+ */
+router.post('/comments/:id/like', authenticate, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  // Verify comment exists
+  const { rows: commentRows } = await pool.query('SELECT id FROM comments WHERE id = $1', [id]);
+  if (!commentRows.length) {
+    return res.status(404).json({ error: 'Comment not found', code: 'NOT_FOUND' });
+  }
+
+  // Check if user already liked this comment
+  const { rows: likeRows } = await pool.query(
+    'SELECT id FROM comment_likes WHERE comment_id = $1 AND user_id = $2',
+    [id, userId]
+  );
+
+  if (likeRows.length > 0) {
+    // Unlike: remove the like
+    await pool.query(
+      'DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2',
+      [id, userId]
+    );
+    res.json({ liked: false });
+  } else {
+    // Like: add the like
+    await pool.query(
+      'INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [id, userId]
+    );
+    res.json({ liked: true });
+  }
 }));
 
 module.exports = router;

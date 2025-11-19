@@ -172,16 +172,13 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   statBoxPrimary: {
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
+    // Left border removed
   },
   statBoxSuccess: {
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.success,
+    // Left border removed
   },
   statBoxFailure: {
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
+    // Left border removed
   },
   statValue: {
     fontSize: theme.fontSizes['3xl'],
