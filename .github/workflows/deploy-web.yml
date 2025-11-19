@@ -30,7 +30,7 @@ jobs:
         working-directory: ./web
         run: |
           echo "Installing web dependencies..."
-          npm ci
+          npm ci --include=optional
           echo "Verifying package.json scripts..."
           grep -A 10 '"scripts"' package.json || echo "package.json not found"
 
@@ -65,7 +65,7 @@ jobs:
             git pull origin main || echo "⚠️ Git pull skipped"
             cd web || { echo "❌ Failed to change to web directory"; exit 1; }
             echo "📦 Installing dependencies..."
-            npm ci
+            npm ci --include=optional
             echo "🔨 Building production bundle..."
             VITE_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
             echo "📁 Setting up web root directory..."
