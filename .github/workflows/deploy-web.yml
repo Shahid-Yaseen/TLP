@@ -47,6 +47,18 @@ jobs:
           VITE_API_URL: ${{ secrets.API_URL }}
         run: npm run build
 
+      - name: Upload build artifacts
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          port: 22
+          source: "web/dist/"
+          target: "/tmp/tlp-web-build"
+          strip_components: 2
+          rm: false
+
       - name: Deploy Web Frontend
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -54,39 +66,54 @@ jobs:
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
           port: 22
-          timeout: 60s
+          timeout: 120s
           script: |
             echo "🚀 Deploying web frontend..."
-            echo "📁 Ensuring directory structure..."
-            mkdir -p /opt/tlp
-            if [ ! -d "/opt/tlp/.git" ]; then
-              echo "📥 Cloning repository (first time setup)..."
-              if [ -d "/opt/tlp" ] && [ "$(ls -A /opt/tlp 2>/dev/null)" ]; then
-                echo "⚠️ /opt/tlp exists but is not a git repo. Backing up and cloning..."
-                sudo mv /opt/tlp /opt/tlp.backup.$(date +%s) 2>/dev/null || true
-              fi
-              git clone https://github.com/Shahid-Yaseen/TLP.git /opt/tlp || { echo "❌ Failed to clone repository"; exit 1; }
-            fi
-            cd /opt/tlp || { echo "❌ Failed to change to /opt/tlp"; exit 1; }
-            echo "📥 Pulling latest changes..."
-            git pull origin main || echo "⚠️ Git pull skipped"
-            cd web || { echo "❌ Failed to change to web directory"; exit 1; }
-            echo "📦 Installing dependencies..."
-            # Work around npm bug with optional dependencies
-            rm -rf node_modules
-            npm install --include=optional
-            # Explicitly install platform-specific optional dependencies (workaround for npm bug)
-            echo "Ensuring platform-specific optional dependencies are installed..."
-            npm install --save-optional @rollup/rollup-linux-x64-gnu@4.52.5 lightningcss-linux-x64-gnu@1.30.2 @tailwindcss/oxide-linux-x64-gnu@4.1.16 || true
-            echo "🔨 Building production bundle..."
-            VITE_API_URL=${{ secrets.API_URL }} npm run build || { echo "❌ Build failed"; exit 1; }
             echo "📁 Setting up web root directory..."
             sudo mkdir -p /var/www/tlp-web
-            sudo chown -R www-data:www-data /var/www/tlp-web || sudo chown -R $(whoami):$(whoami) /var/www/tlp-web || true
-            echo "📁 Copying files to web root..."
-            sudo rm -rf /var/www/tlp-web/* || { echo "⚠️ Failed to clear web root (may be empty)"; true; }
-            sudo cp -r dist/* /var/www/tlp-web/ || { echo "❌ Failed to copy files"; exit 1; }
-            sudo chown -R www-data:www-data /var/www/tlp-web || echo "⚠️ Failed to set ownership"
+            echo "🧹 Clearing old files..."
+            sudo rm -rf /var/www/tlp-web/* /var/www/tlp-web/.* 2>/dev/null || true
+            echo "📁 Checking uploaded build files..."
+            ls -la /tmp/tlp-web-build/ 2>/dev/null || echo "⚠️ /tmp/tlp-web-build not found, checking alternatives..."
+            if [ -d "/tmp/tlp-web-build/dist" ]; then
+              echo "📦 Found files in /tmp/tlp-web-build/dist"
+              sudo cp -r /tmp/tlp-web-build/dist/* /var/www/tlp-web/ || { echo "❌ Failed to copy files from /tmp/tlp-web-build/dist"; exit 1; }
+            elif [ -d "/tmp/tlp-web-build" ] && [ "$(ls -A /tmp/tlp-web-build 2>/dev/null)" ]; then
+              echo "📦 Found files in /tmp/tlp-web-build"
+              sudo cp -r /tmp/tlp-web-build/* /var/www/tlp-web/ || { echo "❌ Failed to copy files from /tmp/tlp-web-build"; exit 1; }
+            else
+              echo "❌ Build directory not found or empty at /tmp/tlp-web-build"
+              echo "Contents of /tmp:"
+              ls -la /tmp/ | grep -i tlp || echo "No TLP directories found"
+              echo "Attempting to find build files..."
+              find /tmp -name "index.html" -type f 2>/dev/null | head -5
+              exit 1
+            fi
+            echo "🔍 Verifying files were copied..."
+            if [ ! -f "/var/www/tlp-web/index.html" ]; then
+              echo "❌ index.html not found in web root!"
+              echo "Contents of /var/www/tlp-web:"
+              ls -la /var/www/tlp-web/ | head -20
+              exit 1
+            fi
+            echo "✅ Found index.html - files copied successfully"
+            echo "📊 Build contents:"
+            ls -lah /var/www/tlp-web/ | head -10
+            echo "🔐 Setting permissions..."
+            sudo chown -R www-data:www-data /var/www/tlp-web || { echo "❌ Failed to set ownership"; exit 1; }
+            sudo chmod -R 755 /var/www/tlp-web || { echo "⚠️ Failed to set permissions"; true; }
+            echo "🧹 Cleaning up temporary files..."
+            sudo rm -rf /tmp/tlp-web-build || true
+            echo "🧹 Clearing nginx cache..."
+            sudo rm -rf /var/cache/nginx/* 2>/dev/null || true
+            echo "🔄 Testing nginx configuration..."
+            sudo nginx -t || { echo "❌ Nginx configuration test failed"; exit 1; }
             echo "🔄 Reloading nginx..."
-            sudo nginx -t && sudo systemctl reload nginx || { echo "❌ Nginx reload failed"; exit 1; }
-            echo "✅ Web frontend deployed!"
+            sudo systemctl reload nginx || { echo "❌ Nginx reload failed"; exit 1; }
+            echo "⏳ Waiting 2 seconds for nginx to fully reload..."
+            sleep 2
+            echo "✅ Web frontend deployed successfully!"
+            echo "📋 Deployment summary:"
+            echo "  - Files deployed to: /var/www/tlp-web"
+            echo "  - Nginx reloaded: Yes"
+            echo "  - Timestamp: $(date)"
