@@ -22,7 +22,11 @@
     "seed:roles": "node scripts/seed_roles_permissions.js",
     "seed:launches": "node scripts/seed_launch_data.js",
     "seed:countries": "node scripts/seed_countries.js",
+    "seed:crew": "node scripts/seed_crew_members.js",
     "sync:launches": "node scripts/syncLaunches.js",
+    "sync:historical": "node scripts/fetch_historical_launches.js",
+    "sync:details": "node scripts/fetch_historical_launches.js --verbose",
+    "sync:new": "node scripts/check_new_launches.js --verbose",
     "start": "node index.js",
     "dev": "nodemon index.js"
   }

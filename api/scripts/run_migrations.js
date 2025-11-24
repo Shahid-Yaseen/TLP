@@ -87,6 +87,7 @@ const MIGRATIONS = [
   '017_ensure_launch_schema_complete.sql',
   '018_add_launch_comments.sql',
   '019_add_email_verification_code.sql',
+  '020_add_raw_api_response.sql',
 ];
 
 // Track completed migrations
