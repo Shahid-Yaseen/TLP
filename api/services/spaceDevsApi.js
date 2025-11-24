@@ -6,6 +6,7 @@
 
 const https = require('https');
 
+// Use dev API with the provided key (Token format)
 const BASE_URL = 'https://lldev.thespacedevs.com/2.3.0';
 const API_KEY = process.env.SPACE_DEVS_API_KEY || '1f7f63ed1517cdef2181117304ae4ed3a6e326f0';
 
@@ -17,15 +18,21 @@ function makeRequest(endpoint, params = {}, retries = 3) {
     const queryString = new URLSearchParams(params).toString();
     const url = `${BASE_URL}${endpoint}${queryString ? '?' + queryString : ''}`;
     
+    const urlObj = new URL(url);
     const options = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || 443,
+      path: urlObj.pathname + urlObj.search,
+      method: 'GET',
       headers: {
         'accept': 'application/json',
-        'Authorization': API_KEY
+        'Authorization': `Token ${API_KEY}`
       },
       timeout: 60000 // 60 second timeout
+      // Note: SSL certificate verification is handled by Node.js default CA store
     };
 
-    const req = https.get(url, options, (res) => {
+    const req = https.request(options, (res) => {
       let data = '';
 
       res.on('data', (chunk) => {
@@ -45,6 +52,8 @@ function makeRequest(endpoint, params = {}, retries = 3) {
         }
       });
     });
+
+    req.end();
 
     req.on('error', (error) => {
       req.destroy();
@@ -87,8 +96,16 @@ async function fetchLaunchers(params = {}) {
       ...params
     };
     
-    // Use /launch/ endpoint as per SpaceDevs API documentation
-    return await makeRequest('/launch/', defaultParams);
+    // Use /launch/ endpoint (try both singular and plural)
+    try {
+      return await makeRequest('/launch/', defaultParams);
+    } catch (error) {
+      // Fallback to plural if singular fails
+      if (error.message.includes('404')) {
+        return await makeRequest('/launches/', defaultParams);
+      }
+      throw error;
+    }
   } catch (error) {
     console.error('Error fetching launches from Space Devs API:', error.message);
     throw error;

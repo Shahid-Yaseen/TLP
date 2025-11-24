@@ -196,6 +196,8 @@ function PreviousLaunches() {
             <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
             <span>|</span>
             <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
+            <span>|</span>
+            <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
                 <span className="hidden lg:inline">|</span>
                 <Link to="/spacebase/astronauts" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
                 <span className="hidden xl:inline">|</span>
@@ -290,6 +292,7 @@ function PreviousLaunches() {
             <div className="md:hidden mt-3 pb-2 border-t border-gray-700 pt-3">
               <div className="flex flex-col gap-3 text-xs text-gray-400">
                 <Link to="/news" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP SPACE NEWS</Link>
+                <Link to="/mission" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP MISSION</Link>
                 <Link to="/spacebase/astronauts" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
                 <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1">SHOP</span>
                 <div className="border-t border-gray-700 pt-3 mt-1">

@@ -55772,3 +55772,458 @@ Error fetching launcher configuration from https://lldev.thespacedevs.com/2.3.0/
   "customers": [],
   "_source": "api-mission-primary"
 }
+Error fetching launch vulcan-wgs-11 from Space Devs API: API request failed with status 500: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Server Error (500)</title>
+</head>
+<body>
+  <h1>Server Error (500)</h1><p></p>
+</body>
+</html>
+
+Error fetching launch from API: API request failed with status 500: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Server Error (500)</title>
+</head>
+<body>
+  <h1>Server Error (500)</h1><p></p>
+</body>
+</html>
+
+[Cache] Launch 649bf8ed-f2a6-4923-aaf0-6086ad0227f5 is 1 hours old - using cached data (refreshes every 24h)
+[API] Launch 402: Fetching crew from astronaut endpoint...
+Error fetching launch vulcan-wgs-11 from Space Devs API: API request failed with status 500: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Server Error (500)</title>
+</head>
+<body>
+  <h1>Server Error (500)</h1><p></p>
+</body>
+</html>
+
+Error fetching launch from API: API request failed with status 500: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Server Error (500)</title>
+</head>
+<body>
+  <h1>Server Error (500)</h1><p></p>
+</body>
+</html>
+
+[API] Launch 402: Found 10 crew members from astronaut endpoint
+[API] Launch 402: Crew summary - DB: 0, Astronaut Endpoint: 10, JSONB: 0, Total: 10
+[API] Launch 402: Fetched array data - Updates: 2, Timeline: 0, Patches: 0, Info URLs: 0, Vid URLs: 0
+[API] Launch 402: Checking mission JSONB for payloads...
+[API] Launch 402: missionJson keys: [
+  'id',          'name',
+  'type',        'image',
+  'orbit',       'agencies',
+  'vid_urls',    'info_urls',
+  'description'
+]
+[API] Launch 402: Found primary mission payload: WGS-11
+[API] Launch 402: Found 0 spacecraft_stage entries in rocket JSONB
+[API] Launch 402: Payload summary - DB: 0, API: 1, Total: 1
+[API] Launch 402: Sample payload: {
+  "id": 6035,
+  "name": "WGS-11",
+  "type": "Communications",
+  "description": "Last mission of the Wideband Global SatCom (WGS) series.",
+  "orbit": "Geosynchronous Transfer Orbit",
+  "orbit_id": 4,
+  "agencies": [],
+  "customers": [],
+  "_source": "api-mission-primary"
+}
+[API] Launch 402: Fetching engine data from configuration URL: https://lldev.thespacedevs.com/2.3.0/launcher_configurations/200/
+Error fetching launcher configuration from https://lldev.thespacedevs.com/2.3.0/launcher_configurations/200/: API request failed with status 404: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Not Found</title>
+</head>
+<body>
+  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+</body>
+</html>
+
+[API] Launch 402: Error fetching configuration from URL: API request failed with status 404: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Not Found</title>
+</head>
+<body>
+  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+</body>
+</html>
+
+[API] Launch 402: Found 0 launcher_stage entries in rocket JSONB
+[API] Launch 402: No engines found. Rocket JSONB structure: {
+  hasRocket: true,
+  hasConfiguration: true,
+  hasConfigurationUrl: true,
+  hasConfigurationLauncherStage: false,
+  hasLauncherStage: true,
+  rocketKeys: [
+    'id',
+    'payloads',
+    'configuration',
+    'launcher_stage',
+    'spacecraft_stage'
+  ],
+  configurationKeys: [
+    'id',
+    'url',
+    'name',
+    'alias',
+    'image',
+    'active',
+    'apogee',
+    'length',
+    'program',
+    'variant',
+    'diameter',
+    'families',
+    'info_url',
+    'reusable',
+    'wiki_url',
+    'full_name',
+    'max_stage',
+    'min_stage',
+    'to_thrust',
+    'description',
+    'launch_cost',
+    'launch_mass',
+    'geo_capacity',
+    'gto_capacity',
+    'leo_capacity',
+    'manufacturer',
+    'sso_capacity',
+    'maiden_flight',
+    'response_mode',
+    'is_placeholder',
+    'failed_landings',
+    'failed_launches',
+    'pending_launches',
+    'attempted_landings',
+    'fastest_turnaround',
+    'total_launch_count',
+    'successful_landings',
+    'successful_launches',
+    'consecutive_successful_landings',
+    'consecutive_successful_launches'
+  ]
+}
+[API] Launch 402: Engine data - Found 0 engines
+[API] Launch 402: Sending response with arrays - Updates: 2, Timeline: 0, Patches: 0, Info URLs: 0, Vid URLs: 0
+[API] Launch 402: Has launch_service_provider: true, Has rocket: true, Has mission: true, Has pad: true
+[API] Launch 402: Payloads in response: 1
+[API] Launch 402: Engines in response: 0, Engines type: Array
+[API] Launch 402: Payloads type: Array
+[API] Launch 402: First payload in response: {
+  "id": 6035,
+  "name": "WGS-11",
+  "type": "Communications",
+  "description": "Last mission of the Wideband Global SatCom (WGS) series.",
+  "orbit": "Geosynchronous Transfer Orbit",
+  "orbit_id": 4,
+  "agencies": [],
+  "customers": [],
+  "_source": "api-mission-primary"
+}
+[Cache] Launch 649bf8ed-f2a6-4923-aaf0-6086ad0227f5 is 1 hours old - using cached data (refreshes every 24h)
+[API] Launch 402: Fetching crew from astronaut endpoint...
+[API] Launch 402: Found 10 crew members from astronaut endpoint
+[API] Launch 402: Crew summary - DB: 0, Astronaut Endpoint: 10, JSONB: 0, Total: 10
+[API] Launch 402: Fetched array data - Updates: 2, Timeline: 0, Patches: 0, Info URLs: 0, Vid URLs: 0
+[API] Launch 402: Checking mission JSONB for payloads...
+[API] Launch 402: missionJson keys: [
+  'id',          'name',
+  'type',        'image',
+  'orbit',       'agencies',
+  'vid_urls',    'info_urls',
+  'description'
+]
+[API] Launch 402: Found primary mission payload: WGS-11
+[API] Launch 402: Found 0 spacecraft_stage entries in rocket JSONB
+[API] Launch 402: Payload summary - DB: 0, API: 1, Total: 1
+[API] Launch 402: Sample payload: {
+  "id": 6035,
+  "name": "WGS-11",
+  "type": "Communications",
+  "description": "Last mission of the Wideband Global SatCom (WGS) series.",
+  "orbit": "Geosynchronous Transfer Orbit",
+  "orbit_id": 4,
+  "agencies": [],
+  "customers": [],
+  "_source": "api-mission-primary"
+}
+[API] Launch 402: Fetching engine data from configuration URL: https://lldev.thespacedevs.com/2.3.0/launcher_configurations/200/
+Error fetching launcher configuration from https://lldev.thespacedevs.com/2.3.0/launcher_configurations/200/: API request failed with status 404: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Not Found</title>
+</head>
+<body>
+  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+</body>
+</html>
+
+[API] Launch 402: Error fetching configuration from URL: API request failed with status 404: 
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Not Found</title>
+</head>
+<body>
+  <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+</body>
+</html>
+
+[API] Launch 402: Found 0 launcher_stage entries in rocket JSONB
+[API] Launch 402: No engines found. Rocket JSONB structure: {
+  hasRocket: true,
+  hasConfiguration: true,
+  hasConfigurationUrl: true,
+  hasConfigurationLauncherStage: false,
+  hasLauncherStage: true,
+  rocketKeys: [
+    'id',
+    'payloads',
+    'configuration',
+    'launcher_stage',
+    'spacecraft_stage'
+  ],
+  configurationKeys: [
+    'id',
+    'url',
+    'name',
+    'alias',
+    'image',
+    'active',
+    'apogee',
+    'length',
+    'program',
+    'variant',
+    'diameter',
+    'families',
+    'info_url',
+    'reusable',
+    'wiki_url',
+    'full_name',
+    'max_stage',
+    'min_stage',
+    'to_thrust',
+    'description',
+    'launch_cost',
+    'launch_mass',
+    'geo_capacity',
+    'gto_capacity',
+    'leo_capacity',
+    'manufacturer',
+    'sso_capacity',
+    'maiden_flight',
+    'response_mode',
+    'is_placeholder',
+    'failed_landings',
+    'failed_launches',
+    'pending_launches',
+    'attempted_landings',
+    'fastest_turnaround',
+    'total_launch_count',
+    'successful_landings',
+    'successful_launches',
+    'consecutive_successful_landings',
+    'consecutive_successful_launches'
+  ]
+}
+[API] Launch 402: Engine data - Found 0 engines
+[API] Launch 402: Sending response with arrays - Updates: 2, Timeline: 0, Patches: 0, Info URLs: 0, Vid URLs: 0
+[API] Launch 402: Has launch_service_provider: true, Has rocket: true, Has mission: true, Has pad: true
+[API] Launch 402: Payloads in response: 1
+[API] Launch 402: Engines in response: 0, Engines type: Array
+[API] Launch 402: Payloads type: Array
+[API] Launch 402: First payload in response: {
+  "id": 6035,
+  "name": "WGS-11",
+  "type": "Communications",
+  "description": "Last mission of the Wideband Global SatCom (WGS) series.",
+  "orbit": "Geosynchronous Transfer Orbit",
+  "orbit_id": 4,
+  "agencies": [],
+  "customers": [],
+  "_source": "api-mission-primary"
+}
+Request timed out, retrying... (3 retries left)
+Request failed, retrying... (3 retries left)
+Error fetching launch vulcan-wgs-11 from Space Devs API: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+Error fetching launch from API: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+Error checking cache expiration: Error: Connection terminated due to connection timeout
+    at /Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.isCacheExpired (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:42:22)
+    at async /Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/routes/launches.js:450:26 {
+  [cause]: Error: Connection terminated unexpectedly
+      at Connection.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg/lib/client.js:136:73)
+      at Object.onceWrapper (node:events:621:28)
+      at Connection.emit (node:events:507:28)
+      at Socket.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg/lib/connection.js:62:12)
+      at Socket.emit (node:events:507:28)
+      at TCP.<anonymous> (node:net:351:12)
+}
+Cache expired, starting background sync from external API...
+Cache expired, fetching all launches from external API...
+Starting to fetch all launches from Space Devs API...
+Error querying launches: Error: Connection terminated due to connection timeout
+    at /Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/routes/launches.js:468:30 {
+  [cause]: Error: Connection terminated unexpectedly
+      at Connection.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg/lib/client.js:136:73)
+      at Object.onceWrapper (node:events:621:28)
+      at Connection.emit (node:events:507:28)
+      at Socket.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg/lib/connection.js:62:12)
+      at Socket.emit (node:events:507:28)
+      at TCP.<anonymous> (node:net:351:12)
+}
+Error: Error: Connection terminated due to connection timeout
+    at /Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/routes/launches.js:468:30 {
+  [cause]: Error: Connection terminated unexpectedly
+      at Connection.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg/lib/client.js:136:73)
+      at Object.onceWrapper (node:events:621:28)
+      at Connection.emit (node:events:507:28)
+      at Socket.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/node_modules/pg/lib/connection.js:62:12)
+      at Socket.emit (node:events:507:28)
+      at TCP.<anonymous> (node:net:351:12)
+}
+Error fetching launch vulcan-wgs-11 from Space Devs API: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+Error fetching launch from API: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+Error fetching launches from Space Devs API: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+Error fetching all launches: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+Error in full sync from external API: Error: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+    at ClientRequest.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/spaceDevsApi.js:57:16)
+    at ClientRequest.emit (node:events:507:28)
+    at emitErrorEvent (node:_http_client:104:11)
+    at TLSSocket.socketErrorListener (node:_http_client:518:5)
+    at TLSSocket.emit (node:events:507:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Error in background sync from external API: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+[Cache] Launch 649bf8ed-f2a6-4923-aaf0-6086ad0227f5 is 12 hours old - using cached data (refreshes every 24h)
+[API] Launch 402: Fetching crew from astronaut endpoint...
+Error fetching astronauts for launch 649bf8ed-f2a6-4923-aaf0-6086ad0227f5 from Space Devs API: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+[API] Launch 402: Crew summary - DB: 0, Astronaut Endpoint: 0, JSONB: 0, Total: 0
+[API] Launch 402: Fetched array data - Updates: 2, Timeline: 0, Patches: 0, Info URLs: 0, Vid URLs: 0
+[API] Launch 402: Checking mission JSONB for payloads...
+[API] Launch 402: missionJson keys: [
+  'id',          'name',
+  'type',        'image',
+  'orbit',       'agencies',
+  'vid_urls',    'info_urls',
+  'description'
+]
+[API] Launch 402: Found primary mission payload: WGS-11
+[API] Launch 402: Found 0 spacecraft_stage entries in rocket JSONB
+[API] Launch 402: Payload summary - DB: 0, API: 1, Total: 1
+[API] Launch 402: Sample payload: {
+  "id": 6035,
+  "name": "WGS-11",
+  "type": "Communications",
+  "description": "Last mission of the Wideband Global SatCom (WGS) series.",
+  "orbit": "Geosynchronous Transfer Orbit",
+  "orbit_id": 4,
+  "agencies": [],
+  "customers": [],
+  "_source": "api-mission-primary"
+}
+[API] Launch 402: Fetching engine data from configuration URL: https://lldev.thespacedevs.com/2.3.0/launcher_configurations/200/
+Error fetching launcher configuration from https://lldev.thespacedevs.com/2.3.0/launcher_configurations/200/: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+[API] Launch 402: Error fetching configuration from URL: API request error: getaddrinfo ENOTFOUND lldev.thespacedevs.com
+[API] Launch 402: Found 0 launcher_stage entries in rocket JSONB
+[API] Launch 402: No engines found. Rocket JSONB structure: {
+  hasRocket: true,
+  hasConfiguration: true,
+  hasConfigurationUrl: true,
+  hasConfigurationLauncherStage: false,
+  hasLauncherStage: true,
+  rocketKeys: [
+    'id',
+    'payloads',
+    'configuration',
+    'launcher_stage',
+    'spacecraft_stage'
+  ],
+  configurationKeys: [
+    'id',
+    'url',
+    'name',
+    'alias',
+    'image',
+    'active',
+    'apogee',
+    'length',
+    'program',
+    'variant',
+    'diameter',
+    'families',
+    'info_url',
+    'reusable',
+    'wiki_url',
+    'full_name',
+    'max_stage',
+    'min_stage',
+    'to_thrust',
+    'description',
+    'launch_cost',
+    'launch_mass',
+    'geo_capacity',
+    'gto_capacity',
+    'leo_capacity',
+    'manufacturer',
+    'sso_capacity',
+    'maiden_flight',
+    'response_mode',
+    'is_placeholder',
+    'failed_landings',
+    'failed_launches',
+    'pending_launches',
+    'attempted_landings',
+    'fastest_turnaround',
+    'total_launch_count',
+    'successful_landings',
+    'successful_launches',
+    'consecutive_successful_landings',
+    'consecutive_successful_launches'
+  ]
+}
+[API] Launch 402: Engine data - Found 0 engines
+[API] Launch 402: Sending response with arrays - Updates: 2, Timeline: 0, Patches: 0, Info URLs: 0, Vid URLs: 0
+[API] Launch 402: Has launch_service_provider: true, Has rocket: true, Has mission: true, Has pad: true
+[API] Launch 402: Payloads in response: 1
+[API] Launch 402: Engines in response: 0, Engines type: Array
+[API] Launch 402: Payloads type: Array
+[API] Launch 402: First payload in response: {
+  "id": 6035,
+  "name": "WGS-11",
+  "type": "Communications",
+  "description": "Last mission of the Wideband Global SatCom (WGS) series.",
+  "orbit": "Geosynchronous Transfer Orbit",
+  "orbit_id": 4,
+  "agencies": [],
+  "customers": [],
+  "_source": "api-mission-primary"
+}
+SIGTERM signal received: closing HTTP server

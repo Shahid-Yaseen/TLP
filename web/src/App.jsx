@@ -5,6 +5,7 @@ import UpcomingLaunches from './pages/UpcomingLaunches';
 import PreviousLaunches from './pages/PreviousLaunches';
 import Homepage from './pages/Homepage';
 import AboutUs from './pages/AboutUs';
+import Mission from './pages/Mission';
 import News from './pages/News';
 import ArticleDetail from './pages/ArticleDetail';
 import AstronautsList from './pages/spacebase/AstronautsList';
@@ -32,6 +33,7 @@ function App() {
         <Route path="/" element={<Navigate to="/launches/upcoming" replace />} />
         <Route path="/home" element={<Homepage />} />
         <Route path="/about" element={<AboutUs />} />
+        <Route path="/mission" element={<Mission />} />
         <Route path="/launches" element={<Navigate to="/launches/upcoming" replace />} />
         <Route path="/launches/upcoming" element={<UpcomingLaunches />} />
         <Route path="/launches/previous" element={<PreviousLaunches />} />
@@ -51,7 +53,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-email/:token" element={<EmailVerification />} />
+        <Route path="/verify-email" element={<EmailVerification />} />
         
         {/* Protected Routes */}
         <Route

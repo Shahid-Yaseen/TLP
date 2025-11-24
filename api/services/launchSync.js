@@ -751,10 +751,10 @@ async function syncLaunchFromApi(mappedLaunch) {
         orbital_launch_attempt_count_year, location_launch_attempt_count_year, pad_launch_attempt_count_year, agency_launch_attempt_count_year,
         status_json, image_json, infographic_json, weather_concerns_json, hashtag_json,
         launch_service_provider_json, rocket_json, mission_json, pad_json, program_json,
-        updated_at
+        raw_data, updated_at
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50
       )
       ON CONFLICT (external_id)
       DO UPDATE SET
@@ -805,6 +805,7 @@ async function syncLaunchFromApi(mappedLaunch) {
         mission_json = EXCLUDED.mission_json,
         pad_json = EXCLUDED.pad_json,
         program_json = EXCLUDED.program_json,
+        raw_data = COALESCE(EXCLUDED.raw_data, launches.raw_data),
         updated_at = EXCLUDED.updated_at
       RETURNING id, external_id, name
     `;
@@ -858,6 +859,7 @@ async function syncLaunchFromApi(mappedLaunch) {
       mappedLaunch.mission_json ? JSON.stringify(mappedLaunch.mission_json) : null,
       mappedLaunch.pad_json ? JSON.stringify(mappedLaunch.pad_json) : null,
       mappedLaunch.program_json ? JSON.stringify(mappedLaunch.program_json) : null,
+      mappedLaunch.raw_data ? JSON.stringify(mappedLaunch.raw_data) : null,
       new Date().toISOString() // Always use current time for cache tracking
     ]);
     

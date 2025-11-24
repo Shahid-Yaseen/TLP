@@ -262,6 +262,8 @@ function LaunchCenter() {
             <span>|</span>
             <span>TLP SPACE NEWS</span>
             <span>|</span>
+            <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
+            <span>|</span>
             <span>SPACEBASE</span>
             <span>|</span>
             <span>SHOP</span>

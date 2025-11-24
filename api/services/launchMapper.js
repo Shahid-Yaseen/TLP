@@ -105,7 +105,10 @@ function mapLauncherToLaunch(launcherData) {
     rocket_json: launcherData.rocket || null,
     mission_json: launcherData.mission || null,
     pad_json: launcherData.pad || null,
-    program_json: launcherData.program || null
+    program_json: launcherData.program || null,
+    
+    // Store complete raw API response for full data preservation
+    raw_data: launcherData || null
   };
 
   return mapped;

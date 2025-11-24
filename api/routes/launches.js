@@ -767,6 +767,10 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     return value;
   };
 
+  // If we have raw_data, use it as the base and merge with database fields
+  // This ensures we have the complete detailed API response
+  let rawData = parseJsonb(launchRow.raw_data);
+  
   // Parse JSONB columns
   const statusJson = parseJsonb(launchRow.status_json);
   const imageJson = parseJsonb(launchRow.image_json);
@@ -779,17 +783,21 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
   const netPrecision = parseJsonb(launchRow.net_precision);
   const weatherConcernsJson = parseJsonb(launchRow.weather_concerns_json);
   const hashtagJson = parseJsonb(launchRow.hashtag_json);
+  
+  // If we have raw_data, prefer fields from it (they're the complete API response)
+  // Otherwise use the individual JSONB fields
+  const useRawData = rawData && typeof rawData === 'object';
 
-  // Build status object
-  const status = statusJson || (launchRow.status_id ? {
+  // Build status object - use raw_data if available, otherwise use individual fields
+  const status = useRawData ? (rawData.status || statusJson) : (statusJson || (launchRow.status_id ? {
     id: launchRow.status_id,
     name: launchRow.status_name || null,
     abbrev: launchRow.status_abbrev || null,
     description: null
-  } : null);
+  } : null));
 
-  // Build launch_service_provider object - use JSONB directly if available, otherwise fallback
-  const launchServiceProvider = launchServiceProviderJson || (launchRow.provider_id ? {
+  // Build launch_service_provider object - use raw_data if available, otherwise use individual fields
+  const launchServiceProvider = useRawData ? (rawData.launch_service_provider || rawData.lsp || launchServiceProviderJson) : (launchServiceProviderJson || (launchRow.provider_id ? {
     id: launchRow.provider_id,
     url: null,
     name: launchRow.provider || null,
@@ -807,11 +815,11 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     nation_url: null,
     wiki_url: null,
     info_url: null
-  } : null);
+  } : null));
 
-  // Build rocket object - use JSONB directly if available, otherwise fallback
+  // Build rocket object - use raw_data if available, otherwise use individual fields
   // Ensure rocket always has a configuration property
-  let rocket = rocketJson;
+  let rocket = useRawData ? (rawData.rocket || rocketJson) : rocketJson;
   if (!rocket && launchRow.rocket_id) {
     rocket = {
       id: launchRow.rocket_id,
@@ -860,8 +868,8 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     };
   }
 
-  // Build mission object - use JSONB directly if available, otherwise fallback
-  const mission = missionJson || (launchRow.mission_type_id ? {
+  // Build mission object - use raw_data if available, otherwise use individual fields
+  const mission = useRawData ? (rawData.mission || missionJson) : (missionJson || (launchRow.mission_type_id ? {
     id: launchRow.mission_type_id,
     name: launchRow.mission_type || null,
     description: null,
@@ -874,10 +882,10 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     agencies: null,
     info_urls: launchRow.mission_info_urls ? (typeof launchRow.mission_info_urls === 'string' ? JSON.parse(launchRow.mission_info_urls) : launchRow.mission_info_urls) : null,
     vid_urls: launchRow.mission_vid_urls ? (typeof launchRow.mission_vid_urls === 'string' ? JSON.parse(launchRow.mission_vid_urls) : launchRow.mission_vid_urls) : null
-  } : null);
+  } : null));
 
-  // Build pad object - use JSONB directly if available, otherwise fallback
-  const pad = padJson || (launchRow.pad_id ? {
+  // Build pad object - use raw_data if available, otherwise use individual fields
+  const pad = useRawData ? (rawData.pad || padJson) : (padJson || (launchRow.pad_id ? {
     id: launchRow.pad_id,
     url: null,
     agency_id: null,
@@ -900,10 +908,10 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     map_image: null,
     total_launch_count: null,
     orbital_launch_attempt_count: null
-  } : null);
+  } : null));
 
-  // Build image object
-  const image = imageJson || (launchRow.mission_image_url ? {
+  // Build image object - use raw_data if available
+  const image = useRawData ? (rawData.image || imageJson) : (imageJson || (launchRow.mission_image_url ? {
     image_url: launchRow.mission_image_url,
     thumbnail_url: null,
     credit: null,
@@ -913,10 +921,10 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     license_link: null,
     single_use: null,
     variants: null
-  } : null);
+  } : null));
 
-  // Build infographic object
-  const infographic = infographicJson || (launchRow.infographic_url ? {
+  // Build infographic object - use raw_data if available
+  const infographic = useRawData ? (rawData.infographic || infographicJson) : (infographicJson || (launchRow.infographic_url ? {
     image_url: launchRow.infographic_url,
     thumbnail_url: null,
     credit: null,
@@ -926,70 +934,101 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     license_link: null,
     single_use: null,
     variants: null
-  } : null);
+  } : null));
 
-  // Build program array - ensure it's always an array
+  // Build program array - use raw_data if available, ensure it's always an array
   let program = [];
-  if (Array.isArray(programJson)) {
+  if (useRawData && rawData.program) {
+    if (Array.isArray(rawData.program)) {
+      program = rawData.program;
+    } else if (typeof rawData.program === 'object') {
+      program = [rawData.program];
+    }
+  } else if (Array.isArray(programJson)) {
     program = programJson;
   } else if (programJson && typeof programJson === 'object') {
     program = [programJson];
   }
 
   // Build response object matching Space Devs API format EXACTLY
-  // Use the stored JSONB fields directly from Space Devs API
-  const response = {
-    id: launchRow.external_id || launchRow.id.toString(),
-    database_id: launchRow.id, // Include numeric database ID for API calls
-    url: launchRow.url || null,
-    name: launchRow.name || null,
-    slug: launchRow.slug || null,
-    launch_designator: launchRow.launch_designator || null,
-    response_mode: launchRow.response_mode || 'normal',
-    last_updated: launchRow.updated_at || launchRow.created_at || new Date().toISOString(),
-    net: launchRow.launch_date || launchRow.net || null,
-    net_precision: netPrecision || null,
-    window_start: launchRow.window_start || null,
-    window_end: launchRow.window_end || null,
-    probability: launchRow.probability !== null && launchRow.probability !== undefined ? launchRow.probability : null,
-    weather_concerns: weatherConcernsJson || launchRow.weather_concerns || null,
-    failreason: launchRow.failreason || null,
-    hashtag: hashtagJson || launchRow.hashtag || null,
-    webcast_live: launchRow.webcast_live || false,
-    // Use raw JSONB fields directly from Space Devs API
-    image: imageJson || image,
-    infographic: infographicJson || infographic,
-    program: programJson || program,
+  // If we have raw_data, use it as base and merge with database-specific fields
+  let response;
+  
+  if (useRawData) {
+    // Use raw_data as base and merge with database fields and arrays
+    response = {
+      ...rawData, // Start with complete API response
+      // Override with database-specific fields
+      database_id: launchRow.id, // Include numeric database ID
+      // Ensure arrays from database are included (they might be more complete)
+      updates: relatedData.updates || rawData.updates || [],
+      info_urls: relatedData.info_urls || rawData.info_urls || [],
+      vid_urls: relatedData.vid_urls || rawData.vid_urls || [],
+      timeline: relatedData.timeline || rawData.timeline || [],
+      mission_patches: relatedData.mission_patches || rawData.mission_patches || [],
+      // Additional related data from database
+      payloads: relatedData.payloads || [],
+      crew: relatedData.crew || [],
+      hazards: relatedData.hazards || [],
+      recovery: relatedData.recovery || null,
+      windows: relatedData.windows || [],
+      engines: relatedData.engines || []
+    };
+  } else {
+    // Fallback to building response from individual fields
+    response = {
+      id: launchRow.external_id || launchRow.id.toString(),
+      database_id: launchRow.id, // Include numeric database ID for API calls
+      url: launchRow.url || null,
+      name: launchRow.name || null,
+      slug: launchRow.slug || null,
+      launch_designator: launchRow.launch_designator || null,
+      response_mode: launchRow.response_mode || 'normal',
+      last_updated: launchRow.updated_at || launchRow.created_at || new Date().toISOString(),
+      net: launchRow.launch_date || launchRow.net || null,
+      net_precision: netPrecision || null,
+      window_start: launchRow.window_start || null,
+      window_end: launchRow.window_end || null,
+      probability: launchRow.probability !== null && launchRow.probability !== undefined ? launchRow.probability : null,
+      weather_concerns: weatherConcernsJson || launchRow.weather_concerns || null,
+      failreason: launchRow.failreason || null,
+      hashtag: hashtagJson || launchRow.hashtag || null,
+      webcast_live: launchRow.webcast_live || false,
+      // Use raw JSONB fields directly from Space Devs API
+      image: imageJson || image,
+      infographic: infographicJson || infographic,
+      program: programJson || program,
     orbital_launch_attempt_count: launchRow.orbital_launch_attempt_count !== null && launchRow.orbital_launch_attempt_count !== undefined ? launchRow.orbital_launch_attempt_count : null,
     location_launch_attempt_count: launchRow.location_launch_attempt_count !== null && launchRow.location_launch_attempt_count !== undefined ? launchRow.location_launch_attempt_count : null,
     pad_launch_attempt_count: launchRow.pad_launch_attempt_count !== null && launchRow.pad_launch_attempt_count !== undefined ? launchRow.pad_launch_attempt_count : null,
     agency_launch_attempt_count: launchRow.agency_launch_attempt_count !== null && launchRow.agency_launch_attempt_count !== undefined ? launchRow.agency_launch_attempt_count : null,
-    orbital_launch_attempt_count_year: launchRow.orbital_launch_attempt_count_year !== null && launchRow.orbital_launch_attempt_count_year !== undefined ? launchRow.orbital_launch_attempt_count_year : null,
-    location_launch_attempt_count_year: launchRow.location_launch_attempt_count_year !== null && launchRow.location_launch_attempt_count_year !== undefined ? launchRow.location_launch_attempt_count_year : null,
-    pad_launch_attempt_count_year: launchRow.pad_launch_attempt_count_year !== null && launchRow.pad_launch_attempt_count_year !== undefined ? launchRow.pad_launch_attempt_count_year : null,
-    agency_launch_attempt_count_year: launchRow.agency_launch_attempt_count_year !== null && launchRow.agency_launch_attempt_count_year !== undefined ? launchRow.agency_launch_attempt_count_year : null,
-    pad_turnaround: launchRow.pad_turnaround || null,
-    flightclub_url: launchRow.flightclub_url || null,
-    // Use raw JSONB objects directly - these are already in Space Devs API format
-    status: statusJson || status,
-    launch_service_provider: launchServiceProviderJson || launchServiceProvider,
-    rocket: rocketJson || rocket,
-    mission: missionJson || mission,
-    pad: padJson || pad,
-    // Array fields from database
-    updates: relatedData.updates || [],
-    info_urls: relatedData.info_urls || [],
-    vid_urls: relatedData.vid_urls || [],
-    timeline: relatedData.timeline || [],
-    mission_patches: relatedData.mission_patches || [],
-    // Additional related data
-    payloads: relatedData.payloads || [],
-    crew: relatedData.crew || [],
-    hazards: relatedData.hazards || [],
-    recovery: relatedData.recovery || null,
-    windows: relatedData.windows || [],
-    engines: relatedData.engines || []
-  };
+      orbital_launch_attempt_count_year: launchRow.orbital_launch_attempt_count_year !== null && launchRow.orbital_launch_attempt_count_year !== undefined ? launchRow.orbital_launch_attempt_count_year : null,
+      location_launch_attempt_count_year: launchRow.location_launch_attempt_count_year !== null && launchRow.location_launch_attempt_count_year !== undefined ? launchRow.location_launch_attempt_count_year : null,
+      pad_launch_attempt_count_year: launchRow.pad_launch_attempt_count_year !== null && launchRow.pad_launch_attempt_count_year !== undefined ? launchRow.pad_launch_attempt_count_year : null,
+      agency_launch_attempt_count_year: launchRow.agency_launch_attempt_count_year !== null && launchRow.agency_launch_attempt_count_year !== undefined ? launchRow.agency_launch_attempt_count_year : null,
+      pad_turnaround: launchRow.pad_turnaround || null,
+      flightclub_url: launchRow.flightclub_url || null,
+      // Use raw JSONB objects directly - these are already in Space Devs API format
+      status: statusJson || status,
+      launch_service_provider: launchServiceProviderJson || launchServiceProvider,
+      rocket: rocketJson || rocket,
+      mission: missionJson || mission,
+      pad: padJson || pad,
+      // Array fields from database
+      updates: relatedData.updates || [],
+      info_urls: relatedData.info_urls || [],
+      vid_urls: relatedData.vid_urls || [],
+      timeline: relatedData.timeline || [],
+      mission_patches: relatedData.mission_patches || [],
+      // Additional related data
+      payloads: relatedData.payloads || [],
+      crew: relatedData.crew || [],
+      hazards: relatedData.hazards || [],
+      recovery: relatedData.recovery || null,
+      windows: relatedData.windows || [],
+      engines: relatedData.engines || []
+    };
+  }
 
   return response;
 }
@@ -1167,61 +1206,19 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   }
 
   let launch = launchRows[0];
-
-  // Cache data for 24 hours - only fetch from external API if data is older than 1 day
-  const CACHE_DURATION_HOURS = 24;
-  const now = new Date();
-  const updatedAt = launch.updated_at ? new Date(launch.updated_at) : null;
-  const hoursSinceUpdate = updatedAt ? (now - updatedAt) / (1000 * 60 * 60) : Infinity;
-  const shouldRefresh = hoursSinceUpdate > CACHE_DURATION_HOURS;
-
-  if (launch.external_id && shouldRefresh) {
-    console.log(`[Cache] Launch ${launch.external_id} is ${Math.round(hoursSinceUpdate)} hours old - refreshing from external API...`);
-    try {
-      const apiData = await spaceDevsApi.fetchLauncherById(launch.external_id);
-      if (apiData) {
-        console.log(`[Cache] Syncing launch ${launch.external_id} with external API data...`);
-        const mappedLaunch = launchMapper.mapLauncherToLaunch(apiData);
-        const syncedLaunch = await launchSync.syncLaunchFromApi(mappedLaunch);
-        
-        // Re-fetch launch from DB with all joins after sync
-        const { rows: syncedLaunchRows } = await pool.query(`
-          SELECT 
-            launches.*,
-            providers.name as provider,
-            providers.abbrev as provider_abbrev,
-            rockets.name as rocket,
-            orbits.code as orbit,
-            orbits.description as orbit_name,
-            launch_sites.name as site,
-            launch_sites.country as site_country,
-            launch_pads.name as pad_name,
-            mission_types.name as mission_type,
-            launch_statuses.name as status_name,
-            launch_statuses.abbrev as status_abbrev
-          FROM launches
-          LEFT JOIN providers ON launches.provider_id = providers.id
-          LEFT JOIN rockets ON launches.rocket_id = rockets.id
-          LEFT JOIN orbits ON launches.orbit_id = orbits.id
-          LEFT JOIN launch_sites ON launches.site_id = launch_sites.id
-          LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
-          LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
-          LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
-          WHERE launches.id = $1
-        `, [syncedLaunch.id]);
-        
-        if (syncedLaunchRows.length > 0) {
-          launch = syncedLaunchRows[0];
-          console.log(`[Cache] Successfully synced launch ${launch.external_id} with external API data`);
-        }
-      }
-    } catch (apiError) {
-      console.error('[Cache] Error fetching from external API:', apiError.message);
-      // Continue with existing database data if API fails
-      apiUnavailable = true;
-    }
+  
+  // Track data source for logging
+  const dataSource = launch.raw_data ? 'DATABASE (raw_data)' : 'DATABASE (individual fields)';
+  const hasRawData = !!launch.raw_data;
+  
+  // Use database data - no external API calls if we have raw_data
+  // The raw_data contains the complete detailed API response
+  if (launch.raw_data) {
+    console.log(`[API] ✅ Using ${dataSource} for launch ${launch.external_id || launch.id} - NO external API call`);
+    // We have complete data in raw_data, no need to fetch from external API
   } else if (launch.external_id) {
-    console.log(`[Cache] Launch ${launch.external_id} is ${Math.round(hoursSinceUpdate)} hours old - using cached data (refreshes every ${CACHE_DURATION_HOURS}h)`);
+    // Only fetch from external API if we don't have raw_data and it's a new launch
+    console.log(`[API] ⚠️ Using ${dataSource} for launch ${launch.external_id} - missing raw_data (older record)`);
   }
 
   // Get payloads (use launch.id after potential sync)
@@ -1925,16 +1922,17 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       console.warn(`[API] Launch ${launchId}: Transformation warning - launch_service_provider missing but launch_service_provider_json exists`);
     }
     
-    // Add cache metadata to response
+    // Add cache metadata to response - track data source
+    const now = new Date();
+    const updatedAt = launch.updated_at ? new Date(launch.updated_at) : null;
     const cacheAge = updatedAt ? Math.round((now - updatedAt) / (1000 * 60 * 60)) : null;
-    const nextRefresh = updatedAt ? new Date(updatedAt.getTime() + (CACHE_DURATION_HOURS * 60 * 60 * 1000)) : null;
     
     formattedLaunch._cache = {
-      cached: !shouldRefresh,
+      cached: true, // Always true since we're using database
+      data_source: hasRawData ? 'database_raw_data' : 'database_individual_fields',
       last_updated: launch.updated_at,
       age_hours: cacheAge,
-      next_refresh: nextRefresh,
-      cache_duration_hours: CACHE_DURATION_HOURS
+      source: dataSource // Track where data came from
     };
     
     // Add warning if API was unavailable
@@ -2329,8 +2327,13 @@ router.post('/:id/comments', authenticate, asyncHandler(async (req, res) => {
     }
   }
 
-  // Check email verification if required (optional - can be configured)
-  // For now, we'll allow comments without email verification
+  // Check email verification - users must verify their email before commenting
+  if (!req.user.email_verified) {
+    return res.status(403).json({
+      error: 'Please verify your email address before commenting. Check your inbox for the verification code.',
+      code: 'EMAIL_NOT_VERIFIED'
+    });
+  }
 
   // Insert comment (auto-approve all comments - no moderation required)
   const isApproved = true;

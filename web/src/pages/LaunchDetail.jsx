@@ -2256,34 +2256,32 @@ const LaunchDetail = () => {
                 {/* Launch Facility and Pad */}
                 <div className="space-y-3 text-sm">
                   {(pad.name || pad.location) && (
-                  <div className="flex items-start">
-                    <span className="text-white font-semibold w-32 shrink-0">LAUNCH FACILITY:</span>
-                    <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                      <div className="text-white whitespace-normal">
-                        {pad.location?.name ? (
-                          pad.location.name.toUpperCase().split(' ').map((word, idx, arr) => {
-                            // Break "NASA KENNEDY SPACE CENTER" into "NASA KENNEDY" and "SPACE CENTER"
-                            if (word === 'SPACE' && arr[idx - 1] === 'KENNEDY') {
-                              return <div key={idx}>{word}</div>;
-                            }
-                            return <span key={idx}>{idx > 0 ? ' ' : ''}{word}</span>;
-                          })
-                        ) : (
-                          <div>TBD</div>
-                  )}
-                </div>
-            </div>
-          </div>
+                  <div className="flex items-start relative">
+                    <span className="text-white font-semibold flex-1 text-right pr-3">LAUNCH FACILITY:</span>
+                    <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                    <div className="text-white flex-1 pl-3 whitespace-normal">
+                      {pad.location?.name ? (
+                        pad.location.name.toUpperCase().split(' ').map((word, idx, arr) => {
+                          // Break "NASA KENNEDY SPACE CENTER" into "NASA KENNEDY" and "SPACE CENTER"
+                          if (word === 'SPACE' && arr[idx - 1] === 'KENNEDY') {
+                            return <div key={idx}>{word}</div>;
+                          }
+                          return <span key={idx}>{idx > 0 ? ' ' : ''}{word}</span>;
+                        })
+                      ) : (
+                        <div>TBD</div>
+                      )}
+                    </div>
+                  </div>
                   )}
                   {pad.name && (
-                  <div className="flex items-start">
-                    <span className="text-white font-semibold w-32 shrink-0">LAUNCH PAD:</span>
-                    <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                      <div className="text-white">
-                        {pad.name?.toUpperCase() || 'TBD'}
-              </div>
-              </div>
-            </div>
+                  <div className="flex items-start relative">
+                    <span className="text-white font-semibold flex-1 text-right pr-3">LAUNCH PAD:</span>
+                    <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                    <div className="text-white flex-1 pl-3">
+                      {pad.name?.toUpperCase() || 'TBD'}
+                    </div>
+                  </div>
                   )}
               </div>
               </div>
@@ -2293,54 +2291,50 @@ const LaunchDetail = () => {
             <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
               <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">PAYLOAD OVERVIEW</h3>
               <div className="p-4 space-y-3 text-sm">
-                <div className="flex items-start">
-                  <span className="text-white font-semibold w-32 shrink-0">CUSTOMER:</span>
-                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                    <div className="text-white">
-                      {launch.payloads && launch.payloads.length > 0 && launch.payloads[0]?.customers && Array.isArray(launch.payloads[0].customers) && launch.payloads[0].customers.length > 0
-                        ? launch.payloads[0].customers.join(', ').toUpperCase()
-                        : (launchServiceProvider?.name || 'TBD').toUpperCase()}
-                </div>
-                </div>
-                </div>
-                <div className="flex items-start">
-                  <span className="text-white font-semibold w-32 shrink-0">PAYLOAD:</span>
-                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                    <div className="text-white">
-                      {launch.payloads && launch.payloads.length > 0 ? (
-                        launch.payloads.map((p, idx) => (
-                          <div key={idx}>{p.name?.toUpperCase() || 'UNNAMED PAYLOAD'}</div>
-                    ))
-                  ) : (
-                        <div>TBD</div>
-                )}
-              </div>
-            </div>
-                </div>
-                <div className="flex items-start">
-                  <span className="text-white font-semibold w-32 shrink-0">PAYLOAD MASS:</span>
-                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                    <div className="text-white">
-                      {launch.payloads && launch.payloads.length > 0 ? (() => {
-                        const totalMassKg = launch.payloads.reduce((sum, p) => sum + (parseFloat(p.mass_kg) || 0), 0);
-                        if (totalMassKg === 0) return 'TBD';
-                        const totalMassLb = Math.round(totalMassKg * 2.20462);
-                        const formattedKg = totalMassKg.toLocaleString();
-                        const formattedLb = totalMassLb.toLocaleString();
-                        // Format with space after comma: "36, 000lb"
-                        const formattedLbWithSpace = formattedLb.replace(/,(\d{3})/g, ', $1');
-                        return `${formattedKg}kg (${formattedLbWithSpace}lb)`;
-                      })() : 'TBD'}
+                <div className="flex items-start relative">
+                  <span className="text-white font-semibold flex-1 text-right pr-3">CUSTOMER:</span>
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                  <div className="text-white flex-1 pl-3">
+                    {launch.payloads && launch.payloads.length > 0 && launch.payloads[0]?.customers && Array.isArray(launch.payloads[0].customers) && launch.payloads[0].customers.length > 0
+                      ? launch.payloads[0].customers.join(', ').toUpperCase()
+                      : (launchServiceProvider?.name || 'TBD').toUpperCase()}
                   </div>
-                  </div>
-              </div>
-                <div className="flex items-start">
-                  <span className="text-white font-semibold w-32 shrink-0">DESTINATION:</span>
-                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                    <div className="text-white">
-                      {((launch.payloads && launch.payloads.length > 0 && launch.payloads[0]?.orbit?.abbrev) || mission?.orbit?.abbrev || 'TBD').toUpperCase()}
-            </div>
                 </div>
+                <div className="flex items-start relative">
+                  <span className="text-white font-semibold flex-1 text-right pr-3">PAYLOAD:</span>
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                  <div className="text-white flex-1 pl-3">
+                    {launch.payloads && launch.payloads.length > 0 ? (
+                      launch.payloads.map((p, idx) => (
+                        <div key={idx}>{p.name?.toUpperCase() || 'UNNAMED PAYLOAD'}</div>
+                      ))
+                    ) : (
+                      <div>TBD</div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start relative">
+                  <span className="text-white font-semibold flex-1 text-right pr-3">PAYLOAD MASS:</span>
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                  <div className="text-white flex-1 pl-3">
+                    {launch.payloads && launch.payloads.length > 0 ? (() => {
+                      const totalMassKg = launch.payloads.reduce((sum, p) => sum + (parseFloat(p.mass_kg) || 0), 0);
+                      if (totalMassKg === 0) return 'TBD';
+                      const totalMassLb = Math.round(totalMassKg * 2.20462);
+                      const formattedKg = totalMassKg.toLocaleString();
+                      const formattedLb = totalMassLb.toLocaleString();
+                      // Format with space after comma: "36, 000lb"
+                      const formattedLbWithSpace = formattedLb.replace(/,(\d{3})/g, ', $1');
+                      return `${formattedKg}kg (${formattedLbWithSpace}lb)`;
+                    })() : 'TBD'}
+                  </div>
+                </div>
+                <div className="flex items-start relative">
+                  <span className="text-white font-semibold flex-1 text-right pr-3">DESTINATION:</span>
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                  <div className="text-white flex-1 pl-3">
+                    {((launch.payloads && launch.payloads.length > 0 && launch.payloads[0]?.orbit?.abbrev) || mission?.orbit?.abbrev || 'TBD').toUpperCase()}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2349,46 +2343,44 @@ const LaunchDetail = () => {
             <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
               <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">RECOVERY OVERVIEW</h3>
               <div className="p-4 space-y-3 text-sm">
-                <div className="flex items-start">
-                  <span className="text-white font-semibold w-32 shrink-0">LANDING LOCATION:</span>
-                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                    <div className="text-white whitespace-normal">
-                      {(() => {
-                        const location = (launch.recovery?.landing_location || 'TBD').toUpperCase();
-                        // Split "JUST READ THE INSTRUCTIONS" into "JUST READ THE" and "INSTRUCTIONS"
-                        if (location.includes('JUST READ THE INSTRUCTIONS')) {
-                          return (
-                            <>
-                              <div>JUST READ THE</div>
-                              <div>INSTRUCTIONS</div>
-                            </>
-                          );
-                        }
-                        // For other locations, try to split intelligently
-                        const words = location.split(' ');
-                        if (words.length > 3) {
-                          // Split into two lines if it's long
-                          const midPoint = Math.ceil(words.length / 2);
-                          return (
-                            <>
-                              <div>{words.slice(0, midPoint).join(' ')}</div>
-                              <div>{words.slice(midPoint).join(' ')}</div>
-                            </>
-                          );
-                        }
-                        return <div>{location}</div>;
-                      })()}
+                <div className="flex items-start relative">
+                  <span className="text-white font-semibold flex-1 text-right pr-3">LANDING LOCATION:</span>
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                  <div className="text-white flex-1 pl-3 whitespace-normal">
+                    {(() => {
+                      const location = (launch.recovery?.landing_location || 'TBD').toUpperCase();
+                      // Split "JUST READ THE INSTRUCTIONS" into "JUST READ THE" and "INSTRUCTIONS"
+                      if (location.includes('JUST READ THE INSTRUCTIONS')) {
+                        return (
+                          <>
+                            <div>JUST READ THE</div>
+                            <div>INSTRUCTIONS</div>
+                          </>
+                        );
+                      }
+                      // For other locations, try to split intelligently
+                      const words = location.split(' ');
+                      if (words.length > 3) {
+                        // Split into two lines if it's long
+                        const midPoint = Math.ceil(words.length / 2);
+                        return (
+                          <>
+                            <div>{words.slice(0, midPoint).join(' ')}</div>
+                            <div>{words.slice(midPoint).join(' ')}</div>
+                          </>
+                        );
+                      }
+                      return <div>{location}</div>;
+                    })()}
                   </div>
                 </div>
-              </div>
-                <div className="flex items-start">
-                  <span className="text-white font-semibold w-32 shrink-0">LANDING TYPE:</span>
-                  <div className="flex-1 border-l-2 border-[#8B1A1A] pl-3">
-                    <div className="text-white">
-                      {(launch.recovery?.landing_type || 'TBD').toUpperCase()}
-                    </div>
+                <div className="flex items-start relative">
+                  <span className="text-white font-semibold flex-1 text-right pr-3">LANDING TYPE:</span>
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-[#8B1A1A] transform -translate-x-1/2"></div>
+                  <div className="text-white flex-1 pl-3">
+                    {(launch.recovery?.landing_type || 'TBD').toUpperCase()}
+                  </div>
                 </div>
-              </div>
               </div>
                     </div>
 

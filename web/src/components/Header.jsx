@@ -51,6 +51,8 @@ const Header = ({ sectionNav = null }) => {
             <span className="text-gray-600">|</span>
             <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
             <span className="text-gray-600">|</span>
+            <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
+            <span className="text-gray-600">|</span>
             <Link to="/spacebase/astronauts" className="hover:text-white transition-colors">SPACEBASE</Link>
             <span className="text-gray-600">|</span>
             <span className="cursor-pointer hover:text-white transition-colors">SHOP</span>

@@ -183,3 +183,10 @@ export const dataProvider: DataProvider = {
     return { data: params.ids };
   },
 };
+
+// Custom method to fetch launch statistics
+export const fetchLaunchStatistics = async () => {
+  const url = `${API_URL}/api/statistics/launches/detailed`;
+  const { json } = await httpClient(url);
+  return json;
+};

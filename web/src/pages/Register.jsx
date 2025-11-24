@@ -51,18 +51,8 @@ const Register = () => {
     const result = await register(formData.email, formData.password, first_name, last_name);
 
     if (result.success) {
-      // Redirect to returnUrl if provided, otherwise go to home
-      const redirectTo = returnUrl ? decodeURIComponent(returnUrl) : '/';
-      navigate(redirectTo);
-      // Scroll to comments section if hash is present
-      setTimeout(() => {
-        if (redirectTo.includes('#comments')) {
-          const commentsElement = document.getElementById('comments');
-          if (commentsElement) {
-            commentsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }
-      }, 100);
+      // Redirect to email verification page with email as query param
+      navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } else {
       setError(result.error);
     }

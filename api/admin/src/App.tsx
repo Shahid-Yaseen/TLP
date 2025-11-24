@@ -1,7 +1,10 @@
-import { Admin, Resource } from 'react-admin';
+import { Admin, Resource, CustomRoutes, Layout } from 'react-admin';
+import { Route } from 'react-router-dom';
 import { dataProvider } from './dataProvider';
 import { authProvider } from './authProvider';
 import { Login } from './components/Login';
+import LaunchStatistics from './pages/LaunchStatistics';
+import CustomMenu from './components/CustomMenu';
 
 // Reference Data Resources
 import { ProviderList, ProviderCreate, ProviderEdit, ProviderShow } from './resources/Providers';
@@ -25,6 +28,8 @@ import { AstronautList, AstronautShow } from './resources/Spacebase';
 import { AgencyList, AgencyCreate, AgencyEdit, AgencyShow } from './resources/Spacebase';
 import { RocketList, RocketShow } from './resources/Spacebase';
 
+const CustomLayout = (props: any) => <Layout {...props} menu={CustomMenu} />;
+
 const App = () => (
   <Admin
     dataProvider={dataProvider}
@@ -32,6 +37,7 @@ const App = () => (
     loginPage={Login}
     title="TLP Platform Admin"
     requireAuth
+    layout={CustomLayout}
   >
     {/* Reference Data */}
     <Resource
@@ -162,6 +168,9 @@ const App = () => (
       show={RocketShow}
       options={{ label: 'Rockets' }}
     />
+    <CustomRoutes>
+      <Route path="/launch-statistics" element={<LaunchStatistics />} />
+    </CustomRoutes>
   </Admin>
 );
 

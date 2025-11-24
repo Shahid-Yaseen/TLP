@@ -76,22 +76,47 @@ export const AuthProvider = ({ children }) => {
         last_name,
       });
 
-      // Registration doesn't automatically log in, so we need to log in after registration
-      // Auto-login after successful registration
-      const loginResult = await login(email, password);
-      
-      if (loginResult.success) {
-        return { success: true, message: response.data.message };
-      } else {
-        return {
-          success: false,
-          error: 'Registration successful, but automatic login failed. Please log in manually.',
-        };
-      }
+      // Registration successful - user must verify email before logging in
+      // Return success with email so frontend can redirect to verification page
+      return { 
+        success: true, 
+        message: response.data.message,
+        email: email // Include email for verification page
+      };
     } catch (error) {
       return {
         success: false,
         error: error.response?.data?.error || 'Registration failed. Please try again.',
+      };
+    }
+  };
+
+  const verifyCode = async (code, email) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/verify-code`, {
+        code,
+        email,
+      });
+
+      const { access_token, refresh_token, user: userData } = response.data;
+
+      // Store tokens
+      localStorage.setItem('accessToken', access_token);
+      if (refresh_token) {
+        localStorage.setItem('refreshToken', refresh_token);
+      }
+
+      // Set axios header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+
+      setToken(access_token);
+      setUser(userData);
+
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Verification failed. Please try again.',
       };
     }
   };
@@ -135,6 +160,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    verifyCode,
     logout,
     refreshAccessToken,
     isAuthenticated: !!token && !!user,
