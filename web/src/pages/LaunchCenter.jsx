@@ -267,6 +267,8 @@ function LaunchCenter() {
             <span>SPACEBASE</span>
             <span>|</span>
             <span>SHOP</span>
+            <span>|</span>
+            <Link to="/navigator/advanced" className="hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
           <div className="flex items-center gap-2">
             <span>ABOUT US</span>
@@ -312,8 +314,6 @@ function LaunchCenter() {
               >
                 PREVIOUS
               </button>
-              <span className="mx-1 font-bold text-white">|</span>
-              <button className="px-3 py-2 text-gray-400">EVENTS</button>
               <span className="mx-1 font-bold text-white">|</span>
               <button className="px-3 py-2 text-gray-400">STATISTICS</button>
             </div>

@@ -58,19 +58,9 @@ const AboutUs = () => {
       {/* Top Header Bar */}
       <div className="bg-black border-b border-gray-800">
         <div className="max-w-full mx-auto px-4 md:px-6 py-2 flex justify-between items-center text-xs text-gray-400">
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Just TLP Network Inc. */}
           <div className="hidden md:flex items-center gap-2">
             <span>TLP Network Inc.</span>
-            <span>|</span>
-            <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-            <span>|</span>
-            <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
-            <span>|</span>
-            <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
-            <span>|</span>
-            <Link to="/spacebase/astronauts" className="hover:text-white transition-colors">SPACEBASE</Link>
-            <span>|</span>
-            <span className="cursor-pointer hover:text-white transition-colors">SHOP</span>
           </div>
           {/* Mobile Menu Button */}
           <button
@@ -86,12 +76,6 @@ const AboutUs = () => {
               )}
             </svg>
           </button>
-          {/* Desktop Right Side */}
-          <div className="hidden md:flex items-center gap-2">
-            <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
-            <span>|</span>
-            <span className="cursor-pointer hover:text-white transition-colors">SUPPORT</span>
-          </div>
         </div>
         {/* Mobile Menu */}
         {mobileMenuOpen && (
@@ -101,6 +85,7 @@ const AboutUs = () => {
             <Link to="/mission" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP MISSION</Link>
             <Link to="/spacebase/astronauts" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
             <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SHOP</span>
+            <Link to="/navigator/advanced" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>3D ORBIT NAVIGATOR</Link>
             <div className="border-t border-gray-800 pt-2 mt-2">
               <Link to="/about" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>ABOUT US</Link>
               <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SUPPORT</span>
@@ -110,25 +95,43 @@ const AboutUs = () => {
       </div>
 
       {/* Main Navigation Bar */}
-      <div className="bg-[#8B1A1A] border-t-2 border-white">
+      <div className="bg-transparent border-t-2 border-transparent">
         <div className="max-w-full mx-auto px-4 md:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4 md:gap-8">
+          {/* Left Side: Helmet, Time, and Navigation Links */}
+          <div className="flex items-center gap-2 md:gap-3">
             {/* Logo Section */}
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="relative" style={{ overflow: 'visible' }}>
-                <div className="w-10 h-10 md:w-14 md:h-14 bg-black flex items-center justify-center overflow-hidden">
-                  <img 
-                    src="/TLP Helmet.png" 
-                    alt="TLP Logo" 
-                    className="w-7 h-7 md:w-10 md:h-10 object-contain"
-                  />
-                </div>
-                <div className="absolute top-full left-0 bg-[#8B1A1A] px-1.5 md:px-2 py-0.5 text-[8px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
-                  {currentTime || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s/g, '')}
-                </div>
+            <div className="relative" style={{ overflow: 'visible' }}>
+              <div className="w-10 h-10 md:w-14 md:h-14 bg-black flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/TLP Helmet.png" 
+                  alt="TLP Logo" 
+                  className="w-7 h-7 md:w-10 md:h-10 object-contain"
+                />
               </div>
-              <h1 className="text-2xl md:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>LAUNCH</h1>
+              <div className="absolute top-full left-0 bg-[#8B1A1A] px-1.5 md:px-2 py-0.5 text-[8px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
+                {currentTime || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s/g, '')}
+              </div>
             </div>
+            {/* Navigation Links - Right next to helmet */}
+            <div className="hidden md:flex items-center gap-2 text-sm text-white">
+              <Link to="/launches/upcoming" className="px-3 py-2 hover:text-gray-300 transition-colors">LAUNCH CENTER</Link>
+              <span className="text-gray-600">|</span>
+              <Link to="/news" className="px-3 py-2 hover:text-gray-300 transition-colors">TLP SPACE NEWS</Link>
+              <span className="text-gray-600">|</span>
+              <Link to="/mission" className="px-3 py-2 hover:text-gray-300 transition-colors">TLP MISSION</Link>
+              <span className="text-gray-600">|</span>
+              <Link to="/spacebase/astronauts" className="px-3 py-2 hover:text-gray-300 transition-colors">SPACEBASE</Link>
+              <span className="text-gray-600">|</span>
+              <span className="px-3 py-2 cursor-pointer hover:text-gray-300 transition-colors">SHOP</span>
+              <span className="text-gray-600">|</span>
+              <Link to="/navigator/advanced" className="px-3 py-2 hover:text-gray-300 transition-colors">3D ORBIT NAVIGATOR</Link>
+            </div>
+          </div>
+          {/* Right Side: ABOUT US and SUPPORT */}
+          <div className="hidden md:flex items-center gap-2 text-sm text-white">
+            <Link to="/about" className="px-3 py-2 hover:text-gray-300 transition-colors">ABOUT US</Link>
+            <span className="text-gray-600">|</span>
+            <span className="px-3 py-2 cursor-pointer hover:text-gray-300 transition-colors">SUPPORT</span>
           </div>
         </div>
       </div>

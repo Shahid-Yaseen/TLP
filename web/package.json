@@ -29,6 +29,7 @@
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^7.9.5",
     "react-simple-maps": "^3.0.0",
+    "satellite.js": "^6.0.1",
     "three": "^0.169.0"
   },
   "devDependencies": {

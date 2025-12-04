@@ -154,6 +154,7 @@ const EarthOrbitNavigator = () => {
               orbitPaths={orbitData}
               earthTextureUrl={earthTextureUrl}
               showStars={true}
+              autoRotate={autoRotate}
             />
             
             {/* Mobile Control Panel Toggle Button */}
@@ -201,7 +202,7 @@ const EarthOrbitNavigator = () => {
           {/* Control Panel */}
           <div className={`${
             showControlPanel ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          } fixed lg:relative inset-y-0 left-0 z-30 lg:z-auto w-full sm:w-80 lg:w-80 bg-gray-900 border-l border-gray-800 overflow-y-auto transition-transform duration-300 ease-in-out`}>
+          } fixed lg:relative inset-y-0 left-0 z-30 lg:z-auto w-full sm:w-80 lg:w-80 bg-[#121212] border-l border-gray-800 overflow-y-auto transition-transform duration-300 ease-in-out`}>
             <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Header */}
               <div className="flex items-start justify-between lg:block">
@@ -238,7 +239,7 @@ const EarthOrbitNavigator = () => {
                     className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded text-xs sm:text-sm font-semibold transition-colors ${
                       autoRotate
                         ? 'bg-[#8B1A1A] text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#2a2a2a]'
                     }`}
                   >
                     {autoRotate ? 'ON' : 'OFF'}
@@ -252,7 +253,7 @@ const EarthOrbitNavigator = () => {
                     className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded text-xs sm:text-sm font-semibold transition-colors ${
                       showStats
                         ? 'bg-[#8B1A1A] text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#2a2a2a]'
                     }`}
                   >
                     {showStats ? 'ON' : 'OFF'}
@@ -262,13 +263,13 @@ const EarthOrbitNavigator = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={selectAllOrbits}
-                    className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-800 hover:bg-gray-700 text-xs sm:text-sm font-semibold rounded transition-colors"
+                    className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-xs sm:text-sm font-semibold rounded transition-colors"
                   >
                     Select All
                   </button>
                   <button
                     onClick={deselectAllOrbits}
-                    className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-800 hover:bg-gray-700 text-xs sm:text-sm font-semibold rounded transition-colors"
+                    className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-xs sm:text-sm font-semibold rounded transition-colors"
                   >
                     Clear
                   </button>
@@ -290,8 +291,8 @@ const EarthOrbitNavigator = () => {
                         onClick={() => toggleOrbit(orbitCode)}
                         className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded border transition-colors ${
                           isSelected
-                            ? 'bg-gray-800 border-[#8B1A1A]'
-                            : 'bg-gray-900 border-gray-700 hover:border-gray-600'
+                            ? 'bg-[#1a1a1a] border-[#8B1A1A]'
+                            : 'bg-[#121212] border-gray-700 hover:border-gray-600'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-0.5 sm:mb-1">
@@ -317,7 +318,7 @@ const EarthOrbitNavigator = () => {
               {showStats && (
                 <div>
                   <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-3">STATISTICS</h2>
-                  <div className="bg-gray-800 p-3 sm:p-4 rounded space-y-2 sm:space-y-3">
+                  <div className="bg-[#1a1a1a] p-3 sm:p-4 rounded space-y-2 sm:space-y-3">
                     <div>
                       <div className="text-xl sm:text-2xl font-bold text-[#8B1A1A]">
                         {stats.totalLaunches}

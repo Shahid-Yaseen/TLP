@@ -34,6 +34,8 @@ const Mission = () => {
             <Link to="/mission" className="text-white transition-colors">TLP MISSIONS</Link>
             <span>|</span>
             <span className="cursor-pointer hover:text-white transition-colors">SHOP</span>
+            <span>|</span>
+            <Link to="/navigator/advanced" className="hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
           {/* Mobile Menu Button */}
           <button
@@ -64,6 +66,7 @@ const Mission = () => {
             <Link to="/spacebase/astronauts" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
             <Link to="/mission" className="block text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP MISSIONS</Link>
             <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SHOP</span>
+            <Link to="/navigator/advanced" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>3D ORBIT NAVIGATOR</Link>
             <div className="border-t border-gray-800 pt-2 mt-2">
               <Link to="/about" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>ABOUT US</Link>
               <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SUPPORT</span>

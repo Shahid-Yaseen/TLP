@@ -59,6 +59,8 @@ const eventsRoutes = require('./routes/events');
 const rolesRoutes = require('./routes/roles');
 const permissionsRoutes = require('./routes/permissions');
 const crewRoutes = require('./routes/crew');
+const uploadRoutes = require('./routes/upload');
+const satellitesRoutes = require('./routes/satellites');
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -71,6 +73,9 @@ const PORT = process.env.PORT || 3007;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from public directory
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Get shared database pool
 const pool = getPool();
@@ -119,6 +124,8 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/crew', crewRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/satellites', satellitesRoutes);
 
 // Legacy /launches route for backward compatibility (will be removed later)
 app.get('/launches', async (req, res) => {

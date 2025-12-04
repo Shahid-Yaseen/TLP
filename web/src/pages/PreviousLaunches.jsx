@@ -44,6 +44,27 @@ function PreviousLaunches() {
     return HERO_BG_IMAGE;
   };
 
+  const getStatusBarColor = (launch) => {
+    if (!launch) return 'bg-gray-600';
+    
+    const isSuccess = launch.outcome === 'success';
+    const isFailure = launch.outcome === 'failure';
+    const isPartial = launch.outcome === 'partial';
+    // Check for recovery failure - could be in outcome, status_name, or status_abbrev
+    const statusName = launch.status_name?.toLowerCase() || '';
+    const statusAbbrev = launch.status_abbrev?.toLowerCase() || '';
+    const isRecoveryFailure = launch.outcome === 'recovery-failure' || 
+                             launch.outcome === 'recovery failure' ||
+                             (statusName.includes('recovery') && statusName.includes('failure')) ||
+                             (statusAbbrev.includes('recovery') && statusAbbrev.includes('failure'));
+    
+    if (isRecoveryFailure) return 'bg-orange-500';
+    if (isSuccess) return 'bg-sky-400';
+    if (isFailure) return 'bg-red-500';
+    if (isPartial) return 'bg-pink-400';
+    return 'bg-gray-600';
+  };
+
   const getLaunchName = (launch) => {
     const name = launch?.name || '';
     if (name.includes('|')) {
@@ -202,6 +223,8 @@ function PreviousLaunches() {
                 <Link to="/spacebase/astronauts" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
                 <span className="hidden xl:inline">|</span>
                 <span className="hidden xl:inline cursor-pointer hover:text-white transition-colors">SHOP</span>
+                <span className="hidden xl:inline">|</span>
+                <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
@@ -295,6 +318,7 @@ function PreviousLaunches() {
                 <Link to="/mission" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP MISSION</Link>
                 <Link to="/spacebase/astronauts" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
                 <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1">SHOP</span>
+                <Link to="/navigator/advanced" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">3D ORBIT NAVIGATOR</Link>
                 <div className="border-t border-gray-700 pt-3 mt-1">
                   <Link to="/about" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">ABOUT US</Link>
                   <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1 block">SUPPORT</span>
@@ -342,9 +366,12 @@ function PreviousLaunches() {
                 PREVIOUS
               </Link>
               <span className="mx-1 font-bold text-white">|</span>
-              <button className="px-3 py-2 text-gray-400">EVENTS</button>
-              <span className="mx-1 font-bold text-white">|</span>
-              <button className="px-3 py-2 text-gray-400">STATISTICS</button>
+              <Link
+                to="/launches/statistics"
+                className={`px-3 py-2 ${location.pathname.includes('statistics') ? 'text-white border-b-2 border-white font-bold' : 'text-gray-400'}`}
+              >
+                STATISTICS
+              </Link>
             </div>
 
             {/* Desktop YouTube Button - Right Side */}
@@ -397,8 +424,13 @@ function PreviousLaunches() {
                 >
                   PREVIOUS
                 </Link>
-                <button className="px-3 py-2 text-xs uppercase text-gray-300 text-left">EVENTS</button>
-                <button className="px-3 py-2 text-xs uppercase text-gray-300 text-left">STATISTICS</button>
+                <Link
+                  to="/launches/statistics"
+                  onClick={() => setNavMenuOpen(false)}
+                  className={`px-3 py-2 text-xs uppercase ${location.pathname.includes('statistics') ? 'text-white font-bold bg-white/10' : 'text-gray-300'} text-left`}
+                >
+                  STATISTICS
+                </Link>
                 {previousLaunch && getYouTubeUrl(previousLaunch) && (
                   <a
                     href={getYouTubeUrl(previousLaunch)}
@@ -513,6 +545,7 @@ function PreviousLaunches() {
               {historicalLaunches && historicalLaunches.length > 0 ? (
                 historicalLaunches.slice(0, 5).map((launch, idx) => {
                   const launchImageUrl = getLaunchImageUrl(launch);
+                  const barColor = getStatusBarColor(launch);
                   return (
                     <Link
                       key={launch.id || launch.external_id || idx}
@@ -525,7 +558,7 @@ function PreviousLaunches() {
                       ></div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
-                        <div className="h-0.5 bg-green-500 mb-1"></div>
+                        <div className={`h-0.5 ${barColor} mb-1`}></div>
                         <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
                           {launch.provider || launch.provider_abbrev || 'Provider'}
                         </div>
@@ -570,6 +603,7 @@ function PreviousLaunches() {
             {historicalLaunches && historicalLaunches.length > 0 ? (
               historicalLaunches.slice(0, 5).map((launch, idx) => {
                 const launchImageUrl = getLaunchImageUrl(launch);
+                const barColor = getStatusBarColor(launch);
                 return (
                   <Link
                     key={launch.id || launch.external_id || idx}
@@ -582,7 +616,7 @@ function PreviousLaunches() {
                     ></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
                     <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
-                      <div className="h-0.5 bg-green-500 mb-1"></div>
+                      <div className={`h-0.5 ${barColor} mb-1`}></div>
                       <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
                         {launch.provider || launch.provider_abbrev || 'Provider'}
                       </div>
@@ -746,16 +780,20 @@ function PreviousLaunches() {
       <div className="max-w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 relative">
         <div className="absolute top-4 sm:top-8 right-4 sm:right-6 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 z-10">
           <div className="flex items-center gap-2">
-            <div className="w-1 h-4 bg-green-500"></div>
-            <span className="text-xs text-green-500 uppercase font-sans">MISSION SUCCESS</span>
+            <div className="w-1 h-4 bg-sky-400"></div>
+            <span className="text-xs text-sky-400 uppercase font-sans">MISSION SUCCESS</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-1 h-4 bg-orange-500"></div>
-            <span className="text-xs text-orange-500 uppercase font-sans">PARTIAL FAILURE</span>
+            <div className="w-1 h-4 bg-pink-400"></div>
+            <span className="text-xs text-pink-400 uppercase font-sans">PARTIAL FAILURE</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-red-500"></div>
             <span className="text-xs text-red-500 uppercase font-sans">MISSION FAILURE</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 bg-orange-500"></div>
+            <span className="text-xs text-orange-500 uppercase font-sans">RECOVERY FAILURE</span>
           </div>
         </div>
 
@@ -764,14 +802,7 @@ function PreviousLaunches() {
             <h2 className="text-2xl uppercase mb-10 tracking-tight text-white">{month}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {monthLaunches.map((launch) => {
-                const isSuccess = launch.outcome === 'success';
-                const isFailure = launch.outcome === 'failure';
-                const isPartial = launch.outcome === 'partial';
-                
-                let borderColor = 'bg-gray-600';
-                if (isSuccess) borderColor = 'bg-green-500';
-                else if (isFailure) borderColor = 'bg-red-500';
-                else if (isPartial) borderColor = 'bg-orange-500';
+                const borderColor = getStatusBarColor(launch);
                 
                 const launchImageUrl = getLaunchImageUrl(launch);
                 

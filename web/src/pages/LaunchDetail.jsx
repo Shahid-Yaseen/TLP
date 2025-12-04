@@ -770,8 +770,6 @@ const LaunchDetail = () => {
             PREVIOUS
           </Link>
           <span className="mx-1 font-bold text-white">|</span>
-          <button className="px-3 py-2 text-gray-400 hover:text-white transition-colors">EVENTS</button>
-          <span className="mx-1 font-bold text-white">|</span>
           <button className="px-3 py-2 text-gray-400 hover:text-white transition-colors">STATISTICS</button>
         </div>
 

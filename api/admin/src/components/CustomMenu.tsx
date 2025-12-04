@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, MenuItemLink } from 'react-admin';
-import { BarChart as BarChartIcon } from '@mui/icons-material';
+import { BarChart as BarChartIcon, Map as MapIcon } from '@mui/icons-material';
 
 const CustomMenu = (props: any) => {
   return (
@@ -10,6 +10,11 @@ const CustomMenu = (props: any) => {
         to="/launch-statistics"
         primaryText="Launch Statistics"
         leftIcon={<BarChartIcon />}
+      />
+      <MenuItemLink
+        to="/crew-map"
+        primaryText="Crew Location Map"
+        leftIcon={<MapIcon />}
       />
       {/* Automatically render all resource menu items */}
       <Menu.ResourceItems />

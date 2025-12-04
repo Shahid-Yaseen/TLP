@@ -11,7 +11,8 @@ export default function OrbitSceneDirect({
   selectedOrbits = [], 
   orbitPaths = {},
   earthTextureUrl = null,
-  showStars = true 
+  showStars = true,
+  autoRotate = false
 }) {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -66,6 +67,8 @@ export default function OrbitSceneDirect({
       ONE: THREE.TOUCH.ROTATE,
       TWO: THREE.TOUCH.DOLLY_PAN
     };
+    controls.autoRotate = autoRotate;
+    controls.autoRotateSpeed = 1.0;
     controlsRef.current = controls;
 
     // Lighting
@@ -286,6 +289,13 @@ export default function OrbitSceneDirect({
       cleanupOrbitLines();
     };
   }, [selectedOrbits, orbitPaths]);
+
+  // Update autoRotate when prop changes
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = autoRotate;
+    }
+  }, [autoRotate]);
 
   // Handle window resize
   useEffect(() => {

@@ -4,6 +4,7 @@ import { dataProvider } from './dataProvider';
 import { authProvider } from './authProvider';
 import { Login } from './components/Login';
 import LaunchStatistics from './pages/LaunchStatistics';
+import CrewMap from './pages/CrewMap';
 import CustomMenu from './components/CustomMenu';
 
 // Reference Data Resources
@@ -170,6 +171,7 @@ const App = () => (
     />
     <CustomRoutes>
       <Route path="/launch-statistics" element={<LaunchStatistics />} />
+      <Route path="/crew-map" element={<CrewMap />} />
     </CustomRoutes>
   </Admin>
 );

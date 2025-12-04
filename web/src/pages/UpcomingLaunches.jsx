@@ -11,19 +11,63 @@ import RedDotLoader from '../components/common/RedDotLoader';
 
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
+// Helper function to get status bar color for upcoming launches
+const getUpcomingStatusBarColor = (launch) => {
+  if (!launch) return 'bg-gray-500';
+  
+  const statusName = launch.status?.name?.toLowerCase() || launch.status_name?.toLowerCase() || '';
+  const statusAbbrev = launch.status?.abbrev?.toLowerCase() || launch.status_abbrev?.toLowerCase() || '';
+  const netPrecision = launch.net_precision;
+  
+  // Check if in flight (launch is happening now or very recently)
+  const launchDate = launch.launch_date || launch.net;
+  if (launchDate) {
+    const now = new Date();
+    const launchDateTime = new Date(launchDate);
+    // Check if launch is within the last 3 hours (in flight window)
+    const timeDiff = now.getTime() - launchDateTime.getTime();
+    const isInFlight = timeDiff >= 0 && timeDiff <= 3 * 60 * 60 * 1000; // Within 3 hours after launch
+    
+    if (isInFlight) return 'bg-blue-500';
+  }
+  
+  // Check for NET (No Earlier Than) - indicated by net_precision or status containing "net"
+  const isNET = (netPrecision && (netPrecision.name?.toLowerCase().includes('net') || 
+                                   netPrecision.abbrev?.toLowerCase().includes('net'))) ||
+                statusName.includes('net') ||
+                statusAbbrev.includes('net') ||
+                (launch.net && !launch.launch_date); // If only NET date exists, not confirmed date
+  
+  if (isNET) return 'bg-yellow-500';
+  
+  // Check if unconfirmed (TBD or Hold)
+  const isUnconfirmed = statusAbbrev === 'tbd' || 
+                        statusAbbrev === 'hold' ||
+                        statusName.includes('tbd') ||
+                        statusName.includes('to be determined') ||
+                        statusName.includes('hold') ||
+                        !statusAbbrev; // No status means unconfirmed
+  
+  if (isUnconfirmed) return 'bg-gray-500';
+  
+  // Check if confirmed (Go status or any other confirmed status)
+  const isConfirmed = statusAbbrev === 'go' || 
+                      statusName.includes('go') ||
+                      statusName.includes('confirmed') ||
+                      (statusAbbrev && statusAbbrev !== 'tbd' && statusAbbrev !== 'hold');
+  
+  if (isConfirmed) return 'bg-green-500';
+  
+  // Default to grey for unconfirmed
+  return 'bg-gray-500';
+};
+
 // Launch Card Component with Countdown
 const LaunchCardWithCountdown = ({ launch, getLaunchImageUrl }) => {
   const launchDate = launch.launch_date || launch.net;
   const countdown = useCountdown(launchDate);
   
-  const isSuccess = launch.outcome === 'success';
-  const isFailure = launch.outcome === 'failure';
-  const isPartial = launch.outcome === 'partial';
-  
-  let borderColor = 'bg-gray-600';
-  if (isSuccess) borderColor = 'bg-green-500';
-  else if (isFailure) borderColor = 'bg-red-500';
-  else if (isPartial) borderColor = 'bg-orange-500';
+  const borderColor = getUpcomingStatusBarColor(launch);
   
   const launchImageUrl = getLaunchImageUrl(launch);
   
@@ -349,6 +393,8 @@ function UpcomingLaunches() {
                 <Link to="/spacebase/astronauts" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
                 <span className="hidden xl:inline">|</span>
                 <span className="hidden xl:inline cursor-pointer hover:text-white transition-colors">SHOP</span>
+                <span className="hidden xl:inline">|</span>
+                <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
@@ -442,6 +488,7 @@ function UpcomingLaunches() {
                 <Link to="/mission" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP MISSION</Link>
                 <Link to="/spacebase/astronauts" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
                 <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1">SHOP</span>
+                <Link to="/navigator/advanced" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">3D ORBIT NAVIGATOR</Link>
                 <div className="border-t border-gray-700 pt-3 mt-1">
                   <Link to="/about" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">ABOUT US</Link>
                   <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1 block">SUPPORT</span>
@@ -489,9 +536,12 @@ function UpcomingLaunches() {
                 PREVIOUS
               </Link>
               <span className="mx-1 font-bold text-white">|</span>
-              <button className="px-3 py-2 text-gray-400">EVENTS</button>
-              <span className="mx-1 font-bold text-white">|</span>
-              <button className="px-3 py-2 text-gray-400">STATISTICS</button>
+              <Link
+                to="/launches/statistics"
+                className={`px-3 py-2 ${location.pathname.includes('statistics') ? 'text-white border-b-2 border-white font-bold' : 'text-gray-400'}`}
+              >
+                STATISTICS
+              </Link>
             </div>
 
             {/* Desktop YouTube Button - Right Side */}
@@ -544,8 +594,13 @@ function UpcomingLaunches() {
                 >
                   PREVIOUS
                 </Link>
-                <button className="px-3 py-2 text-xs uppercase text-gray-300 text-left">EVENTS</button>
-                <button className="px-3 py-2 text-xs uppercase text-gray-300 text-left">STATISTICS</button>
+                <Link
+                  to="/launches/statistics"
+                  onClick={() => setNavMenuOpen(false)}
+                  className={`px-3 py-2 text-xs uppercase ${location.pathname.includes('statistics') ? 'text-white font-bold bg-white/10' : 'text-gray-300'} text-left`}
+                >
+                  STATISTICS
+                </Link>
                 {upcomingLaunch && getYouTubeUrl(upcomingLaunch) && (
                   <a
                     href={getYouTubeUrl(upcomingLaunch)}
@@ -669,6 +724,7 @@ function UpcomingLaunches() {
               {historicalLaunches && historicalLaunches.length > 0 ? (
                 historicalLaunches.slice(0, 5).map((launch, idx) => {
                   const launchImageUrl = getLaunchImageUrl(launch);
+                  const barColor = getUpcomingStatusBarColor(launch);
                   return (
                     <Link
                       key={launch.id || launch.external_id || idx}
@@ -681,7 +737,7 @@ function UpcomingLaunches() {
                       ></div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
-                        <div className="h-0.5 bg-green-500 mb-1"></div>
+                        <div className={`h-0.5 ${barColor} mb-1`}></div>
                         <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
                           {launch.provider || launch.provider_abbrev || 'Provider'}
                         </div>
@@ -726,6 +782,7 @@ function UpcomingLaunches() {
             {historicalLaunches && historicalLaunches.length > 0 ? (
               historicalLaunches.slice(0, 5).map((launch, idx) => {
                 const launchImageUrl = getLaunchImageUrl(launch);
+                const barColor = getUpcomingStatusBarColor(launch);
                 return (
                   <Link
                     key={launch.id || launch.external_id || idx}
@@ -738,7 +795,7 @@ function UpcomingLaunches() {
                     ></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
                     <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
-                      <div className="h-0.5 bg-green-500 mb-1"></div>
+                      <div className={`h-0.5 ${barColor} mb-1`}></div>
                       <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
                         {launch.provider || launch.provider_abbrev || 'Provider'}
                       </div>
@@ -903,15 +960,19 @@ function UpcomingLaunches() {
         <div className="absolute top-4 sm:top-8 right-4 sm:right-6 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 z-10">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-green-500"></div>
-            <span className="text-xs text-green-500 uppercase font-sans">MISSION SUCCESS</span>
+            <span className="text-xs text-green-500 uppercase font-sans">LAUNCH CONFIRMED</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-1 h-4 bg-orange-500"></div>
-            <span className="text-xs text-orange-500 uppercase font-sans">PARTIAL FAILURE</span>
+            <div className="w-1 h-4 bg-yellow-500"></div>
+            <span className="text-xs text-yellow-500 uppercase font-sans">NO EARLIER THAN</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-1 h-4 bg-red-500"></div>
-            <span className="text-xs text-red-500 uppercase font-sans">MISSION FAILURE</span>
+            <div className="w-1 h-4 bg-gray-500"></div>
+            <span className="text-xs text-gray-500 uppercase font-sans">UNCONFIRMED</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 bg-blue-500"></div>
+            <span className="text-xs text-blue-500 uppercase font-sans">IN FLIGHT</span>
           </div>
         </div>
 

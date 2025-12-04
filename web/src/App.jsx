@@ -17,6 +17,7 @@ import FacilitiesList from './pages/spacebase/FacilitiesList';
 import PadsList from './pages/spacebase/PadsList';
 import AgenciesList from './pages/spacebase/AgenciesList';
 import LaunchDetail from './pages/LaunchDetail';
+import LaunchStatistics from './pages/LaunchStatistics';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -24,6 +25,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import EmailVerification from './pages/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import EarthOrbitNavigator from './pages/EarthOrbitNavigator';
+import AdvancedOrbitNavigator from './pages/AdvancedOrbitNavigator';
 
 function App() {
   return (
@@ -37,6 +39,7 @@ function App() {
         <Route path="/launches" element={<Navigate to="/launches/upcoming" replace />} />
         <Route path="/launches/upcoming" element={<UpcomingLaunches />} />
         <Route path="/launches/previous" element={<PreviousLaunches />} />
+        <Route path="/launches/statistics" element={<LaunchStatistics />} />
         <Route path="/launches/:slug" element={<LaunchDetail />} />
         <Route path="/news" element={<News />} />
         <Route path="/news/:slug" element={<ArticleDetail />} />
@@ -69,6 +72,7 @@ function App() {
         <Route path="/briefing" element={<div className="min-h-screen bg-black text-white p-8">Mission Briefing (YouTube, Leaflet, etc.)</div>} />
         <Route path="/tlpedia" element={<div className="min-h-screen bg-black text-white p-8">TLPedia (search/faceted results)</div>} />
         <Route path="/navigator" element={<EarthOrbitNavigator />} />
+        <Route path="/navigator/advanced" element={<AdvancedOrbitNavigator />} />
       </Routes>
     </AuthProvider>
   );

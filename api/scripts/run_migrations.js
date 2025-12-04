@@ -88,6 +88,7 @@ const MIGRATIONS = [
   '018_add_launch_comments.sql',
   '019_add_email_verification_code.sql',
   '020_add_raw_api_response.sql',
+  '021_satellites_cache.sql',
 ];
 
 // Track completed migrations
