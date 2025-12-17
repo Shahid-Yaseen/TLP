@@ -449,32 +449,106 @@ function PreviousLaunches() {
       </div>
 
       {/* Hero Section with ON THIS DAY IN HISTORY - Single Background */}
-      <div 
-        className="relative bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('${previousLaunch ? getLaunchImageUrl(previousLaunch) : HERO_BG_IMAGE}')`,
-          backgroundPosition: 'center 30%',
-          backgroundSize: 'cover',
-        }}
-      >
-        <div className="absolute inset-0 bg-black/40"></div>
+      {previousLaunch ? (
+        <Link
+          to={`/launches/${getLaunchSlug(previousLaunch)}`}
+          className="relative bg-cover bg-center bg-no-repeat block cursor-pointer hover:opacity-95 transition-opacity"
+          style={{
+            backgroundImage: `url('${getLaunchImageUrl(previousLaunch)}')`,
+            backgroundPosition: 'center 30%',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] h-[400px] sm:h-[500px] lg:h-[600px] flex items-center">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex flex-col justify-center items-center text-center">
-            <div className="text-[10px] sm:text-xs text-white mb-1">
-            {previousLaunch?.launch_date 
-              ? new Date(previousLaunch.launch_date).toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                }) + ' | ' + new Date(previousLaunch.launch_date).toLocaleTimeString('en-US', { 
-                  hour: 'numeric', 
-                  minute: '2-digit', 
-                  hour12: true 
-                }).toLowerCase()
-              : new Date().toLocaleDateString('en-US', { 
+          {/* Hero Content */}
+          <div className="relative z-10 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] h-[400px] sm:h-[500px] lg:h-[600px] flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex flex-col justify-center items-center text-center">
+              <div className="text-[10px] sm:text-xs text-white mb-1">
+                {previousLaunch?.launch_date 
+                  ? new Date(previousLaunch.launch_date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }) + ' | ' + new Date(previousLaunch.launch_date).toLocaleTimeString('en-US', { 
+                      hour: 'numeric', 
+                      minute: '2-digit', 
+                      hour12: true 
+                    }).toLowerCase()
+                  : new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }) + ' | ' + new Date().toLocaleTimeString('en-US', { 
+                      hour: 'numeric', 
+                      minute: '2-digit', 
+                      hour12: true 
+                    }).toLowerCase()
+                }
+              </div>
+
+              {(() => {
+                const launchName = getLaunchName(previousLaunch);
+                return (
+                  <div className="mb-1">
+                    <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white px-2">
+                      {launchName.firstLine ? launchName.firstLine.toUpperCase() : 'PREVIOUS LAUNCH'}
+                    </h2>
+                    {launchName.secondLine && (
+                      <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-gray-300 mt-2 px-2">
+                        {launchName.secondLine.toUpperCase()}
+                      </h3>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-8 sm:mb-12 lg:mb-16 px-4">
+                {previousLaunch?.site || previousLaunch?.site_name || 'Launch Site Information'}
+              </p>
+
+              <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 text-white px-4">
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">DAYS</div>
+                </div>
+                <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">HOURS</div>
+                </div>
+                <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">MINUTES</div>
+                </div>
+                <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">SECONDS</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Link>
+      ) : (
+        <div 
+          className="relative bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('${HERO_BG_IMAGE}')`,
+            backgroundPosition: 'center 30%',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="absolute inset-0 bg-black/40"></div>
+
+          {/* Hero Content */}
+          <div className="relative z-10 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] h-[400px] sm:h-[500px] lg:h-[600px] flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex flex-col justify-center items-center text-center">
+              <div className="text-[10px] sm:text-xs text-white mb-1">
+                {new Date().toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   year: 'numeric', 
                   month: 'long', 
@@ -483,57 +557,34 @@ function PreviousLaunches() {
                   hour: 'numeric', 
                   minute: '2-digit', 
                   hour12: true 
-                }).toLowerCase()
-            }
-          </div>
+                }).toLowerCase()}
+              </div>
 
-            {(() => {
-              const launchName = getLaunchName(previousLaunch);
-              return (
-                <div className="mb-1">
-                  <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white px-2">
-                    {launchName.firstLine ? launchName.firstLine.toUpperCase() : 'PREVIOUS LAUNCH'}
-          </h2>
-                  {launchName.secondLine && (
-                    <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-gray-300 mt-2 px-2">
-                      {launchName.secondLine.toUpperCase()}
-                    </h3>
-                  )}
-                </div>
-              );
-            })()}
+              <div className="mb-1">
+                <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white px-2">
+                  PREVIOUS LAUNCH
+                </h2>
+              </div>
 
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-8 sm:mb-12 lg:mb-16 px-4">
-            {previousLaunch?.site || previousLaunch?.site_name || 'Launch Site Information'}
-          </p>
-
-            <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 text-white px-4">
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">DAYS</div>
-              </div>
-              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">HOURS</div>
-              </div>
-              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">MINUTES</div>
-              </div>
-              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">SECONDS</div>
-              </div>
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-8 sm:mb-12 lg:mb-16 px-4">
+                Launch Site Information
+              </p>
             </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ON THIS DAY IN HISTORY */}
         <div className="relative z-10 py-4 sm:py-6 lg:py-8">
-          <div className="absolute inset-0 bg-black/60"></div>
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `
+                linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 20%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0) 100%),
+                linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 15%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0) 100%)
+              `,
+            }}
+          ></div>
           <div className="relative z-10 max-w-full mx-auto px-4 sm:px-6 md:px-12 lg:px-24 xl:px-36">
           <h3 className="text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-300 mb-4 sm:mb-6">
             ON THIS DAY IN HISTORY
@@ -656,7 +707,6 @@ function PreviousLaunches() {
           </div>
           </div>
         </div>
-      </div>
 
       {/* Filter Bar */}
       <div className="bg-[#8B1A1A] border-b border-[#7A1515]">

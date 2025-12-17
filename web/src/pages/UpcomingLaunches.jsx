@@ -11,6 +11,27 @@ import RedDotLoader from '../components/common/RedDotLoader';
 
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
+// Helper function to format landing location to common abbreviations
+const formatLandingLocation = (location) => {
+  if (!location) return null;
+  const loc = location.toUpperCase();
+  
+  // Common abbreviations
+  if (loc.includes('JUST READ THE INSTRUCTIONS')) return 'JRTI';
+  if (loc.includes('A SHORTFALL OF GRAVITAS')) return 'ASOG';
+  if (loc.includes('OCISLY') || loc.includes('OF COURSE I STILL LOVE YOU')) return 'OCISLY';
+  if (loc.includes('SPLASHDOWN')) return 'SPLASHDOWN';
+  if (loc.includes('TOUCHDOWN')) return 'TOUCHDOWN';
+  if (loc.includes('LZ-')) return loc.match(/LZ-[0-9]+/)?.[0] || loc;
+  
+  // Return first few words if it's long, otherwise return as is
+  const words = loc.split(' ');
+  if (words.length > 3) {
+    return words.slice(0, 3).join(' ');
+  }
+  return loc;
+};
+
 // Helper function to get status bar color for upcoming launches
 const getUpcomingStatusBarColor = (launch) => {
   if (!launch) return 'bg-gray-500';
@@ -90,7 +111,7 @@ const LaunchCardWithCountdown = ({ launch, getLaunchImageUrl }) => {
       <div className="relative z-10 p-4 h-full flex flex-col justify-center items-center text-center">
         <div>
           {launch.launch_date && (
-            <p className="text-[10px] text-gray-400 leading-snug normal-case mb-2">
+            <p className="text-[10px] text-gray-400 leading-tight normal-case mb-1">
               {new Date(launch.launch_date).toLocaleDateString('en-US', { 
                 month: 'short', 
                 day: 'numeric',
@@ -103,15 +124,24 @@ const LaunchCardWithCountdown = ({ launch, getLaunchImageUrl }) => {
             </p>
           )}
           
-          <div className="text-[9px] text-gray-400 mb-2 font-bold uppercase tracking-widest">
+          <div className="text-[9px] text-gray-400 mb-1 font-bold uppercase tracking-widest">
             {launch.provider || launch.provider_abbrev || 'Provider'}
           </div>
-          <h3 className="text-base font-bold mb-2 leading-tight tracking-tight text-white uppercase">
+          <h3 className="text-base font-bold mb-1 leading-tight tracking-tight text-white uppercase">
             {(launch.name || 'Launch Name').toUpperCase()}
           </h3>
-          <p className="text-xs text-gray-400 leading-snug normal-case mb-2">
+          <p className="text-xs text-gray-400 leading-tight normal-case mb-2">
             {launch.provider || launch.provider_abbrev || ''} {launch.rocket || ''} | {launch.site || launch.site_name || 'Location TBD'}
           </p>
+          
+          {/* Landing Location Icon Box */}
+          {launch.recovery?.landing_location && (
+            <div className="inline-flex items-center justify-center px-2 py-1 bg-black/40 border border-gray-600 rounded mb-2">
+              <span className="text-[9px] text-white uppercase font-semibold">
+                {formatLandingLocation(launch.recovery.landing_location)}
+              </span>
+            </div>
+          )}
           
           {launchDate && new Date(launchDate) > new Date() && (
             <div className="flex items-center justify-center gap-1 text-white mb-2">
@@ -358,13 +388,25 @@ function UpcomingLaunches() {
 
   const groupLaunchesByMonth = (launches) => {
     const groups = {};
+    const monthDates = {}; // Store the actual date for sorting
+    
     launches.forEach(launch => {
       const date = new Date(launch.launch_date);
       const monthKey = date.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
-      if (!groups[monthKey]) groups[monthKey] = [];
+      if (!groups[monthKey]) {
+        groups[monthKey] = [];
+        // Store first day of the month for sorting
+        monthDates[monthKey] = new Date(date.getFullYear(), date.getMonth(), 1);
+      }
       groups[monthKey].push(launch);
     });
-    return groups;
+    
+    // Sort months chronologically by their actual date
+    const sortedEntries = Object.entries(groups).sort(([monthA], [monthB]) => {
+      return monthDates[monthA].getTime() - monthDates[monthB].getTime();
+    });
+    
+    return Object.fromEntries(sortedEntries);
   };
 
   const launchesByMonth = groupLaunchesByMonth(launches);
@@ -620,32 +662,114 @@ function UpcomingLaunches() {
 
       {/* HERO SECTION */}
       {/* Hero Section with ON THIS DAY IN HISTORY - Single Background */}
-      <div 
-        className="relative bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('${upcomingLaunch ? getLaunchImageUrl(upcomingLaunch) : HERO_BG_IMAGE}')`,
-          backgroundPosition: 'center 30%',
-          backgroundSize: 'cover',
-        }}
-      >
-        <div className="absolute inset-0 bg-black/40"></div>
+      {upcomingLaunch ? (
+        <Link
+          to={`/launches/${getLaunchSlug(upcomingLaunch)}`}
+          className="relative bg-cover bg-center bg-no-repeat block cursor-pointer hover:opacity-95 transition-opacity"
+          style={{
+            backgroundImage: `url('${getLaunchImageUrl(upcomingLaunch)}')`,
+            backgroundPosition: 'center 30%',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] h-[400px] sm:h-[500px] lg:h-[600px] flex items-center">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex flex-col justify-center items-center text-center">
-            <div className="text-[10px] sm:text-xs text-white mb-1">
-            {upcomingLaunch?.launch_date 
-              ? new Date(upcomingLaunch.launch_date).toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                }) + ' | ' + new Date(upcomingLaunch.launch_date).toLocaleTimeString('en-US', { 
-                  hour: 'numeric', 
-                  minute: '2-digit', 
-                  hour12: true 
-                }).toLowerCase()
-              : new Date().toLocaleDateString('en-US', { 
+          {/* Hero Content */}
+          <div className="relative z-10 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] h-[400px] sm:h-[500px] lg:h-[600px] flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex flex-col justify-center items-center text-center">
+              <div className="text-[10px] sm:text-xs text-white mb-1">
+                {upcomingLaunch?.launch_date 
+                  ? new Date(upcomingLaunch.launch_date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }) + ' | ' + new Date(upcomingLaunch.launch_date).toLocaleTimeString('en-US', { 
+                      hour: 'numeric', 
+                      minute: '2-digit', 
+                      hour12: true 
+                    }).toLowerCase()
+                  : new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }) + ' | ' + new Date().toLocaleTimeString('en-US', { 
+                      hour: 'numeric', 
+                      minute: '2-digit', 
+                      hour12: true 
+                    }).toLowerCase()
+                }
+              </div>
+
+              {(() => {
+                const launchName = getLaunchName(upcomingLaunch);
+                return (
+                  <div className="mb-1">
+                    <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white px-2">
+                      {launchName.firstLine ? launchName.firstLine.toUpperCase() : 'UPCOMING LAUNCH'}
+                    </h2>
+                    {launchName.secondLine && (
+                      <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-gray-300 mt-2 px-2">
+                        {launchName.secondLine.toUpperCase()}
+                      </h3>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-8 sm:mb-12 lg:mb-16 px-4">
+                {upcomingLaunch?.site || upcomingLaunch?.site_name || 'Launch Site Information'}
+              </p>
+
+              <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 text-white px-4">
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.days).padStart(2, '0')}
+                  </div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">DAYS</div>
+                </div>
+                <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.hours).padStart(2, '0')}
+                  </div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">HOURS</div>
+                </div>
+                <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.minutes).padStart(2, '0')}
+                  </div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">MINUTES</div>
+                </div>
+                <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.seconds).padStart(2, '0')}
+                  </div>
+                  <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">SECONDS</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Link>
+      ) : (
+        <div 
+          className="relative bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('${HERO_BG_IMAGE}')`,
+            backgroundPosition: 'center 30%',
+            backgroundSize: 'cover',
+          }}
+        >
+          <div className="absolute inset-0 bg-black/40"></div>
+
+          {/* Hero Content */}
+          <div className="relative z-10 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] h-[400px] sm:h-[500px] lg:h-[600px] flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex flex-col justify-center items-center text-center">
+              <div className="text-[10px] sm:text-xs text-white mb-1">
+                {new Date().toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   year: 'numeric', 
                   month: 'long', 
@@ -654,81 +778,42 @@ function UpcomingLaunches() {
                   hour: 'numeric', 
                   minute: '2-digit', 
                   hour12: true 
-                }).toLowerCase()
-            }
-          </div>
-
-            {(() => {
-              const launchName = getLaunchName(upcomingLaunch);
-              return (
-                <div className="mb-1">
-                  <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white px-2">
-                    {launchName.firstLine ? launchName.firstLine.toUpperCase() : 'UPCOMING LAUNCH'}
-          </h2>
-                  {launchName.secondLine && (
-                    <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-gray-300 mt-2 px-2">
-                      {launchName.secondLine.toUpperCase()}
-                    </h3>
-                  )}
-                </div>
-              );
-            })()}
-
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-8 sm:mb-12 lg:mb-16 px-4">
-            {upcomingLaunch?.site || upcomingLaunch?.site_name || 'Launch Site Information'}
-          </p>
-
-            <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 text-white px-4">
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
-                {String(countdown.days).padStart(2, '0')}
-                </div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">DAYS</div>
+                }).toLowerCase()}
               </div>
-              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
-                  {String(countdown.hours).padStart(2, '0')}
-            </div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">HOURS</div>
+
+              <div className="mb-1">
+                <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white px-2">
+                  UPCOMING LAUNCH
+                </h2>
               </div>
-              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
-                  {String(countdown.minutes).padStart(2, '0')}
-            </div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">MINUTES</div>
-              </div>
-              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
-                  {String(countdown.seconds).padStart(2, '0')}
-            </div>
-                <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">SECONDS</div>
+
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-8 sm:mb-12 lg:mb-16 px-4">
+                Launch Site Information
+              </p>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ON THIS DAY IN HISTORY */}
+      {/* FEATURED LAUNCHES */}
         <div className="relative z-10 py-4 sm:py-6 lg:py-8">
           <div className="absolute inset-0 bg-black/60"></div>
           <div className="relative z-10 max-w-full mx-auto px-4 sm:px-6 md:px-12 lg:px-24 xl:px-36">
           <h3 className="text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-300 mb-4 sm:mb-6">
-            ON THIS DAY IN HISTORY
+            FEATURED LAUNCHES
           </h3>
           
           {/* Mobile Carousel */}
           <div className="sm:hidden">
             <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-3 pb-2 -mx-4 px-4">
-              {historicalLaunches && historicalLaunches.length > 0 ? (
-                historicalLaunches.slice(0, 5).map((launch, idx) => {
+              {launches && launches.length > 0 ? (
+                launches.slice(0, 5).map((launch, idx) => {
                   const launchImageUrl = getLaunchImageUrl(launch);
                   const barColor = getUpcomingStatusBarColor(launch);
                   return (
                     <Link
                       key={launch.id || launch.external_id || idx}
-                      to={`/launches/${launch.id}`}
+                      to={`/launches/${getLaunchSlug(launch)}`}
                       className="relative h-44 w-[280px] shrink-0 snap-center bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
                     >
                       <div 
@@ -752,7 +837,7 @@ function UpcomingLaunches() {
                   );
                 })
               ) : (
-                // Show placeholder cards if no historical launches found
+                // Show placeholder cards if no launches found
                 Array.from({ length: 5 }).map((_, idx) => (
                   <div 
                     key={idx} 
@@ -765,10 +850,10 @@ function UpcomingLaunches() {
                         NO DATA
                       </div>
                       <h4 className="text-[11px] font-bold text-gray-600 uppercase leading-tight mb-1">
-                        NO HISTORICAL LAUNCH
+                        NO UPCOMING LAUNCH
                       </h4>
                       <p className="text-[8px] text-gray-500 leading-tight normal-case">
-                        No launches found for this date
+                        No launches available
                       </p>
                     </div>
                   </div>
@@ -779,14 +864,14 @@ function UpcomingLaunches() {
 
           {/* Desktop Grid */}
           <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3">
-            {historicalLaunches && historicalLaunches.length > 0 ? (
-              historicalLaunches.slice(0, 5).map((launch, idx) => {
+            {launches && launches.length > 0 ? (
+              launches.slice(0, 5).map((launch, idx) => {
                 const launchImageUrl = getLaunchImageUrl(launch);
                 const barColor = getUpcomingStatusBarColor(launch);
                 return (
                   <Link
                     key={launch.id || launch.external_id || idx}
-                    to={`/launches/${launch.id}`}
+                    to={`/launches/${getLaunchSlug(launch)}`}
                     className="relative h-40 lg:h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
                   >
                     <div 
@@ -810,7 +895,7 @@ function UpcomingLaunches() {
                 );
               })
             ) : (
-              // Show placeholder cards if no historical launches found
+              // Show placeholder cards if no launches found
               Array.from({ length: 5 }).map((_, idx) => (
                 <div 
                   key={idx} 
@@ -823,10 +908,10 @@ function UpcomingLaunches() {
                       NO DATA
                     </div>
                     <h4 className="text-[11px] font-bold text-gray-600 uppercase leading-tight mb-1">
-                      NO HISTORICAL LAUNCH
+                      NO UPCOMING LAUNCH
                     </h4>
                     <p className="text-[8px] text-gray-500 leading-tight normal-case">
-                      No launches found for this date
+                      No launches available
                     </p>
                   </div>
                 </div>
@@ -835,7 +920,6 @@ function UpcomingLaunches() {
           </div>
           </div>
         </div>
-      </div>
 
       {/* Filter Bar */}
       <div className="bg-[#8B1A1A] border-b border-[#7A1515]">
