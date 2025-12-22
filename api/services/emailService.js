@@ -1,34 +1,34 @@
 /**
  * Email Service
  * 
- * Handles sending emails using SendGrid API
+ * Handles sending emails using Brevo API (Direct API approach)
  */
 
-const sgMail = require('@sendgrid/mail');
-
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@tlp.com';
+const FROM_NAME = process.env.FROM_NAME || 'TLP Platform';
 const APP_NAME = process.env.APP_NAME || 'TLP Platform';
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-// Initialize SendGrid
-if (SENDGRID_API_KEY) {
-  sgMail.setApiKey(SENDGRID_API_KEY);
-} else {
-  console.warn('⚠️  SENDGRID_API_KEY not set. Email service will not work.');
+// Validate configuration
+if (!BREVO_API_KEY) {
+  console.warn('⚠️  BREVO_API_KEY not set. Email service will not work.');
 }
 
 /**
- * Send verification code email
+ * Send verification code email via Brevo API
  * @param {string} to - Recipient email address
  * @param {string} code - 6-digit verification code
  * @param {string} username - User's username
+ * @returns {Promise<{success: boolean, messageId?: string}>}
  */
 async function sendVerificationCode(to, code, username) {
-  if (!SENDGRID_API_KEY) {
-    console.error('❌ Cannot send email: SENDGRID_API_KEY not configured');
+  if (!BREVO_API_KEY) {
+    console.error('❌ Cannot send email: BREVO_API_KEY not configured');
     throw new Error('Email service not configured');
   }
 
+  // HTML email template
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -60,22 +60,109 @@ async function sendVerificationCode(to, code, username) {
     </html>
   `;
 
-  const msg = {
-    to: to,
-    from: FROM_EMAIL,
+  // Plain text fallback for email clients that don't support HTML
+  const textContent = `
+    Hi ${username || 'there'},
+    
+    Thank you for signing up for ${APP_NAME}!
+    
+    Your verification code is: ${code}
+    
+    This code will expire in 10 minutes.
+    
+    If you didn't create an account, please ignore this email.
+    
+    © ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.
+  `;
+
+  // Brevo API request payload
+  const payload = {
+    sender: {
+      name: FROM_NAME,
+      email: FROM_EMAIL
+    },
+    to: [
+      {
+        email: to,
+        name: username || 'User'
+      }
+    ],
     subject: `Verify your ${APP_NAME} account`,
-    html: htmlContent,
+    htmlContent: htmlContent,
+    textContent: textContent,
+    tags: ['otp', 'verification', 'email-verification']
   };
 
   try {
-    await sgMail.send(msg);
-    console.log(`✅ Verification email sent to ${to}`);
-    return { success: true };
-  } catch (error) {
-    console.error('❌ Error sending email:', error);
-    if (error.response) {
-      console.error('SendGrid error details:', error.response.body);
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      // Handle specific error codes
+      if (response.status === 401) {
+        console.error('❌ Brevo API Error:', responseData);
+        
+        // Check for IP authorization error
+        if (responseData.message && responseData.message.includes('unrecognised IP address')) {
+          const ipMatch = responseData.message.match(/\d+\.\d+\.\d+\.\d+/);
+          const ipAddress = ipMatch ? ipMatch[0] : 'your IP';
+          throw new Error(
+            `IP address not authorized. Brevo detected an unrecognised IP address (${ipAddress}). ` +
+            `Please add this IP to authorized IPs in Brevo: https://app.brevo.com/security/authorised_ips ` +
+            `Or disable IP restrictions in your Brevo account settings.`
+          );
+        }
+        
+        throw new Error('Invalid Brevo API key. Please check your BREVO_API_KEY environment variable.');
+      } else if (response.status === 400) {
+        console.error('❌ Brevo API Error:', responseData);
+        
+        // Check for sender verification error
+        if (responseData.message && (responseData.message.includes('sender') || responseData.message.includes('Sender'))) {
+          throw new Error(
+            `Sender email not verified. Please verify your sender email (${FROM_EMAIL}) in Brevo: ` +
+            `https://app.brevo.com/settings/senders`
+          );
+        }
+        
+        throw new Error(`Invalid request: ${responseData.message || 'Bad request'}`);
+      } else if (response.status === 429) {
+        console.error('❌ Brevo API Error: Rate limit exceeded');
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else {
+        console.error('❌ Brevo API Error:', responseData);
+        throw new Error(`Brevo API error: ${responseData.message || response.statusText}`);
+      }
     }
+
+    console.log(`✅ Verification email sent to ${to} (Message ID: ${responseData.messageId})`);
+    return { 
+      success: true, 
+      messageId: responseData.messageId 
+    };
+  } catch (error) {
+    // Handle network errors or other exceptions
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      console.error('❌ Network error: Failed to connect to Brevo API');
+      throw new Error('Network error: Unable to connect to email service');
+    }
+    
+    // Re-throw if it's already a formatted error
+    if (error.message && error.message.includes('Brevo') || error.message.includes('Invalid') || error.message.includes('Rate limit')) {
+      throw error;
+    }
+    
+    // Log and throw generic error for unexpected cases
+    console.error('❌ Error sending email via Brevo:', error);
     throw new Error(`Failed to send email: ${error.message}`);
   }
 }

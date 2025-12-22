@@ -7,7 +7,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@sendgrid/mail": "^8.1.6",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -30,6 +29,7 @@
     "sync:historical": "node scripts/fetch_historical_launches.js",
     "sync:details": "node scripts/fetch_historical_launches.js --verbose",
     "sync:new": "node scripts/check_new_launches.js --verbose",
+    "test:email": "node scripts/test-brevo-email.js",
     "start": "node index.js",
     "dev": "nodemon index.js"
   }
