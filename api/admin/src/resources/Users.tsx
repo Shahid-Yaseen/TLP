@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, PasswordInput, BooleanInput, Datagrid, TextField, EmailField, BooleanField, FunctionField, ShowButton, EditButton, DeleteButton } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 export const UserList = (props: any) => (
   <List {...props}>
@@ -25,7 +26,7 @@ export const UserList = (props: any) => (
 );
 
 export const UserCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="users" />}>
     <SimpleForm>
       <TextInput source="username" required />
       <TextInput source="email" type="email" required />
@@ -44,7 +45,7 @@ export const UserCreate = (props: any) => (
 );
 
 export const UserEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="users" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="username" required />
@@ -64,7 +65,7 @@ export const UserEdit = (props: any) => (
 );
 
 export const UserShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="users" showActions />}>
     <TextField source="id" />
     <TextField source="username" />
     <EmailField source="email" />

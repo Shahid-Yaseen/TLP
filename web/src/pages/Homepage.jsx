@@ -161,8 +161,8 @@ const Homepage = () => {
           </div>
         </div>
 
-        {/* Launch Statistics */}
-        <div className="bg-gray-900 p-6">
+        {/* Launch Statistics - Hidden for now */}
+        {/* <div className="bg-gray-900 p-6">
           <div className="grid md:grid-cols-3 gap-6 mb-4">
             <div>
               <div className="text-4xl font-bold mb-2">{stats?.total_launches || 0}</div>
@@ -183,7 +183,7 @@ const Homepage = () => {
           >
             Full Launch Statistics
           </Link>
-        </div>
+        </div> */}
 
         {/* Latest Space News */}
         <div className="bg-gray-900 p-6">
@@ -238,7 +238,7 @@ const Homepage = () => {
               <p className="text-gray-400">A Complete Space History Database</p>
             </div>
             <Link
-              to="/spacebase/astronauts"
+              to="/spacebase"
               className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 transition-colors"
             >
               Enter The Database

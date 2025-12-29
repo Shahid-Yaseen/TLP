@@ -1,6 +1,7 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, SelectInput, Datagrid, TextField, BooleanField, ShowButton, EditButton, DeleteButton, useRecordContext, ImageInput, ImageField } from 'react-admin';
 import { Box, Card, CardContent, Typography, Avatar, Chip, Grid, Divider, Stack } from '@mui/material';
 import { Person, Work, LocationOn, Description, CheckCircle, Cancel, CalendarToday, Image as ImageIcon } from '@mui/icons-material';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 const categoryChoices = [
   { id: 'ADVISOR', name: 'Advisor' },
@@ -28,7 +29,7 @@ export const CrewList = (props: any) => (
 );
 
 export const CrewCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="crew" />}>
     <SimpleForm>
       <TextInput source="first_name" required />
       <TextInput source="last_name" required />
@@ -46,7 +47,7 @@ export const CrewCreate = (props: any) => (
 );
 
 export const CrewEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="crew" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="first_name" required />
@@ -270,7 +271,7 @@ const CrewShowContent = () => {
 };
 
 export const CrewShow = (props: any) => (
-  <Show {...props} title=" ">
+  <Show {...props} title=" " actions={<BackButtonActions resource="crew" showActions />}>
     <CrewShowContent />
   </Show>
 );

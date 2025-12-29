@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, Datagrid, TextField, ShowButton, EditButton, DeleteButton } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 export const CategoryList = (props: any) => (
   <List {...props}>
@@ -15,7 +16,7 @@ export const CategoryList = (props: any) => (
 );
 
 export const CategoryCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="categories" />}>
     <SimpleForm>
       <TextInput source="name" required />
       <TextInput source="slug" />
@@ -25,7 +26,7 @@ export const CategoryCreate = (props: any) => (
 );
 
 export const CategoryEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="categories" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="name" required />
@@ -36,7 +37,7 @@ export const CategoryEdit = (props: any) => (
 );
 
 export const CategoryShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="categories" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
     <TextField source="slug" />

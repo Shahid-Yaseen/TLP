@@ -12,28 +12,18 @@ export const useCountdown = (targetDate) => {
     const calculateCountdown = () => {
       const now = new Date().getTime();
       const target = new Date(targetDate).getTime();
-      const distance = target - now;
+      const distance = Math.abs(target - now); // Use absolute value to continue counting up
 
-      if (distance < 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return false;
-      } else {
-        setCountdown({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
-        return true;
-      }
+      setCountdown({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+      });
     };
 
     calculateCountdown();
-    const interval = setInterval(() => {
-      if (!calculateCountdown()) {
-        clearInterval(interval);
-      }
-    }, 1000);
+    const interval = setInterval(calculateCountdown, 1000);
 
     return () => clearInterval(interval);
   }, [targetDate]);

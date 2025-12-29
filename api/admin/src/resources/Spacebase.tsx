@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, DateInput, Datagrid, TextField, DateField, ShowButton, EditButton, DeleteButton, FunctionField, ArrayField } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 // ==================== ASTRONAUTS ====================
 
@@ -28,7 +29,7 @@ export const AstronautList = (props: any) => (
 );
 
 export const AstronautShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="astronauts" showActions />}>
     <TextField source="id" />
     <TextField source="full_name" />
     <TextField source="first_name" />
@@ -68,7 +69,7 @@ export const AgencyList = (props: any) => (
 );
 
 export const AgencyCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="agencies" />}>
     <SimpleForm>
       <TextInput source="name" required />
       <TextInput source="abbreviation" />
@@ -83,7 +84,7 @@ export const AgencyCreate = (props: any) => (
 );
 
 export const AgencyEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="agencies" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="name" required />
@@ -99,7 +100,7 @@ export const AgencyEdit = (props: any) => (
 );
 
 export const AgencyShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="agencies" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
     <TextField source="abbreviation" />
@@ -127,7 +128,7 @@ export const RocketList = (props: any) => (
 );
 
 export const RocketShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="rockets" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
     <TextField source="provider_name" label="Provider" />

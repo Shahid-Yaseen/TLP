@@ -29,11 +29,11 @@ const Mission = () => {
             <span>|</span>
             <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
             <span>|</span>
-            <Link to="/spacebase/astronauts" className="hover:text-white transition-colors">SPACEBASE</Link>
+            <Link to="/spacebase" className="hover:text-white transition-colors">SPACEBASE</Link>
             <span>|</span>
             <Link to="/mission" className="text-white transition-colors">TLP MISSIONS</Link>
             <span>|</span>
-            <span className="cursor-pointer hover:text-white transition-colors">SHOP</span>
+            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">SHOP</a>
             <span>|</span>
             <Link to="/navigator/advanced" className="hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
@@ -55,7 +55,7 @@ const Mission = () => {
           <div className="hidden md:flex items-center gap-2">
             <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
             <span>|</span>
-            <span className="cursor-pointer hover:text-white transition-colors">SUPPORT</span>
+            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
           </div>
         </div>
         {/* Mobile Menu */}
@@ -63,13 +63,13 @@ const Mission = () => {
           <div className="md:hidden bg-black border-t border-gray-800 px-4 py-3 space-y-2">
             <Link to="/launches/upcoming" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>LAUNCH CENTER</Link>
             <Link to="/news" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP SPACE NEWS</Link>
-            <Link to="/spacebase/astronauts" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
+            <Link to="/spacebase" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
             <Link to="/mission" className="block text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP MISSIONS</Link>
-            <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SHOP</span>
+            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="block text-gray-400 hover:text-white transition-colors">SHOP</a>
             <Link to="/navigator/advanced" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>3D ORBIT NAVIGATOR</Link>
             <div className="border-t border-gray-800 pt-2 mt-2">
               <Link to="/about" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>ABOUT US</Link>
-              <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SUPPORT</span>
+              <Link to="/support" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SUPPORT</Link>
             </div>
           </div>
         )}

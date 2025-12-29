@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, Datagrid, TextField, ShowButton, EditButton, DeleteButton } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 export const ProviderList = (props: any) => (
   <List {...props}>
@@ -13,7 +14,7 @@ export const ProviderList = (props: any) => (
 );
 
 export const ProviderCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="providers" />}>
     <SimpleForm>
       <TextInput source="name" required />
     </SimpleForm>
@@ -21,7 +22,7 @@ export const ProviderCreate = (props: any) => (
 );
 
 export const ProviderEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="providers" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="name" required />
@@ -30,7 +31,7 @@ export const ProviderEdit = (props: any) => (
 );
 
 export const ProviderShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="providers" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
   </Show>

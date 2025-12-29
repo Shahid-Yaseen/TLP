@@ -18,6 +18,12 @@ import PadsList from './pages/spacebase/PadsList';
 import AgenciesList from './pages/spacebase/AgenciesList';
 import LaunchDetail from './pages/LaunchDetail';
 import LaunchStatistics from './pages/LaunchStatistics';
+import LaunchNews from './pages/LaunchNews';
+import LaunchNewsDetail from './pages/LaunchNewsDetail';
+import InSpaceNews from './pages/InSpaceNews';
+import TechnologyNews from './pages/TechnologyNews';
+import MilitaryNews from './pages/MilitaryNews';
+import FinanceNews from './pages/FinanceNews';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -26,6 +32,10 @@ import EmailVerification from './pages/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import EarthOrbitNavigator from './pages/EarthOrbitNavigator';
 import AdvancedOrbitNavigator from './pages/AdvancedOrbitNavigator';
+import ComingSoonSpaceNews from './pages/ComingSoonSpaceNews';
+import ComingSoonSpaceBase from './pages/ComingSoonSpaceBase';
+import ComingSoonOrbitNavigator from './pages/ComingSoonOrbitNavigator';
+import ComingSoonSupport from './pages/ComingSoonSupport';
 
 function App() {
   return (
@@ -40,9 +50,16 @@ function App() {
         <Route path="/launches/upcoming" element={<UpcomingLaunches />} />
         <Route path="/launches/previous" element={<PreviousLaunches />} />
         <Route path="/launches/statistics" element={<LaunchStatistics />} />
+        <Route path="/launches/news" element={<LaunchNews />} />
+        <Route path="/launches/news/:slug" element={<LaunchNewsDetail />} />
         <Route path="/launches/:slug" element={<LaunchDetail />} />
-        <Route path="/news" element={<News />} />
+        <Route path="/news" element={<ComingSoonSpaceNews />} />
+        <Route path="/news/in-space" element={<InSpaceNews />} />
+        <Route path="/news/technology" element={<TechnologyNews />} />
+        <Route path="/news/military" element={<MilitaryNews />} />
+        <Route path="/news/finance" element={<FinanceNews />} />
         <Route path="/news/:slug" element={<ArticleDetail />} />
+        <Route path="/spacebase" element={<ComingSoonSpaceBase />} />
         <Route path="/spacebase/astronauts" element={<AstronautsList />} />
         <Route path="/spacebase/astronauts/:id" element={<AstronautProfile />} />
         <Route path="/spacebase/rockets" element={<RocketsList />} />
@@ -72,7 +89,8 @@ function App() {
         <Route path="/briefing" element={<div className="min-h-screen bg-black text-white p-8">Mission Briefing (YouTube, Leaflet, etc.)</div>} />
         <Route path="/tlpedia" element={<div className="min-h-screen bg-black text-white p-8">TLPedia (search/faceted results)</div>} />
         <Route path="/navigator" element={<EarthOrbitNavigator />} />
-        <Route path="/navigator/advanced" element={<AdvancedOrbitNavigator />} />
+        <Route path="/navigator/advanced" element={<ComingSoonOrbitNavigator />} />
+        <Route path="/support" element={<ComingSoonSupport />} />
       </Routes>
     </AuthProvider>
   );

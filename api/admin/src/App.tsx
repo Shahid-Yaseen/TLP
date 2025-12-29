@@ -23,11 +23,13 @@ import { EventList, EventCreate, EventEdit, EventShow } from './resources/Events
 import { CrewList, CrewCreate, CrewEdit, CrewShow } from './resources/Crew';
 import { RoleList, RoleCreate, RoleEdit, RoleShow } from './resources/Roles';
 import { PermissionList, PermissionCreate, PermissionEdit, PermissionShow } from './resources/Permissions';
+import { StockTickerList, StockTickerCreate, StockTickerEdit, StockTickerShow } from './resources/StockTickers';
 
 // Spacebase Resources
 import { AstronautList, AstronautShow } from './resources/Spacebase';
 import { AgencyList, AgencyCreate, AgencyEdit, AgencyShow } from './resources/Spacebase';
 import { RocketList, RocketShow } from './resources/Spacebase';
+import { CountryList, CountryCreate, CountryEdit, CountryShow } from './resources/Countries';
 
 const CustomLayout = (props: any) => <Layout {...props} menu={CustomMenu} />;
 
@@ -64,6 +66,14 @@ const App = () => (
       edit={LaunchSiteEdit}
       show={LaunchSiteShow}
       options={{ label: 'Launch Sites' }}
+    />
+    <Resource
+      name="stock_tickers"
+      list={StockTickerList}
+      create={StockTickerCreate}
+      edit={StockTickerEdit}
+      show={StockTickerShow}
+      options={{ label: 'Stock Tickers' }}
     />
 
     {/* Main Resources */}
@@ -168,6 +178,14 @@ const App = () => (
       list={RocketList}
       show={RocketShow}
       options={{ label: 'Rockets' }}
+    />
+    <Resource
+      name="countries"
+      list={CountryList}
+      create={CountryCreate}
+      edit={CountryEdit}
+      show={CountryShow}
+      options={{ label: 'Countries' }}
     />
     <CustomRoutes>
       <Route path="/launch-statistics" element={<LaunchStatistics />} />

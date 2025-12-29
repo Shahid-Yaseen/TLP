@@ -30,10 +30,18 @@ const errorHandler = (err, req, res, next) => {
           details: err.detail
         });
       default:
+        console.error('Database error details:', {
+          code: err.code,
+          message: err.message,
+          detail: err.detail,
+          hint: err.hint,
+          position: err.position
+        });
         return res.status(500).json({
           error: 'Database error',
           code: 'DB_ERROR',
-          details: process.env.NODE_ENV === 'development' ? err.message : undefined
+          details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+          dbCode: process.env.NODE_ENV === 'development' ? err.code : undefined
         });
     }
   }

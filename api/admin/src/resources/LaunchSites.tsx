@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, Datagrid, TextField, ShowButton, EditButton, DeleteButton } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 export const LaunchSiteList = (props: any) => (
   <List {...props}>
@@ -15,7 +16,7 @@ export const LaunchSiteList = (props: any) => (
 );
 
 export const LaunchSiteCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="launch_sites" />}>
     <SimpleForm>
       <TextInput source="name" required />
       <TextInput source="location" />
@@ -26,7 +27,7 @@ export const LaunchSiteCreate = (props: any) => (
 );
 
 export const LaunchSiteEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="launch_sites" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="name" required />
@@ -38,7 +39,7 @@ export const LaunchSiteEdit = (props: any) => (
 );
 
 export const LaunchSiteShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="launch_sites" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
     <TextField source="location" />

@@ -61,6 +61,8 @@ const permissionsRoutes = require('./routes/permissions');
 const crewRoutes = require('./routes/crew');
 const uploadRoutes = require('./routes/upload');
 const satellitesRoutes = require('./routes/satellites');
+const countriesRoutes = require('./routes/countries');
+const stockTickersRoutes = require('./routes/stockTickers');
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -126,6 +128,8 @@ app.use('/api/permissions', permissionsRoutes);
 app.use('/api/crew', crewRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/satellites', satellitesRoutes);
+app.use('/api/countries', countriesRoutes);
+app.use('/api/stock-tickers', stockTickersRoutes);
 
 // Legacy /launches route for backward compatibility (will be removed later)
 app.get('/launches', async (req, res) => {

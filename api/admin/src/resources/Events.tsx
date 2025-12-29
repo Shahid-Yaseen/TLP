@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, DateTimeInput, SelectInput, ReferenceInput, Datagrid, TextField, DateField, ShowButton, EditButton, DeleteButton, FunctionField } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 const eventTypeChoices = [
   { id: 'launch', name: 'Launch' },
@@ -45,7 +46,7 @@ export const EventList = (props: any) => (
 );
 
 export const EventCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="events" />}>
     <SimpleForm>
       <TextInput source="name" required />
       <SelectInput source="event_type" choices={eventTypeChoices} />
@@ -62,7 +63,7 @@ export const EventCreate = (props: any) => (
 );
 
 export const EventEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="events" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="name" required />
@@ -80,7 +81,7 @@ export const EventEdit = (props: any) => (
 );
 
 export const EventShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="events" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
     <TextField source="event_type" />

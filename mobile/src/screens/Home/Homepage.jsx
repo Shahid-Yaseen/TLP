@@ -63,8 +63,8 @@ const Homepage = () => {
         }
       >
         <View style={styles.content}>
-          {/* Hero Stats Section */}
-          {stats && (
+          {/* Hero Stats Section - Hidden for now */}
+          {/* {stats && (
             <View style={styles.heroStatsContainer}>
               <View style={styles.heroStatsHeader}>
                 <Text style={styles.heroStatsTitle}>LAUNCH STATISTICS</Text>
@@ -84,7 +84,7 @@ const Homepage = () => {
                 </View>
               </View>
             </View>
-          )}
+          )} */}
 
           {/* Upcoming Launches */}
           <View style={styles.section}>

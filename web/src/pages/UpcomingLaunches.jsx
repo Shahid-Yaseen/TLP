@@ -261,28 +261,18 @@ function UpcomingLaunches() {
     const calculateCountdown = () => {
       const now = new Date().getTime();
       const target = new Date(targetDate).getTime();
-      const distance = target - now;
+      const distance = Math.abs(target - now); // Use absolute value to continue counting up
 
-      if (distance < 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return false;
-      } else {
-        setCountdown({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
-        return true;
-      }
+      setCountdown({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+      });
     };
 
     calculateCountdown();
-    const interval = setInterval(() => {
-      if (!calculateCountdown()) {
-        clearInterval(interval);
-      }
-    }, 1000);
+    const interval = setInterval(calculateCountdown, 1000);
 
     return () => clearInterval(interval);
   };
@@ -432,16 +422,16 @@ function UpcomingLaunches() {
             <span>|</span>
             <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
                 <span className="hidden lg:inline">|</span>
-                <Link to="/spacebase/astronauts" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
+                <Link to="/spacebase" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
                 <span className="hidden xl:inline">|</span>
-                <span className="hidden xl:inline cursor-pointer hover:text-white transition-colors">SHOP</span>
+                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hidden xl:inline hover:text-white transition-colors">SHOP</a>
                 <span className="hidden xl:inline">|</span>
                 <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
             <span>|</span>
-            <span className="cursor-pointer hover:text-white transition-colors">SUPPORT</span>
+            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
             <span>|</span>
             {isAuthenticated ? (
               <div className="relative ml-2" ref={profileMenuRef}>
@@ -528,12 +518,12 @@ function UpcomingLaunches() {
               <div className="flex flex-col gap-3 text-xs text-gray-400">
                 <Link to="/news" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP SPACE NEWS</Link>
                 <Link to="/mission" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP MISSION</Link>
-                <Link to="/spacebase/astronauts" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
-                <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1">SHOP</span>
+                <Link to="/spacebase" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
+                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SHOP</a>
                 <Link to="/navigator/advanced" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">3D ORBIT NAVIGATOR</Link>
                 <div className="border-t border-gray-700 pt-3 mt-1">
                   <Link to="/about" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">ABOUT US</Link>
-                  <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1 block">SUPPORT</span>
+                  <Link to="/support" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">SUPPORT</Link>
                 </div>
               </div>
             </div>
@@ -577,13 +567,14 @@ function UpcomingLaunches() {
               >
                 PREVIOUS
               </Link>
-              <span className="mx-1 font-bold text-white">|</span>
+              {/* STATISTICS link hidden for now */}
+              {/* <span className="mx-1 font-bold text-white">|</span>
               <Link
                 to="/launches/statistics"
                 className={`px-3 py-2 ${location.pathname.includes('statistics') ? 'text-white border-b-2 border-white font-bold' : 'text-gray-400'}`}
               >
                 STATISTICS
-              </Link>
+              </Link> */}
             </div>
 
             {/* Desktop YouTube Button - Right Side */}
@@ -636,13 +627,14 @@ function UpcomingLaunches() {
                 >
                   PREVIOUS
                 </Link>
-                <Link
+                {/* STATISTICS link hidden for now */}
+                {/* <Link
                   to="/launches/statistics"
                   onClick={() => setNavMenuOpen(false)}
                   className={`px-3 py-2 text-xs uppercase ${location.pathname.includes('statistics') ? 'text-white font-bold bg-white/10' : 'text-gray-300'} text-left`}
                 >
                   STATISTICS
-                </Link>
+                </Link> */}
                 {upcomingLaunch && getYouTubeUrl(upcomingLaunch) && (
                   <a
                     href={getYouTubeUrl(upcomingLaunch)}

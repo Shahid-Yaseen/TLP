@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, ReferenceArrayInput, SelectArrayInput, Datagrid, TextField, ArrayField, FunctionField, ShowButton, EditButton, DeleteButton } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 export const RoleList = (props: any) => (
   <List {...props}>
@@ -22,7 +23,7 @@ export const RoleList = (props: any) => (
 );
 
 export const RoleCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="roles" />}>
     <SimpleForm>
       <TextInput source="name" required />
       <TextInput source="description" multiline />
@@ -34,7 +35,7 @@ export const RoleCreate = (props: any) => (
 );
 
 export const RoleEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="roles" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="name" required />
@@ -47,7 +48,7 @@ export const RoleEdit = (props: any) => (
 );
 
 export const RoleShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="roles" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
     <TextField source="description" />

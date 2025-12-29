@@ -121,16 +121,16 @@ function LaunchStatistics() {
                 <span>|</span>
                 <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
                 <span className="hidden lg:inline">|</span>
-                <Link to="/spacebase/astronauts" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
+                <Link to="/spacebase" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
                 <span className="hidden xl:inline">|</span>
-                <span className="hidden xl:inline cursor-pointer hover:text-white transition-colors">SHOP</span>
+                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hidden xl:inline hover:text-white transition-colors">SHOP</a>
                 <span className="hidden xl:inline">|</span>
                 <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
               </div>
               <div className="flex items-center gap-2">
                 <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
                 <span>|</span>
-                <span className="cursor-pointer hover:text-white transition-colors">SUPPORT</span>
+                <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
               </div>
             </div>
           </div>

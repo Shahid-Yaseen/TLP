@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config/api';
 import LaunchFilters from '../components/LaunchFilters';
@@ -11,6 +11,7 @@ import RedDotLoader from '../components/common/RedDotLoader';
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
 function LaunchCenter() {
+  const location = useLocation();
   const [launches, setLaunches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('UPCOMING');
@@ -36,31 +37,21 @@ function LaunchCenter() {
     const calculateCountdown = () => {
       const now = new Date().getTime();
       const target = new Date(targetDate).getTime();
-      const distance = target - now;
+      const distance = Math.abs(target - now); // Use absolute value to continue counting up
 
-      if (distance < 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return false; // Stop the interval
-      } else {
-        setCountdown({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
-        return true; // Continue the interval
-      }
+      setCountdown({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+      });
     };
 
     // Set initial countdown
     calculateCountdown();
 
     // Update every second
-    const interval = setInterval(() => {
-      if (!calculateCountdown()) {
-        clearInterval(interval);
-      }
-    }, 1000);
+    const interval = setInterval(calculateCountdown, 1000);
 
     return () => clearInterval(interval);
   };
@@ -266,14 +257,14 @@ function LaunchCenter() {
             <span>|</span>
             <span>SPACEBASE</span>
             <span>|</span>
-            <span>SHOP</span>
+            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">SHOP</a>
             <span>|</span>
             <Link to="/navigator/advanced" className="hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
           <div className="flex items-center gap-2">
             <span>ABOUT US</span>
             <span>|</span>
-            <span>SUPPORT</span>
+            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
           </div>
         </div>
       </div>
@@ -314,6 +305,13 @@ function LaunchCenter() {
               >
                 PREVIOUS
               </button>
+              <span className="mx-1 font-bold text-white">|</span>
+              <Link
+                to="/launches/news"
+                className={`px-3 py-2 ${location.pathname === '/launches/news' ? 'text-white border-b-2 border-white font-bold' : 'text-gray-400 hover:text-white'}`}
+              >
+                NEWS
+              </Link>
               <span className="mx-1 font-bold text-white">|</span>
               <button className="px-3 py-2 text-gray-400">STATISTICS</button>
             </div>

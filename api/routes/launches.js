@@ -1981,7 +1981,8 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
     youtube_channel_id,
     launch_window_open,
     launch_window_close,
-    is_featured
+    is_featured,
+    author_id
   } = req.body;
 
   if (!name || !launch_date) {
@@ -1996,14 +1997,14 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
       name, launch_date, provider_id, rocket_id, site_id, launch_pad_id,
       orbit_id, mission_type_id, outcome, details, mission_description,
       media, youtube_video_id, youtube_channel_id, launch_window_open,
-      launch_window_close, is_featured
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      launch_window_close, is_featured, author_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
     RETURNING *
   `, [
     name, launch_date, provider_id, rocket_id, site_id, launch_pad_id,
     orbit_id, mission_type_id, outcome, details, mission_description,
     JSON.stringify(media || {}), youtube_video_id, youtube_channel_id,
-    launch_window_open, launch_window_close, is_featured || false
+    launch_window_open, launch_window_close, is_featured || false, author_id || null
   ]);
 
   res.status(201).json(rows[0]);
@@ -2019,7 +2020,7 @@ router.patch('/:id', authenticate, role('admin', 'writer'), asyncHandler(async (
     'name', 'launch_date', 'provider_id', 'rocket_id', 'site_id', 'launch_pad_id',
     'orbit_id', 'mission_type_id', 'outcome', 'details', 'mission_description',
     'media', 'youtube_video_id', 'youtube_channel_id', 'launch_window_open',
-    'launch_window_close', 'is_featured'
+    'launch_window_close', 'is_featured', 'author_id'
   ];
 
   const updates = Object.keys(req.body).filter(key => allowedFields.includes(key));

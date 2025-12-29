@@ -83,12 +83,12 @@ const AboutUs = () => {
             <Link to="/launches/upcoming" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>LAUNCH CENTER</Link>
             <Link to="/news" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP SPACE NEWS</Link>
             <Link to="/mission" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP MISSION</Link>
-            <Link to="/spacebase/astronauts" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
-            <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SHOP</span>
+            <Link to="/spacebase" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
+            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="block text-gray-400 hover:text-white transition-colors">SHOP</a>
             <Link to="/navigator/advanced" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>3D ORBIT NAVIGATOR</Link>
             <div className="border-t border-gray-800 pt-2 mt-2">
               <Link to="/about" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>ABOUT US</Link>
-              <span className="block text-gray-400 cursor-pointer hover:text-white transition-colors">SUPPORT</span>
+              <Link to="/support" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SUPPORT</Link>
             </div>
           </div>
         )}
@@ -120,9 +120,9 @@ const AboutUs = () => {
               <span className="text-gray-600">|</span>
               <Link to="/mission" className="px-3 py-2 hover:text-gray-300 transition-colors">TLP MISSION</Link>
               <span className="text-gray-600">|</span>
-              <Link to="/spacebase/astronauts" className="px-3 py-2 hover:text-gray-300 transition-colors">SPACEBASE</Link>
+              <Link to="/spacebase" className="px-3 py-2 hover:text-gray-300 transition-colors">SPACEBASE</Link>
               <span className="text-gray-600">|</span>
-              <span className="px-3 py-2 cursor-pointer hover:text-gray-300 transition-colors">SHOP</span>
+              <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="px-3 py-2 hover:text-gray-300 transition-colors">SHOP</a>
               <span className="text-gray-600">|</span>
               <Link to="/navigator/advanced" className="px-3 py-2 hover:text-gray-300 transition-colors">3D ORBIT NAVIGATOR</Link>
             </div>
@@ -131,7 +131,7 @@ const AboutUs = () => {
           <div className="hidden md:flex items-center gap-2 text-sm text-white">
             <Link to="/about" className="px-3 py-2 hover:text-gray-300 transition-colors">ABOUT US</Link>
             <span className="text-gray-600">|</span>
-            <span className="px-3 py-2 cursor-pointer hover:text-gray-300 transition-colors">SUPPORT</span>
+            <Link to="/support" className="px-3 py-2 hover:text-gray-300 transition-colors">SUPPORT</Link>
           </div>
         </div>
       </div>

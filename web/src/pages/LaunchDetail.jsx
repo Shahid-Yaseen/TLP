@@ -34,7 +34,7 @@ const LaunchDetail = () => {
   const [authorImageError, setAuthorImageError] = useState(false);
   const [replyContent, setReplyContent] = useState('');
 
-  const tabs = ['PAYLOAD', 'CREW', 'ROCKET', 'ENGINE', 'PROVIDER', 'PAD', 'HAZARDS', 'STATS'];
+  const tabs = ['PAYLOAD', 'CREW', 'ROCKET', 'ENGINE', 'PROVIDER', 'PAD', 'HAZARDS']; // 'STATS' hidden for now
 
   useEffect(() => {
     fetchLaunch();
@@ -227,19 +227,14 @@ const LaunchDetail = () => {
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const target = new Date(targetDate).getTime();
-      const distance = target - now;
+      const distance = Math.abs(target - now); // Use absolute value to continue counting up
 
-      if (distance < 0) {
-        clearInterval(interval);
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      } else {
-        setCountdown({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
-      }
+      setCountdown({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+      });
     }, 1000);
     return () => clearInterval(interval);
   };
@@ -769,8 +764,9 @@ const LaunchDetail = () => {
           >
             PREVIOUS
           </Link>
-          <span className="mx-1 font-bold text-white">|</span>
-          <button className="px-3 py-2 text-gray-400 hover:text-white transition-colors">STATISTICS</button>
+          {/* STATISTICS button hidden for now */}
+          {/* <span className="mx-1 font-bold text-white">|</span>
+          <button className="px-3 py-2 text-gray-400 hover:text-white transition-colors">STATISTICS</button> */}
         </div>
 
         {/* Desktop YouTube Button - Right Side */}
@@ -851,56 +847,54 @@ const LaunchDetail = () => {
         </div>
       </div>
 
-      {/* Video Player and Sidebar - Side by Side */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8">
-          {/* Left Column - Video Player */}
-          <div className="lg:col-span-8">
-            <div className="bg-[#121212] p-4 sm:p-6">
-              <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
-                {/* Red Border - Inside container, left border extends to top, top border has gap from left border */}
-                {/* Left border - extends to top */}
-                <div className="absolute top-0 left-4 sm:left-5 bottom-4 sm:bottom-5 w-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
-                {/* Top border - starts after left border with gap, increased padding for visibility */}
-                <div className="absolute top-8 sm:top-10 left-12 sm:left-14 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
-                {/* Right border */}
-                <div className="absolute top-8 sm:top-10 right-4 sm:right-5 bottom-4 sm:bottom-5 w-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
-                {/* Bottom border */}
-                <div className="absolute bottom-4 sm:bottom-5 left-4 sm:left-5 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+      {/* Video Player - Full Width (Conditional - Only if YouTube video exists) */}
+      {youtubeVideoId && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <div className="bg-[#121212] p-4 sm:p-6">
+            <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+              {/* Red Border - Inside container, left border extends to top, top border has gap from left border */}
+              {/* Left border - extends to top */}
+              <div className="absolute top-0 left-4 sm:left-5 bottom-4 sm:bottom-5 w-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+              {/* Top border - starts after left border with gap, increased padding for visibility */}
+              <div className="absolute top-8 sm:top-10 left-12 sm:left-14 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+              {/* Right border */}
+              <div className="absolute top-8 sm:top-10 right-4 sm:right-5 bottom-4 sm:bottom-5 w-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+              {/* Bottom border */}
+              <div className="absolute bottom-4 sm:bottom-5 left-4 sm:left-5 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
+              
+              {/* Background Image */}
+              <div 
+                className="absolute top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: `url('${launchImageUrl}')`,
+                  backgroundPosition: 'center',
+                  backgroundSize: 'cover',
+                }}
+              >
+                {/* Dark Overlay - Full Image - Hide when video is playing */}
+                {!isVideoPlaying && (
+                  <div className="absolute top-0 left-0 w-full h-full bg-black/85 z-10"></div>
+                )}
                 
-                {/* Background Image */}
-                <div 
-                  className="absolute top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
-                  style={{
-                    backgroundImage: `url('${launchImageUrl}')`,
-                    backgroundPosition: 'center',
-                    backgroundSize: 'cover',
-                  }}
-                >
-                  {/* Dark Overlay - Full Image - Hide when video is playing */}
-                  {!isVideoPlaying && (
-                    <div className="absolute top-0 left-0 w-full h-full bg-black/85 z-10"></div>
-                  )}
-                  
-                  {/* YouTube Video - Only render when playing to improve performance */}
-                  {youtubeVideoId && isVideoPlaying && (
-                    <iframe
-                      className="absolute top-0 left-0 w-full h-full z-20"
-                      src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
-                      title="Launch Video"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    ></iframe>
-                  )}
-                  
-                  {/* Branding - Top Left - Above border */}
-                  <div className="absolute top-0 left-4 sm:left-5 z-20 flex items-center gap-2 sm:gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black flex items-center justify-center overflow-hidden">
-                      <img 
-                        src="/TLP Helmet.png" 
-                        alt="TLP Logo" 
-                        className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
+                {/* YouTube Video - Only render when playing to improve performance */}
+                {youtubeVideoId && isVideoPlaying && (
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full z-20"
+                    src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
+                    title="Launch Video"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
+                )}
+                
+                {/* Branding - Top Left - Above border */}
+                <div className="absolute top-0 left-4 sm:left-5 z-20 flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black flex items-center justify-center overflow-hidden">
+                    <img 
+                      src="/TLP Helmet.png" 
+                      alt="TLP Logo" 
+                      className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
                 />
               </div>
                     <div className="text-white text-sm sm:text-base md:text-lg font-semibold uppercase tracking-wide" style={{ fontFamily: 'Nasalization, sans-serif' }}>THE LAUNCH PAD</div>
@@ -984,19 +978,21 @@ const LaunchDetail = () => {
                                   )}
                       </div>
 
-                                {/* Countdown to Launch - Under Title */}
-                                <div className="mt-4 sm:mt-6 z-20 relative">
-                                  <div 
-                                    className="bg-[#8B1A1A] px-6 sm:px-8 md:px-10 py-2 sm:py-2.5 text-white text-sm sm:text-base md:text-lg font-bold uppercase text-center tracking-wider"
-                                    style={{ 
-                                      fontFamily: 'Nasalization, sans-serif',
-                                      clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
-                                      boxShadow: '0 0 10px rgba(139, 26, 26, 0.5)'
-                                    }}
-                                  >
-                                    COUNTDOWN TO LAUNCH
+                                {/* Countdown to Launch - Under Title (Only show when YouTube video exists) */}
+                                {youtubeVideoId && (
+                                  <div className="mt-4 sm:mt-6 z-20 relative">
+                                    <div 
+                                      className="bg-[#8B1A1A] px-6 sm:px-8 md:px-10 py-2 sm:py-2.5 text-white text-sm sm:text-base md:text-lg font-bold uppercase text-center tracking-wider"
+                                      style={{ 
+                                        fontFamily: 'Nasalization, sans-serif',
+                                        clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
+                                        boxShadow: '0 0 10px rgba(139, 26, 26, 0.5)'
+                                      }}
+                                    >
+                                      COUNTDOWN TO LAUNCH
                       </div>
                       </div>
+                                )}
                       </div>
                             </>
                           );
@@ -1007,6 +1003,14 @@ const LaunchDetail = () => {
                       </div>
                       </div>
                       </div>
+        </div>
+      )}
+
+      {/* Main Content Grid - Tabs and Sidebar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8">
+          {/* Left Column - Tabs and Content */}
+          <div className="lg:col-span-8">
                   
             {/* Tabs */}
             <div className="bg-[#8B1A1A] flex flex-wrap mb-4 sm:mb-6 mt-6">
@@ -1290,7 +1294,8 @@ const LaunchDetail = () => {
                           </div>
                         )}
                           </div>
-                          {(rocket.configuration.total_launch_count !== null && rocket.configuration.total_launch_count !== undefined) ||
+                          {/* Launch Statistics section hidden for now */}
+                          {/* {(rocket.configuration.total_launch_count !== null && rocket.configuration.total_launch_count !== undefined) ||
                            (rocket.configuration.successful_launches !== null && rocket.configuration.successful_launches !== undefined) ||
                            (rocket.configuration.failed_launches !== null && rocket.configuration.failed_launches !== undefined) ? (
                             <div className="mt-4">
@@ -1316,7 +1321,7 @@ const LaunchDetail = () => {
                         )}
                           </div>
                           </div>
-                          ) : null}
+                          ) : null} */}
                           {(rocket.configuration.info_url || rocket.configuration.wiki_url) && (
                         <div className="mt-4">
                               <h6 className="text-md font-semibold mb-3 text-gray-300">Links</h6>
@@ -1779,7 +1784,8 @@ const LaunchDetail = () => {
                   )}
                 </div>
               )}
-              {activeTab === 'STATS' && (
+              {/* STATS tab content hidden for now */}
+              {/* {activeTab === 'STATS' && (
                 <div className="space-y-4">
                   {(launch.orbital_launch_attempt_count !== null && launch.orbital_launch_attempt_count !== undefined) ||
                    (launch.location_launch_attempt_count !== null && launch.location_launch_attempt_count !== undefined) ||
@@ -1853,7 +1859,7 @@ const LaunchDetail = () => {
                     <div className="text-gray-400">Statistics not available for this launch.</div>
                   )}
                 </div>
-              )}
+              )} */}
                         </div>
 
             {/* Author Information Section */}

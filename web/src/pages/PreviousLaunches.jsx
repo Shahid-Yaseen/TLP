@@ -109,6 +109,7 @@ function PreviousLaunches() {
 
   const previousLaunch = heroLaunch;
   const [historicalLaunches, setHistoricalLaunches] = useState([]);
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const fetchHistoricalLaunches = useCallback(async (heroLaunchDate) => {
     if (!heroLaunchDate) {
@@ -169,6 +170,31 @@ function PreviousLaunches() {
     }
   }, [previousLaunch, fetchHistoricalLaunches]);
 
+  // Countdown timer for previous launch (counts up elapsed time)
+  useEffect(() => {
+    if (!previousLaunch?.launch_date) {
+      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const launchDate = new Date(previousLaunch.launch_date || previousLaunch.net).getTime();
+      const distance = Math.abs(launchDate - now); // Use absolute value to continue counting up
+
+      setCountdown({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+      });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [previousLaunch?.launch_date, previousLaunch?.net]);
+
   // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -220,16 +246,16 @@ function PreviousLaunches() {
             <span>|</span>
             <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
                 <span className="hidden lg:inline">|</span>
-                <Link to="/spacebase/astronauts" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
+                <Link to="/spacebase" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
                 <span className="hidden xl:inline">|</span>
-                <span className="hidden xl:inline cursor-pointer hover:text-white transition-colors">SHOP</span>
+                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hidden xl:inline hover:text-white transition-colors">SHOP</a>
                 <span className="hidden xl:inline">|</span>
                 <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
             <span>|</span>
-            <span className="cursor-pointer hover:text-white transition-colors">SUPPORT</span>
+            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
             <span>|</span>
             {isAuthenticated ? (
               <div className="relative ml-2" ref={profileMenuRef}>
@@ -316,12 +342,12 @@ function PreviousLaunches() {
               <div className="flex flex-col gap-3 text-xs text-gray-400">
                 <Link to="/news" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP SPACE NEWS</Link>
                 <Link to="/mission" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP MISSION</Link>
-                <Link to="/spacebase/astronauts" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
-                <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1">SHOP</span>
+                <Link to="/spacebase" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
+                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SHOP</a>
                 <Link to="/navigator/advanced" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">3D ORBIT NAVIGATOR</Link>
                 <div className="border-t border-gray-700 pt-3 mt-1">
                   <Link to="/about" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">ABOUT US</Link>
-                  <span onClick={() => setTopMenuOpen(false)} className="cursor-pointer hover:text-white transition-colors py-1 block">SUPPORT</span>
+                  <Link to="/support" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">SUPPORT</Link>
                 </div>
               </div>
             </div>
@@ -365,13 +391,14 @@ function PreviousLaunches() {
               >
                 PREVIOUS
               </Link>
-              <span className="mx-1 font-bold text-white">|</span>
+              {/* STATISTICS link hidden for now */}
+              {/* <span className="mx-1 font-bold text-white">|</span>
               <Link
                 to="/launches/statistics"
                 className={`px-3 py-2 ${location.pathname.includes('statistics') ? 'text-white border-b-2 border-white font-bold' : 'text-gray-400'}`}
               >
                 STATISTICS
-              </Link>
+              </Link> */}
             </div>
 
             {/* Desktop YouTube Button - Right Side */}
@@ -424,13 +451,14 @@ function PreviousLaunches() {
                 >
                   PREVIOUS
                 </Link>
-                <Link
+                {/* STATISTICS link hidden for now */}
+                {/* <Link
                   to="/launches/statistics"
                   onClick={() => setNavMenuOpen(false)}
                   className={`px-3 py-2 text-xs uppercase ${location.pathname.includes('statistics') ? 'text-white font-bold bg-white/10' : 'text-gray-300'} text-left`}
                 >
                   STATISTICS
-                </Link>
+                </Link> */}
                 {previousLaunch && getYouTubeUrl(previousLaunch) && (
                   <a
                     href={getYouTubeUrl(previousLaunch)}
@@ -511,22 +539,30 @@ function PreviousLaunches() {
 
               <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 text-white px-4">
                 <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.days).padStart(2, '0')}
+                  </div>
                   <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">DAYS</div>
                 </div>
                 <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
                 <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.hours).padStart(2, '0')}
+                  </div>
                   <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">HOURS</div>
                 </div>
                 <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
                 <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.minutes).padStart(2, '0')}
+                  </div>
                   <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">MINUTES</div>
                 </div>
                 <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-white leading-none self-start pt-1.5 sm:pt-2">:</span>
                 <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">00</div>
+                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-mono text-white">
+                    {String(countdown.seconds).padStart(2, '0')}
+                  </div>
                   <div className="text-[8px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-white mt-0.5 sm:mt-1">SECONDS</div>
                 </div>
               </div>

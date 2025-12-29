@@ -20,6 +20,18 @@ const pool = getPool();
 router.get('/launches/detailed', optionalAuth, asyncHandler(async (req, res) => {
   try {
     // Overall metrics
+    // Check if raw_data column exists first
+    const columnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'launches' AND column_name = 'raw_data'
+    `);
+    const hasRawDataColumn = columnCheck.rows.length > 0;
+    
+    const rawDataFilter = hasRawDataColumn 
+      ? `COUNT(*) FILTER (WHERE raw_data IS NOT NULL) as launches_with_raw_data,`
+      : `0 as launches_with_raw_data,`;
+    
     const overallMetrics = await pool.query(`
       SELECT 
         COUNT(*) as total_launches,
@@ -28,7 +40,7 @@ router.get('/launches/detailed', optionalAuth, asyncHandler(async (req, res) => 
         COUNT(*) FILTER (WHERE outcome = 'partial') as total_partial_failures,
         COUNT(*) FILTER (WHERE outcome = 'TBD' OR outcome IS NULL) as total_tbd,
         COUNT(*) FILTER (WHERE is_featured = true) as featured_launches,
-        COUNT(*) FILTER (WHERE raw_data IS NOT NULL) as launches_with_raw_data,
+        ${rawDataFilter}
         COUNT(*) FILTER (WHERE launch_date >= NOW() - INTERVAL '7 days') as launches_last_7_days,
         COUNT(*) FILTER (WHERE launch_date >= NOW() - INTERVAL '30 days') as launches_last_30_days,
         COUNT(*) FILTER (WHERE launch_date >= NOW() - INTERVAL '90 days') as launches_last_90_days,
@@ -170,10 +182,14 @@ router.get('/launches/detailed', optionalAuth, asyncHandler(async (req, res) => 
     `);
 
     // Data completeness metrics
+    const rawDataCompleteness = hasRawDataColumn
+      ? `COUNT(*) FILTER (WHERE raw_data IS NOT NULL) as has_raw_data,`
+      : `0 as has_raw_data,`;
+    
     const dataCompleteness = await pool.query(`
       SELECT 
         COUNT(*) as total_launches,
-        COUNT(*) FILTER (WHERE raw_data IS NOT NULL) as has_raw_data,
+        ${rawDataCompleteness}
         COUNT(*) FILTER (WHERE status_json IS NOT NULL) as has_status_json,
         COUNT(*) FILTER (WHERE rocket_json IS NOT NULL) as has_rocket_json,
         COUNT(*) FILTER (WHERE mission_json IS NOT NULL) as has_mission_json,

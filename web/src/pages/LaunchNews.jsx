@@ -1,0 +1,334 @@
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import Layout from '../components/Layout';
+import API_URL from '../config/api';
+
+const LaunchNews = () => {
+  const navigate = useNavigate();
+  const [articles, setArticles] = useState([]);
+  const [featuredArticle, setFeaturedArticle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState('');
+
+  const categories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
+
+  // Dummy data matching the image design
+  const dummyFeaturedArticle = {
+    id: 1,
+    slug: 'live-coverage-china-shenzhou-20-crew-launch',
+    title: 'LIVE COVERAGE! China Shenzhou 20 Crew Launch',
+    excerpt: 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).',
+    featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop',
+    category: { name: 'China' },
+    published_at: new Date().toISOString(),
+  };
+
+  const dummyArticles = [
+    {
+      id: 1,
+      slug: 'leocloud-space-edge-datacenter-iss',
+      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
+      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
+      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
+      category: { name: 'China' },
+      published_at: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      slug: 'leocloud-space-edge-datacenter-iss-2',
+      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
+      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
+      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
+      category: { name: 'China' },
+      published_at: new Date().toISOString(),
+    },
+    {
+      id: 3,
+      slug: 'leocloud-space-edge-datacenter-iss-3',
+      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
+      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
+      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
+      category: { name: 'China' },
+      published_at: new Date().toISOString(),
+    },
+    {
+      id: 4,
+      slug: 'leocloud-space-edge-datacenter-iss-4',
+      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
+      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
+      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
+      category: { name: 'China' },
+      published_at: new Date().toISOString(),
+    },
+    {
+      id: 5,
+      slug: 'leocloud-space-edge-datacenter-iss-5',
+      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
+      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
+      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
+      category: { name: 'China' },
+      published_at: new Date().toISOString(),
+    },
+    {
+      id: 6,
+      slug: 'leocloud-space-edge-datacenter-iss-6',
+      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
+      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
+      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
+      category: { name: 'China' },
+      published_at: new Date().toISOString(),
+    },
+  ];
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s/g, '');
+      setCurrentTime(timeString);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchArticles = async () => {
+    try {
+      setLoading(true);
+      
+      const [articlesRes, featuredRes] = await Promise.all([
+        axios.get(`${API_URL}/api/news`, { params: { status: 'published', limit: 10, category: 'launch' } }),
+        axios.get(`${API_URL}/api/news/featured`, { params: { limit: 1 } }).catch(() => ({ data: [] })),
+      ]);
+
+      const articlesData = Array.isArray(articlesRes.data) 
+        ? articlesRes.data 
+        : articlesRes.data?.data || [];
+      
+      // Filter featured article by launch category if available
+      let featuredData = Array.isArray(featuredRes.data) 
+        ? featuredRes.data 
+        : featuredRes.data?.data || [];
+      
+      // If featured article is not from launch category, use first launch article
+      if (featuredData.length > 0 && featuredData[0].category_slug !== 'launch') {
+        const launchFeatured = articlesData.find(a => a.category_slug === 'launch' || a.category_name === 'LAUNCH');
+        if (launchFeatured) {
+          featuredData = [launchFeatured];
+        } else if (articlesData.length > 0) {
+          featuredData = [articlesData[0]];
+        } else {
+          featuredData = [];
+        }
+      }
+
+      if (articlesData.length > 0) {
+        setArticles(articlesData);
+      } else {
+        setArticles(dummyArticles);
+      }
+
+      if (featuredData.length > 0) {
+        setFeaturedArticle(featuredData[0]);
+      } else if (articlesData.length > 0) {
+        setFeaturedArticle(articlesData[0]);
+      } else {
+        setFeaturedArticle(dummyFeaturedArticle);
+      }
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+      setArticles(dummyArticles);
+      setFeaturedArticle(dummyFeaturedArticle);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sectionNav = (
+    <div className="bg-orange-500 border-t-2 border-white">
+      <div className="max-w-full mx-auto px-6 flex items-center justify-between py-0">
+        <div className="flex items-center gap-8">
+          {/* Logo Section */}
+          <div className="flex items-center gap-3">
+            <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
+              <div className="w-14 h-14 bg-black flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/TLP Helmet.png" 
+                  alt="TLP Logo" 
+                  className="w-10 h-10 object-contain"
+                />
+              </div>
+              <div className="absolute top-full left-0 bg-orange-500 px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
+                {currentTime}
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>LAUNCH</h1>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-0 text-xs uppercase">
+            {categories.slice(1).map((cat, idx) => (
+              <div key={cat} className="flex items-center">
+                {idx > 0 && <span className="mx-1 font-bold text-white">|</span>}
+                {cat === 'LAUNCH' ? (
+                  <button
+                    className="px-2 py-1 text-white border-b-2 border-white font-bold"
+                  >
+                    {cat}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      // Navigate to category-specific page
+                      const categorySlugMap = {
+                        'IN SPACE': '/news/in-space',
+                        'TECHNOLOGY': '/news/technology',
+                        'MILITARY': '/news/military',
+                        'FINANCE': '/news/finance',
+                        'NEWS': '/news'
+                      };
+                      const route = categorySlugMap[cat] || '/news';
+                      navigate(route);
+                    }}
+                    className="px-2 py-1 text-white font-normal hover:text-gray-200"
+                  >
+                    {cat}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <Layout sectionNav={sectionNav}>
+        <div className="max-w-7xl mx-auto px-6 py-12 text-center text-gray-400">
+          Loading...
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout sectionNav={sectionNav}>
+      <div className="w-full px-6 pt-[2px] pb-[2px]">
+        {/* Hero Section - Large Featured Article */}
+        <div className="mb-6">
+          <Link to={`/launches/news/${featuredArticle?.slug || featuredArticle?.id}`}>
+            <div 
+              className="relative h-[600px] overflow-hidden"
+              style={{
+                backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop'})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              <div 
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
+                }}
+              ></div>
+              <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
+                <h1 
+                  className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
+                  style={{ fontFamily: 'Nasalization, sans-serif' }}
+                >
+                  {featuredArticle?.title || 'LIVE COVERAGE! China Shenzhou 20 Crew Launch'}
+                </h1>
+                <p className="text-lg text-white mb-6 max-w-3xl">
+                  {featuredArticle?.excerpt || 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).'}
+                </p>
+                <button className="px-5 py-2 bg-orange-500 text-white rounded-full font-semibold hover:bg-orange-600 transition-colors uppercase">
+                  {featuredArticle?.category_name || featuredArticle?.category?.name || 'LAUNCH'}
+                </button>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Secondary Hero Section - Two Smaller Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {[featuredArticle, featuredArticle].map((article, idx) => (
+            <Link key={idx} to={`/launches/news/${article?.slug || article?.id}`}>
+              <div 
+                className="relative h-[300px] overflow-hidden"
+                style={{
+                  backgroundImage: `url(${article?.featured_image_url || article?.hero_image_url || 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop'})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
+                  }}
+                ></div>
+                <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
+                  <h3 
+                    className="text-lg font-bold mb-2 text-white uppercase leading-tight"
+                    style={{ fontFamily: 'Nasalization, sans-serif' }}
+                  >
+                    {article?.title || 'LIVE COVERAGE! China Shenzhou 20 Crew Launch'}
+                  </h3>
+                  <button className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-semibold hover:bg-orange-600 transition-colors uppercase">
+                    {article?.category_name || article?.category?.name || 'LAUNCH'}
+                  </button>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Article List Section - 6 Cards */}
+        <div className="space-y-4">
+          {articles.slice(0, 6).map((article) => (
+            <Link key={article.id} to={`/launches/news/${article.slug || article.id}`}>
+              <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors">
+                {/* Left Side - Image */}
+                <div className="col-span-1">
+                  <img
+                    src={article.featured_image_url || 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop'}
+                    alt={article.title}
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+                
+                {/* Right Side - Text Content */}
+                <div className="col-span-2 p-6 flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-3">
+                      {article.title}
+                    </h2>
+                    <p className="text-sm text-white leading-relaxed line-clamp-3">
+                      {article.excerpt}
+                    </p>
+                  </div>
+                  
+                  {/* Tags/Buttons */}
+                  <div className="flex gap-2 mt-4 flex-wrap">
+                    <span className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded uppercase">
+                      {article.category_name || article.category?.name || 'LAUNCH'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default LaunchNews;
+

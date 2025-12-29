@@ -21,6 +21,8 @@ const getResourceEndpoint = (resource: string): string => {
     providers: 'providers',
     orbits: 'orbits',
     launch_sites: 'launch-sites',
+    countries: 'countries',
+    stock_tickers: 'stock-tickers',
   };
   return resourceMap[resource] || resource;
 };
@@ -227,6 +229,28 @@ export const dataProvider: DataProvider = {
       if (json.net && !json.launch_date) {
         json.launch_date = json.net;
       }
+      
+      // Extract video data and country from metadata for articles
+      if (resource === 'articles' && json.metadata) {
+        let metadata = json.metadata;
+        if (typeof metadata === 'string') {
+          try {
+            metadata = JSON.parse(metadata);
+          } catch (e) {
+            // If parsing fails, keep as is
+          }
+        }
+        if (metadata && typeof metadata === 'object') {
+          if (metadata.video) {
+            json.video_youtube_url = metadata.video.youtube_url || '';
+            json.video_url = metadata.video.video_url || '';
+            json.video_title = metadata.video.title || '';
+            json.video_thumbnail = metadata.video.thumbnail || '';
+            json.video_countdown_text = metadata.video.countdown_text || '';
+          }
+          // country_id is already in the main json object
+        }
+      }
     }
     
     return { data: json };
@@ -270,7 +294,115 @@ export const dataProvider: DataProvider = {
     const url = `${API_URL}/api/${endpoint}`;
     
     // Handle file uploads
-    const data = { ...params.data };
+    let data = { ...params.data };
+    
+    // Transform article data: move custom fields to metadata
+    if (resource === 'articles') {
+      const metadata: any = {};
+      
+      if (data.is_breaking !== undefined) {
+        metadata.is_breaking = data.is_breaking;
+      }
+      if (data.is_developing !== undefined) {
+        metadata.is_developing = data.is_developing;
+      }
+      if (data.sub_category) {
+        metadata.sub_category = data.sub_category;
+      }
+      if (data.summary) {
+        metadata.summary = data.summary;
+      }
+      // country_id is handled separately as a direct column
+      
+      // Handle video data
+      if (data.video_youtube_url || data.video_url || data.video_title || data.video_thumbnail || data.video_countdown_text) {
+        metadata.video = {};
+        if (data.video_youtube_url) {
+          metadata.video.youtube_url = data.video_youtube_url;
+        }
+        if (data.video_url) {
+          metadata.video.video_url = data.video_url;
+        }
+        if (data.video_title) {
+          metadata.video.title = data.video_title;
+        }
+        if (data.video_thumbnail) {
+          metadata.video.thumbnail = data.video_thumbnail;
+        }
+        if (data.video_countdown_text) {
+          metadata.video.countdown_text = data.video_countdown_text;
+        }
+      }
+      
+      // Remove custom fields and add metadata
+      const { is_breaking, is_developing, sub_category, summary, video_youtube_url, video_url, video_title, video_thumbnail, video_countdown_text, ...rest } = data;
+      
+      // Ensure tag_ids is an array or undefined (not empty array)
+      const tagIds = rest.tag_ids && Array.isArray(rest.tag_ids) && rest.tag_ids.length > 0 
+        ? rest.tag_ids 
+        : undefined;
+      
+      // Keep is_featured, is_trending, and country_id as they need to be saved to database columns
+      const { featured_image_url, author_id, category_id, country_id, ...cleanRest } = rest;
+      
+      // Only include author_id and category_id if they have valid values
+      const finalData: any = {
+        ...cleanRest,
+        tag_ids: tagIds,
+        metadata: Object.keys(metadata).length > 0 ? metadata : {},
+      };
+      
+      // Include is_featured, is_trending, is_interview, and is_top_story if they exist
+      if (data.is_featured !== undefined) {
+        finalData.is_featured = Boolean(data.is_featured);
+      }
+      if (data.is_trending !== undefined) {
+        finalData.is_trending = Boolean(data.is_trending);
+      }
+      if (data.is_interview !== undefined) {
+        finalData.is_interview = Boolean(data.is_interview);
+      }
+      if (data.is_top_story !== undefined) {
+        finalData.is_top_story = Boolean(data.is_top_story);
+      }
+      
+      // Explicitly remove author_id and category_id from the data object
+      // Only add them back if they have valid, non-empty values
+      delete finalData.author_id;
+      delete finalData.category_id;
+      
+      // Only add author_id if it's a valid number (not null, undefined, empty string, or 0)
+      // Also handle the case where it might be sent as an empty string from the form
+      const authorIdValue = author_id === '' || author_id === null || author_id === undefined ? null : author_id;
+      if (authorIdValue && !isNaN(Number(authorIdValue)) && Number(authorIdValue) > 0) {
+        finalData.author_id = Number(authorIdValue);
+      }
+      
+      // Only add category_id if it's a valid number
+      // Also handle the case where it might be sent as an empty string from the form
+      const categoryIdValue = category_id === '' || category_id === null || category_id === undefined ? null : category_id;
+      if (categoryIdValue && !isNaN(Number(categoryIdValue)) && Number(categoryIdValue) > 0) {
+        finalData.category_id = Number(categoryIdValue);
+      }
+      
+      // Only add country_id if it's a valid number
+      const countryIdValue = country_id === '' || country_id === null || country_id === undefined ? null : country_id;
+      if (countryIdValue && !isNaN(Number(countryIdValue)) && Number(countryIdValue) > 0) {
+        finalData.country_id = Number(countryIdValue);
+      }
+      
+      data = finalData;
+      
+      // Final safety check: ensure author_id and category_id are not in the data if they're invalid
+      if (data.author_id === null || data.author_id === undefined || data.author_id === '' || data.author_id === 0) {
+        delete data.author_id;
+      }
+      if (data.category_id === null || data.category_id === undefined || data.category_id === '' || data.category_id === 0) {
+        delete data.category_id;
+      }
+      
+      console.log('Article data being sent:', JSON.stringify(data, null, 2));
+    }
     if (data.profile_image_url) {
       // Check if it's a file object (has rawFile property)
       if (data.profile_image_url.rawFile) {
@@ -312,11 +444,32 @@ export const dataProvider: DataProvider = {
       }
     }
     
-    const { json } = await httpClient(url, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return { data: json };
+    // Ensure author_id and category_id are explicitly not included if they're null/undefined/empty
+    if (data.author_id === null || data.author_id === undefined || data.author_id === '') {
+      delete data.author_id;
+    }
+    if (data.category_id === null || data.category_id === undefined || data.category_id === '') {
+      delete data.category_id;
+    }
+    
+    try {
+      const { json } = await httpClient(url, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return { data: json };
+    } catch (error: any) {
+      console.error('Error creating article:', error);
+      console.error('Data being sent:', JSON.stringify(data, null, 2));
+      // Try to get the error message from the response
+      if (error.body) {
+        console.error('Error body:', error.body);
+      }
+      if (error.message) {
+        console.error('Error message:', error.message);
+      }
+      throw error;
+    }
   },
 
   update: async (resource: string, params: any) => {
@@ -324,7 +477,107 @@ export const dataProvider: DataProvider = {
     const url = `${API_URL}/api/${endpoint}/${params.id}`;
     
     // Handle file uploads
-    const data = { ...params.data };
+    let data = { ...params.data };
+    
+    // Transform article data: move custom fields to metadata
+    if (resource === 'articles') {
+      const metadata: any = {};
+      
+      // Preserve existing metadata if it exists
+      if (data.metadata && typeof data.metadata === 'object') {
+        Object.assign(metadata, data.metadata);
+      }
+      
+      if (data.is_breaking !== undefined) {
+        metadata.is_breaking = data.is_breaking;
+      }
+      if (data.is_developing !== undefined) {
+        metadata.is_developing = data.is_developing;
+      }
+      if (data.sub_category) {
+        metadata.sub_category = data.sub_category;
+      }
+      if (data.summary) {
+        metadata.summary = data.summary;
+      }
+      // country_id is handled separately as a direct column
+      
+      // Handle video data
+      if (data.video_youtube_url || data.video_url || data.video_title || data.video_thumbnail || data.video_countdown_text) {
+        if (!metadata.video) {
+          metadata.video = {};
+        }
+        if (data.video_youtube_url) {
+          metadata.video.youtube_url = data.video_youtube_url;
+        }
+        if (data.video_url) {
+          metadata.video.video_url = data.video_url;
+        }
+        if (data.video_title) {
+          metadata.video.title = data.video_title;
+        }
+        if (data.video_thumbnail) {
+          metadata.video.thumbnail = data.video_thumbnail;
+        }
+        if (data.video_countdown_text) {
+          metadata.video.countdown_text = data.video_countdown_text;
+        }
+      }
+      
+      // Remove custom fields and add metadata
+      const { is_breaking, is_developing, sub_category, summary, video_youtube_url, video_url, video_title, video_thumbnail, video_countdown_text, ...rest } = data;
+      
+      // Ensure tag_ids is an array or undefined (not empty array)
+      const tagIds = rest.tag_ids && Array.isArray(rest.tag_ids) && rest.tag_ids.length > 0 
+        ? rest.tag_ids 
+        : undefined;
+      
+      // Keep is_featured, is_trending, and country_id as they need to be saved to database columns
+      const { country_id, ...cleanRest } = rest;
+      const finalData: any = {
+        ...cleanRest,
+        tag_ids: tagIds,
+        metadata: Object.keys(metadata).length > 0 ? metadata : {},
+      };
+      
+      // Include is_featured and is_trending if they exist
+      if (data.is_featured !== undefined) {
+        finalData.is_featured = Boolean(data.is_featured);
+      }
+      if (data.is_trending !== undefined) {
+        finalData.is_trending = Boolean(data.is_trending);
+      }
+      
+      // Handle author_id and category_id
+      if (data.author_id !== undefined) {
+        const authorIdValue = data.author_id === '' || data.author_id === null || data.author_id === undefined ? null : data.author_id;
+        if (authorIdValue && !isNaN(Number(authorIdValue)) && Number(authorIdValue) > 0) {
+          finalData.author_id = Number(authorIdValue);
+        } else {
+          finalData.author_id = null;
+        }
+      }
+      
+      if (data.category_id !== undefined) {
+        const categoryIdValue = data.category_id === '' || data.category_id === null || data.category_id === undefined ? null : data.category_id;
+        if (categoryIdValue && !isNaN(Number(categoryIdValue)) && Number(categoryIdValue) > 0) {
+          finalData.category_id = Number(categoryIdValue);
+        } else {
+          finalData.category_id = null;
+        }
+      }
+      
+      if (data.country_id !== undefined) {
+        const countryIdValue = data.country_id === '' || data.country_id === null || data.country_id === undefined ? null : data.country_id;
+        if (countryIdValue && !isNaN(Number(countryIdValue)) && Number(countryIdValue) > 0) {
+          finalData.country_id = Number(countryIdValue);
+        } else {
+          finalData.country_id = null;
+        }
+      }
+      
+      data = finalData;
+    }
     if (data.profile_image_url) {
       // Check if it's a file object (has rawFile property)
       if (data.profile_image_url.rawFile) {

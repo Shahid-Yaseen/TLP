@@ -1,4 +1,5 @@
 import { List, Create, Edit, Show, SimpleForm, TextInput, Datagrid, TextField, DateField, ShowButton, EditButton, DeleteButton } from 'react-admin';
+import { BackButtonActions } from '../components/BackButtonActions';
 
 export const PermissionList = (props: any) => (
   <List {...props}>
@@ -15,7 +16,7 @@ export const PermissionList = (props: any) => (
 );
 
 export const PermissionCreate = (props: any) => (
-  <Create {...props}>
+  <Create {...props} actions={<BackButtonActions resource="permissions" />}>
     <SimpleForm>
       <TextInput source="name" required />
       <TextInput source="resource" />
@@ -25,7 +26,7 @@ export const PermissionCreate = (props: any) => (
 );
 
 export const PermissionEdit = (props: any) => (
-  <Edit {...props}>
+  <Edit {...props} actions={<BackButtonActions resource="permissions" />}>
     <SimpleForm>
       <TextInput source="id" disabled />
       <TextInput source="name" required />
@@ -36,7 +37,7 @@ export const PermissionEdit = (props: any) => (
 );
 
 export const PermissionShow = (props: any) => (
-  <Show {...props}>
+  <Show {...props} actions={<BackButtonActions resource="permissions" showActions />}>
     <TextField source="id" />
     <TextField source="name" />
     <TextField source="resource" />
