@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+import API_URL from '../config/api';
 
-const ComingSoon = () => {
+const ComingSoon = ({ sourcePage = 'general' }) => {
   const [currentSaying, setCurrentSaying] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [stars, setStars] = useState([]);
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [formVisible, setFormVisible] = useState(false);
 
   const sayings = [
     'Systems Still Powering Up',
@@ -39,7 +45,55 @@ const ComingSoon = () => {
     setTimeout(() => {
       setTextVisible(true);
     }, 600);
+
+    // Trigger form animation after text
+    setTimeout(() => {
+      setFormVisible(true);
+    }, 1600);
   }, []);
+
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'Please enter your email address' });
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setMessage({ type: 'error', text: 'Please enter a valid email address' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const response = await axios.post(`${API_URL}/api/subscribe`, {
+        email: email.trim().toLowerCase(),
+        source_page: sourcePage
+      });
+
+      if (response.data.success) {
+        setMessage({ 
+          type: 'success', 
+          text: response.data.message || 'Successfully subscribed! We\'ll notify you when this page is ready.' 
+        });
+        setEmail(''); // Clear form
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to subscribe. Please try again.';
+      setMessage({ type: 'error', text: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -91,6 +145,17 @@ const ComingSoon = () => {
         }
 
         @keyframes textEnter {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes formEnter {
           0% {
             opacity: 0;
             transform: translateY(20px);
@@ -491,9 +556,9 @@ const ComingSoon = () => {
           </div>
 
           {/* Saying with typewriter/fade effect */}
-          <div className="text-center max-w-2xl">
+          <div className="text-center max-w-2xl mb-8">
             <h2 
-              className={`text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-wide text-[#8B1A1A] mb-4 ${
+              className={`text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-wide text-[#8B1A1A] mb-8 ${
                 textVisible ? 'animate-text-enter' : 'opacity-0 translate-y-4'
               }`}
               style={{ 
@@ -503,6 +568,48 @@ const ComingSoon = () => {
             >
               {currentSaying || 'Systems Still Powering Up'}
             </h2>
+
+            {/* Subscription Form */}
+            <div 
+              className={`max-w-md mx-auto ${
+                formVisible ? 'animate-text-enter' : 'opacity-0 translate-y-4'
+              }`}
+              style={{ animationDelay: '0.5s' }}
+            >
+              <form onSubmit={handleSubscribe} className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email for updates"
+                    className="flex-1 px-4 py-3 bg-black/50 border-2 border-[#8B1A1A] text-white placeholder-gray-400 focus:outline-none focus:border-[#8B1A1A] focus:ring-2 focus:ring-[#8B1A1A]/50"
+                    style={{ fontFamily: 'Arial, sans-serif' }}
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-3 bg-[#8B1A1A] text-white font-bold uppercase tracking-wide hover:bg-[#7a1515] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ fontFamily: 'Nasalization, sans-serif' }}
+                  >
+                    {isSubmitting ? 'Subscribing...' : 'Subscribe'}
+                  </button>
+                </div>
+                
+                {message.text && (
+                  <div 
+                    className={`text-sm px-4 py-2 ${
+                      message.type === 'success' 
+                        ? 'bg-green-900/50 text-green-300 border border-green-500' 
+                        : 'bg-red-900/50 text-red-300 border border-red-500'
+                    }`}
+                  >
+                    {message.text}
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       </div>

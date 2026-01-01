@@ -1,7 +1,7 @@
 import ComingSoon from '../components/ComingSoon';
 
 const ComingSoonSpaceBase = () => {
-  return <ComingSoon />;
+  return <ComingSoon sourcePage="spacebase" />;
 };
 
 export default ComingSoonSpaceBase;

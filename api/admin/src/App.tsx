@@ -24,6 +24,7 @@ import { CrewList, CrewCreate, CrewEdit, CrewShow } from './resources/Crew';
 import { RoleList, RoleCreate, RoleEdit, RoleShow } from './resources/Roles';
 import { PermissionList, PermissionCreate, PermissionEdit, PermissionShow } from './resources/Permissions';
 import { StockTickerList, StockTickerCreate, StockTickerEdit, StockTickerShow } from './resources/StockTickers';
+import { SubscriptionsList } from './resources/Subscriptions';
 
 // Spacebase Resources
 import { AstronautList, AstronautShow } from './resources/Spacebase';
@@ -74,6 +75,11 @@ const App = () => (
       edit={StockTickerEdit}
       show={StockTickerShow}
       options={{ label: 'Stock Tickers' }}
+    />
+    <Resource
+      name="subscriptions"
+      list={SubscriptionsList}
+      options={{ label: 'Subscriptions' }}
     />
 
     {/* Main Resources */}
