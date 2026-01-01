@@ -92,6 +92,7 @@ const MIGRATIONS = [
   '022_add_article_classification_fields.sql',
   '023_add_author_to_launches.sql',
   '024_create_stock_tickers.sql',
+  '025_create_subscriptions.sql',
 ];
 
 // Track completed migrations

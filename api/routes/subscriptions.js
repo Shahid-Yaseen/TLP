@@ -8,7 +8,7 @@ const express = require('express');
 const router = express.Router();
 const { asyncHandler } = require('../middleware/errorHandler');
 const { authenticate } = require('../middleware/auth');
-const { authorize } = require('../middleware/authorize');
+const { role } = require('../middleware/authorize');
 const { getPool } = require('../config/database');
 const { sendUpdateEmail } = require('../services/emailService');
 
@@ -116,7 +116,7 @@ router.post('/subscribe', asyncHandler(async (req, res) => {
  * GET /api/subscribers
  * Get all subscribers (admin only)
  */
-router.get('/subscribers', authenticate, authorize(['admin']), asyncHandler(async (req, res) => {
+router.get('/subscribers', authenticate, role('admin'), asyncHandler(async (req, res) => {
   const { page = 1, perPage = 50, limit, offset, status, search, email, is_active, source_page } = req.query;
   
   // Handle both react-admin format (perPage, offset) and custom format (page, limit)
@@ -190,7 +190,7 @@ router.get('/subscribers', authenticate, authorize(['admin']), asyncHandler(asyn
  * GET /api/subscribers/stats
  * Get subscription statistics (admin only)
  */
-router.get('/subscribers/stats', authenticate, authorize(['admin']), asyncHandler(async (req, res) => {
+router.get('/subscribers/stats', authenticate, role('admin'), asyncHandler(async (req, res) => {
   const stats = await pool.query(`
     SELECT 
       COUNT(*) FILTER (WHERE is_active = true) as active_count,
@@ -221,7 +221,7 @@ router.get('/subscribers/stats', authenticate, authorize(['admin']), asyncHandle
  * POST /api/subscribers/send-update
  * Send update email to all active subscribers (admin only)
  */
-router.post('/subscribers/send-update', authenticate, authorize(['admin']), asyncHandler(async (req, res) => {
+router.post('/subscribers/send-update', authenticate, role('admin'), asyncHandler(async (req, res) => {
   const { subject, message } = req.body;
 
   // Validation

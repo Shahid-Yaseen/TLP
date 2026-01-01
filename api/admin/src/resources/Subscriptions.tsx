@@ -50,7 +50,8 @@ const SendUpdateEmailButton = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${import.meta.env.REACT_APP_API_URL || 'http://localhost:3007'}/api/subscribers/send-update`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3007';
+      const response = await fetch(`${API_URL}/api/subscribers/send-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
