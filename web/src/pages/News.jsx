@@ -58,7 +58,7 @@ const News = () => {
           style={{
             background: isPositive 
               ? 'linear-gradient(to right, #062817, #11442b)' 
-              : 'linear-gradient(to right, #441111, #280606)'
+              : 'linear-gradient(to right, #7a4a00, #4a2e00)'
           }}
         >
           {/* White top section with black text */}
@@ -82,10 +82,10 @@ const News = () => {
               {formattedPrice}
             </div>
             <div className="flex items-center gap-1.5">
-              <span className={`text-[15px] ${isPositive ? 'text-[#4ade80]' : 'text-[#f87171]'}`}>
+              <span className={`text-[15px] ${isPositive ? 'text-[#4ade80]' : 'text-[#fa9a00]'}`}>
                 {isPositive ? '▲' : '▼'}
               </span>
-              <span className={`text-[14px] font-medium ${isPositive ? 'text-[#4ade80]' : 'text-[#f87171]'}`} style={{ fontFamily: 'Orbitron, sans-serif' }}>
+              <span className={`text-[14px] font-medium ${isPositive ? 'text-[#4ade80]' : 'text-[#fa9a00]'}`} style={{ fontFamily: 'Orbitron, sans-serif' }}>
                 {formattedChange} ({formattedPercent})
               </span>
             </div>
@@ -569,7 +569,7 @@ const News = () => {
   }, []);
 
   const sectionNav = (
-    <div className="bg-orange-500 border-t-2 border-white">
+    <div className="border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>
       <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between py-0">
         <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-wrap">
           {/* Logo Section */}

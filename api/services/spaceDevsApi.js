@@ -1,13 +1,13 @@
 /**
  * Space Devs API Service
  * 
- * Handles all interactions with the Space Devs API (lldev.thespacedevs.com)
+ * Handles all interactions with the Space Devs API (ll.thespacedevs.com)
  */
 
 const https = require('https');
 
-// Use dev API with the provided key (Token format)
-const BASE_URL = 'https://lldev.thespacedevs.com/2.3.0';
+// Use production API with the provided key (Token format)
+const BASE_URL = 'https://ll.thespacedevs.com/2.3.0';
 const API_KEY = process.env.SPACE_DEVS_API_KEY || '1f7f63ed1517cdef2181117304ae4ed3a6e326f0';
 
 /**
@@ -193,14 +193,19 @@ async function fetchLauncherConfiguration(url) {
  */
 async function fetchUpcomingLaunches(params = {}) {
   try {
+    // Get current time in ISO format for filtering
+    const now = new Date().toISOString();
+    
     const defaultParams = {
       limit: params.limit || 100,
       offset: params.offset || 0,
+      ordering: params.ordering || 'net', // Order by net (launch date) ascending - most recent first
+      net__gte: params.net__gte || now, // Only get launches from now onwards (exclude past launches)
       ...params
     };
     
-    // Use /launch/upcoming/ endpoint as per SpaceDevs API documentation
-    return await makeRequest('/launch/upcoming/', defaultParams);
+    // Use /launches/upcoming/ endpoint (plural) as per SpaceDevs API documentation
+    return await makeRequest('/launches/upcoming/', defaultParams);
   } catch (error) {
     console.error('Error fetching upcoming launches from Space Devs API:', error.message);
     throw error;
@@ -220,8 +225,8 @@ async function fetchPreviousLaunches(params = {}) {
       ...params
     };
     
-    // Use /launch/previous/ endpoint as per SpaceDevs API documentation
-    return await makeRequest('/launch/previous/', defaultParams);
+    // Use /launches/previous/ endpoint (plural) as per SpaceDevs API documentation
+    return await makeRequest('/launches/previous/', defaultParams);
   } catch (error) {
     console.error('Error fetching previous launches from Space Devs API:', error.message);
     throw error;

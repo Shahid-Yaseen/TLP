@@ -12,3 +12,6 @@ dist/
 /admin/dist/
 /mobile/dist/
 
+# Rate limit state file
+/api/.rate_limit_state.json
+

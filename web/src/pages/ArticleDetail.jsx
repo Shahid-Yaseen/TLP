@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import API_URL from '../config/api';
@@ -10,6 +10,7 @@ import RedDotLoader from '../components/common/RedDotLoader';
 const ArticleDetail = () => {
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [article, setArticle] = useState(null);
   const [relatedArticles, setRelatedArticles] = useState([]);
@@ -26,6 +27,14 @@ const ArticleDetail = () => {
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
+
+  const trending = [
+    { label: 'TRENDING', search: 'trending', route: null },
+    { label: 'SPACEX', search: 'spacex', route: null },
+    { label: 'ARTEMIS 2', search: 'artemis', route: null },
+    { label: 'MARS SAMPLE RETURN', search: 'mars sample return', route: null },
+    { label: 'DARPA LUNAR ORBITER', search: 'darpa lunar', route: null }
+  ];
 
   useEffect(() => {
     fetchArticle();
@@ -305,13 +314,46 @@ const ArticleDetail = () => {
     }
   ];
 
+  // Demo images for articles
+  const getDemoImage = (index = 0) => {
+    const images = [
+      'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=1920&h=800&fit=crop',
+      'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1920&h=800&fit=crop'
+    ];
+    return images[index % images.length];
+  };
+
   const fetchArticle = async () => {
     try {
       const articleRes = await axios.get(`${API_URL}/api/news/${slug}`);
       
       // Use API data if available, otherwise use dummy data
       if (articleRes.data) {
-        setArticle(articleRes.data);
+        // Ensure image URLs are set - check multiple possible field names
+        const articleData = {
+          ...articleRes.data,
+          hero_image_url: articleRes.data.hero_image_url || 
+                         articleRes.data.featured_image_url || 
+                         articleRes.data.image_url ||
+                         articleRes.data.hero_image ||
+                         articleRes.data.image ||
+                         getDemoImage(articleRes.data.id || 0),
+          featured_image_url: articleRes.data.featured_image_url || 
+                              articleRes.data.hero_image_url ||
+                              articleRes.data.image_url ||
+                              articleRes.data.featured_image ||
+                              articleRes.data.image ||
+                              getDemoImage(articleRes.data.id || 0)
+        };
+        setArticle(articleData);
         
         // Fetch related articles from same category
         const categorySlug = articleRes.data.category_slug || articleRes.data.category?.slug;
@@ -356,8 +398,17 @@ const ArticleDetail = () => {
           setRelatedLaunches(dummyRelatedLaunches);
         }
       } else {
+        // No data from API, use dummy data
         const dummyArticle = dummyArticles[slug] || dummyArticles['live-coverage-china-shenzhou-20-crew-launch'];
-        setArticle(dummyArticle);
+        if (dummyArticle) {
+          // Ensure image URLs are always set for dummy articles
+          const articleWithImages = {
+            ...dummyArticle,
+            hero_image_url: dummyArticle.hero_image_url || dummyArticle.featured_image_url || getDemoImage(dummyArticle.id || 0),
+            featured_image_url: dummyArticle.featured_image_url || dummyArticle.hero_image_url || getDemoImage(dummyArticle.id || 0)
+          };
+          setArticle(articleWithImages);
+        }
         setRelatedArticles(dummyRelatedArticles);
         setRelatedLaunches(dummyRelatedLaunches);
       }
@@ -365,7 +416,15 @@ const ArticleDetail = () => {
       console.error('Error fetching article:', error);
       // Use dummy data on error
       const dummyArticle = dummyArticles[slug] || dummyArticles['live-coverage-china-shenzhou-20-crew-launch'];
-      setArticle(dummyArticle);
+      if (dummyArticle) {
+        // Ensure image URLs are always set for dummy articles
+        const articleWithImages = {
+          ...dummyArticle,
+          hero_image_url: dummyArticle.hero_image_url || dummyArticle.featured_image_url || getDemoImage(dummyArticle.id || 0),
+          featured_image_url: dummyArticle.featured_image_url || dummyArticle.hero_image_url || getDemoImage(dummyArticle.id || 0)
+        };
+        setArticle(articleWithImages);
+      }
       setRelatedArticles(dummyRelatedArticles);
       setRelatedLaunches(dummyRelatedLaunches);
     } finally {
@@ -469,7 +528,7 @@ const ArticleDetail = () => {
       <Layout>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Article Not Found</h1>
-          <Link to="/news" className="text-orange-500 hover:text-orange-400">
+          <Link to="/news" className="text-[#fa9a00] hover:text-[#d87a00]">
             Return to News
           </Link>
         </div>
@@ -477,29 +536,35 @@ const ArticleDetail = () => {
     );
   }
 
+  // Ensure article always has image URLs
+  if (article && !article.hero_image_url && !article.featured_image_url) {
+    article.hero_image_url = getDemoImage(article.id || 0);
+    article.featured_image_url = getDemoImage(article.id || 0);
+  }
+
   const sectionNav = (
-    <div className="bg-orange-500 border-t-2 border-white">
-      <div className="max-w-full mx-auto px-6 flex items-center justify-between py-0">
-        <div className="flex items-center gap-8">
+    <div className="border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>
+      <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between py-0">
+        <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-wrap">
           {/* Logo Section */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
-              <div className="w-14 h-14 bg-black flex items-center justify-center overflow-hidden">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-black flex items-center justify-center overflow-hidden">
                 <img 
                   src="/TLP Helmet.png" 
                   alt="TLP Logo" 
-                  className="w-10 h-10 object-contain"
+                  className="w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 object-contain"
                 />
               </div>
-              <div className="absolute top-full left-0 bg-orange-500 px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
+              <div className="absolute top-full left-0 bg-orange-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
                 {currentTime}
               </div>
             </div>
-            <h1 className="text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-0 text-xs uppercase">
+          <div className="flex items-center gap-0 text-[10px] sm:text-xs uppercase flex-wrap">
             {categories.slice(1).map((cat, idx) => {
               const categorySlugMap = {
                 'LAUNCH': '/launches/news',
@@ -510,17 +575,29 @@ const ArticleDetail = () => {
                 'NEWS': '/news'
               };
               const route = categorySlugMap[cat] || '/news';
-              const isActive = article?.category_name === cat;
               
               return (
                 <div key={cat} className="flex items-center">
-                  {idx > 0 && <span className="mx-1 font-bold text-white">|</span>}
-                  <Link
-                    to={route}
-                    className={`px-2 py-1 text-white ${isActive ? 'border-b-2 border-white font-bold' : 'font-normal hover:text-gray-200'}`}
+                  {idx > 0 && <span className="mx-0.5 sm:mx-1 font-bold text-white">|</span>}
+                  {cat === 'LAUNCH' ? (
+                    <button
+                      onClick={() => navigate('/launches/news')}
+                      className="px-1 sm:px-2 py-1 text-white border-b-2 border-white font-bold"
                   >
                     {cat}
-                  </Link>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (route) {
+                          navigate(route);
+                        }
+                      }}
+                      className="px-1 sm:px-2 py-1 text-white font-normal hover:border-b-2 hover:border-white hover:font-bold transition-all"
+                    >
+                      {cat}
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -548,23 +625,64 @@ const ArticleDetail = () => {
   const currentPageUrl = window.location.href;
   const shareText = `${article.title} - ${article.excerpt || ''}`;
 
+  // Get the image URL for the hero section - always ensure we have an image
+  const heroImageUrl = article.hero_image_url || 
+                      article.featured_image_url || 
+                      article.image_url ||
+                      article.hero_image ||
+                      article.image ||
+                      getDemoImage(article.id || 0);
+
   return (
     <Layout sectionNav={sectionNav}>
+      {/* Trending Sub-Navigation */}
+      <div className="bg-white border-b border-gray-300 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-[2px] pb-[2px]">
+          <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
+            {trending.map((topic, idx) => (
+              <div key={idx} className="flex items-center shrink-0">
+                {idx > 0 && <span className="text-black mx-2 sm:mx-3">|</span>}
+                <button
+                  onClick={() => {
+                    const categorySlugMap = {
+                      'TRENDING': '/news?trending=trending',
+                      'SPACEX': '/news?trending=spacex',
+                      'ARTEMIS 2': '/news?trending=artemis',
+                      'MARS SAMPLE RETURN': '/news?trending=mars-sample-return',
+                      'DARPA LUNAR ORBITER': '/news?trending=darpa-lunar'
+                    };
+                    const route = categorySlugMap[topic.label] || '/news';
+                    navigate(route);
+                  }}
+                  className="text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1 hover:text-orange-500"
+                >
+                  {topic.label}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section with Background Image */}
       <div
-        className="relative h-[60vh] bg-cover bg-center"
+        className="relative h-[70vh] bg-cover bg-center bg-no-repeat w-full"
         style={{
-          backgroundImage: `url(${article.hero_image_url || article.featured_image_url || 'https://via.placeholder.com/1920x800/1a1a1a/ffffff?text=No+Image'})`,
+          backgroundImage: `url(${heroImageUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '70vh'
         }}
       >
-        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-        <div className="relative z-10 h-full flex items-end">
-          <div className="max-w-7xl mx-auto px-6 pb-12 w-full">
-            <h1 className="text-6xl md:text-8xl font-bold mb-4 text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+        <div className="absolute inset-0 bg-black/80"></div>
+        <div className="relative z-10 h-full flex items-center justify-center pt-16 md:pt-24">
+          <div className="max-w-7xl mx-auto px-6 w-full text-center">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 text-white uppercase tracking-tight leading-tight" style={{ fontFamily: 'Nasalization, sans-serif', textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
               {article.title || 'NASA CANCELS SLS AND ARTEMIS PROGRAM'}
             </h1>
             {article.subtitle && (
-              <p className="text-xl md:text-2xl text-white max-w-4xl">
+              <p className="text-lg md:text-xl lg:text-2xl text-white max-w-5xl mx-auto uppercase leading-relaxed" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
                 {article.subtitle}
               </p>
             )}
@@ -577,7 +695,8 @@ const ArticleDetail = () => {
           {/* Main Content */}
           <div className="md:col-span-2">
             {/* Article Content */}
-            <div className="mb-8">
+            <div className="bg-[#121212] border-t-4 border-[#fa9a00] mb-8">
+              <div className="p-6">
               <div
                 className="prose prose-invert max-w-none text-white text-base leading-relaxed"
                 dangerouslySetInnerHTML={{ 
@@ -592,22 +711,24 @@ const ArticleDetail = () => {
             </div>
 
             {/* Tags */}
-            <div className="flex gap-2 mb-8 flex-wrap">
+              <div className="px-6 pb-6 flex gap-2 flex-wrap">
               {tags.map((tag, idx) => (
                 <span
                   key={idx}
-                  className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold"
+                    className="text-white px-4 py-2 text-sm font-semibold"
+                    style={{ backgroundColor: '#fa9a00' }}
                 >
                   {tag}
                 </span>
               ))}
+              </div>
             </div>
 
             {/* Author Information Section */}
-            <div className="bg-[#121212] p-6 mt-6 border-t-4 border-[#8B1A1A]">
+            <div className="bg-[#121212] p-6 mt-6 border-t-4 border-[#fa9a00]">
               <div className="flex items-start gap-4">
-                {/* Profile Picture with red border */}
-                <div className="w-20 h-20 rounded-full shrink-0 border-4 border-[#8B1A1A] overflow-hidden">
+                {/* Profile Picture with orange border */}
+                <div className="w-20 h-20 rounded-full shrink-0 border-4 border-[#fa9a00] overflow-hidden">
                   {!authorImageError && (article.author_image || article.author?.profile_image_url) ? (
                     <img
                       src={article.author_image || article.author.profile_image_url}
@@ -637,7 +758,7 @@ const ArticleDetail = () => {
                 
                 <div className="flex-1">
                   <div className="mb-3">
-                    <h3 className="text-xl font-bold inline text-[#8B1A1A] uppercase tracking-wide">
+                    <h3 className="text-xl font-bold inline text-[#fa9a00] uppercase tracking-wide">
                       {article.author_name || article.author?.full_name || 'ZACHARY AUBERT'}
                     </h3>
                     <span className="text-xl italic text-white uppercase tracking-wide ml-2">
@@ -658,7 +779,7 @@ const ArticleDetail = () => {
                   </p>
                   <Link
                     to={`/news?author=${article.author_id || article.author?.id || 'zac-aubert'}`}
-                    className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm mt-2 inline-block font-semibold transition-colors"
+                    className="text-[#fa9a00] hover:text-[#d87a00] text-sm mt-2 inline-block font-semibold transition-colors"
                   >
                     More by {article.author_first_name || article.author?.first_name || article.author_name?.split(' ')[0] || 'Zac'} {article.author_last_name || article.author?.last_name || article.author_name?.split(' ').slice(1).join(' ') || 'Aubert'}
                   </Link>
@@ -667,7 +788,7 @@ const ArticleDetail = () => {
             </div>
 
             {/* Comments Section */}
-            <div id="comments" className="bg-[#121212] p-6 mt-6 border-t-4 border-[#8B1A1A]">
+            <div id="comments" className="bg-[#121212] p-6 mt-6 border-t-4 border-[#fa9a00]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-white">
                   {commentsTotal} {commentsTotal === 1 ? 'Comment' : 'Comments'}
@@ -735,7 +856,7 @@ const ArticleDetail = () => {
                           <button
                             onClick={handleReply}
                             disabled={!replyContent.trim()}
-                            className="mt-2 px-4 py-2 bg-[#8B1A1A] text-white rounded hover:bg-[#A02A2A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="mt-2 px-4 py-2 bg-[#fa9a00] text-white rounded hover:bg-[#d87a00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Post Reply
                           </button>
@@ -786,7 +907,7 @@ const ArticleDetail = () => {
                           <button
                             onClick={handleSubmitComment}
                             disabled={!newComment.trim()}
-                            className="px-4 py-2 bg-[#8B1A1A] text-white rounded hover:bg-[#A02A2A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2 bg-[#fa9a00] text-white rounded hover:bg-[#d87a00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Post Comment
                           </button>
@@ -800,7 +921,7 @@ const ArticleDetail = () => {
                   <p className="text-gray-400 mb-2">Please log in to join the discussion.</p>
                   <Link
                     to={`/login?returnUrl=${encodeURIComponent(location.pathname + location.search + '#comments')}`}
-                    className="text-[#8B1A1A] hover:text-[#A02A2A] font-semibold"
+                    className="text-[#fa9a00] hover:text-[#d87a00] font-semibold"
                   >
                     Log In
                   </Link>
@@ -813,7 +934,7 @@ const ArticleDetail = () => {
                   onClick={() => setCommentSort('best')}
                   className={`text-sm transition-colors px-1 pb-1 ${
                     commentSort === 'best'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                      ? 'font-semibold text-[#fa9a00] border-b-2 border-[#fa9a00]'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -823,7 +944,7 @@ const ArticleDetail = () => {
                   onClick={() => setCommentSort('newest')}
                   className={`text-sm transition-colors px-1 pb-1 ${
                     commentSort === 'newest'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                      ? 'font-semibold text-[#fa9a00] border-b-2 border-[#fa9a00]'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -833,7 +954,7 @@ const ArticleDetail = () => {
                   onClick={() => setCommentSort('oldest')}
                   className={`text-sm transition-colors px-1 pb-1 ${
                     commentSort === 'oldest'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                      ? 'font-semibold text-[#fa9a00] border-b-2 border-[#fa9a00]'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -870,7 +991,7 @@ const ArticleDetail = () => {
             {/* Social Sharing Icons */}
             <div className="bg-black p-3 flex gap-2 justify-center">
               <button
-                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
                 title="Share on X (Twitter)"
                 onClick={() => {
                   window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentPageUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
@@ -879,7 +1000,7 @@ const ArticleDetail = () => {
                 <span className="text-sm font-bold">X</span>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
                 title="Share on Facebook"
                 onClick={() => {
                   window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentPageUrl)}`, '_blank', 'noopener,noreferrer');
@@ -888,7 +1009,7 @@ const ArticleDetail = () => {
                 <span className="text-sm font-bold">f</span>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
                 title="Share on LinkedIn"
                 onClick={() => {
                   window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentPageUrl)}`, '_blank', 'noopener,noreferrer');
@@ -899,7 +1020,7 @@ const ArticleDetail = () => {
                 </svg>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
                 title="Share"
                 onClick={() => {
                   if (navigator.share) {
@@ -919,7 +1040,7 @@ const ArticleDetail = () => {
                 </svg>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
                 title="Email"
                 onClick={() => {
                   window.location.href = `mailto:?subject=${encodeURIComponent(article.title)}&body=${encodeURIComponent(currentPageUrl)}`;
@@ -930,7 +1051,7 @@ const ArticleDetail = () => {
                 </svg>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
                 title="Copy link"
                 onClick={() => {
                   navigator.clipboard.writeText(currentPageUrl);
@@ -944,13 +1065,13 @@ const ArticleDetail = () => {
             </div>
 
             {/* Summary */}
-            <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
+            <div className="bg-[#121212] border-t-4 border-[#fa9a00]">
               <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">SUMMARY</h3>
               <div className="p-4 space-y-3">
                 <ul className="space-y-3">
                   {summaryPoints.map((point, idx) => (
                     <li key={idx} className="flex items-start gap-3">
-                      <span className="text-[#8B1A1A] text-lg mt-0.5">●</span>
+                      <span className="text-[#fa9a00] text-lg mt-0.5">●</span>
                       <span className="text-sm text-white">{point}</span>
                     </li>
                   ))}
@@ -960,7 +1081,7 @@ const ArticleDetail = () => {
 
             {/* Related Launches */}
             {relatedLaunches.length > 0 && (
-              <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
+              <div className="bg-[#121212] border-t-4 border-[#fa9a00]">
                 <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">RELATED LAUNCHES</h3>
                 <div className="p-4 space-y-4">
                   {relatedLaunches.map((launch) => (
@@ -992,7 +1113,7 @@ const ArticleDetail = () => {
 
             {/* Related Stories */}
             {relatedArticles.length > 0 && (
-              <div className="bg-[#121212] border-t-4 border-[#8B1A1A]">
+              <div className="bg-[#121212] border-t-4 border-[#fa9a00]">
                 <h3 className="text-lg sm:text-xl font-bold py-3 px-4 text-center text-white uppercase">RELATED STORIES</h3>
                 <div className="p-4 space-y-4">
                   {relatedArticles

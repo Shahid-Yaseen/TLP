@@ -41,6 +41,8 @@ console.log('  DB_PASSWORD:', process.env.DB_PASSWORD ? '***SET***' : 'NOT SET')
 console.log('');
 const express = require('express');
 const cors = require('cors');
+const { exec } = require('child_process');
+const path = require('path');
 
 // Import routes
 const launchesRoutes = require('./routes/launches');
@@ -175,6 +177,23 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('  GET  /health - API health check');
   console.log('  GET  /db-health - Database health check');
   console.log('');
+  
+  // Automatically set up cron job for launch sync (only in production)
+  if (process.env.NODE_ENV === 'production' || process.env.AUTO_SETUP_CRON === 'true') {
+    const setupScript = path.join(__dirname, 'scripts', 'setup_cron_on_deploy.sh');
+    if (fs.existsSync(setupScript)) {
+      console.log('🔄 Setting up automatic launch sync cron job...');
+      exec(`bash ${setupScript}`, { cwd: __dirname }, (error, stdout, stderr) => {
+        if (error) {
+          console.log('⚠️  Cron setup warning:', error.message);
+          console.log('   You can set it up manually with: npm run setup:cron');
+        } else {
+          console.log('✅ Cron job configured automatically');
+          if (stdout) console.log(stdout.trim());
+        }
+      });
+    }
+  }
   console.log('  📡 Launches:');
   console.log('    GET  /api/launches - Get all launches');
   console.log('    GET  /api/launches/:id - Get launch by ID');

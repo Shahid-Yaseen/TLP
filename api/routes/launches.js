@@ -434,7 +434,15 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   const { filters, args, needsJoins } = buildFilters(req.query);
   
   let sql = buildLaunchQuery(filters, args);
-  sql += ' ORDER BY launches.launch_date DESC';
+  
+  // Determine sort order based on whether we're filtering for upcoming or previous
+  // If net__gte is present (upcoming), sort ASC (soonest first)
+  // If net__lt is present (previous), sort DESC (most recent first)
+  // Otherwise default to DESC (most recent first)
+  const isUpcoming = req.query.net__gte !== undefined;
+  const isPrevious = req.query.net__lt !== undefined;
+  const sortOrder = isUpcoming ? 'ASC' : (isPrevious ? 'DESC' : 'DESC');
+  sql += ` ORDER BY launches.launch_date ${sortOrder}`;
 
   // Pagination
   const limit = parseInt(req.query.limit) || 100;
