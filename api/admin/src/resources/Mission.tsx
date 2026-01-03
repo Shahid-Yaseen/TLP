@@ -2,6 +2,7 @@ import {
   List,
   Edit,
   Show,
+  Create,
   SimpleForm,
   TextInput,
   Datagrid,
