@@ -178,20 +178,25 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('  GET  /db-health - Database health check');
   console.log('');
   
-  // Automatically set up cron job for launch sync (only in production)
+  // Automatically set up cron job for launch sync (only in production, non-blocking)
   if (process.env.NODE_ENV === 'production' || process.env.AUTO_SETUP_CRON === 'true') {
     const setupScript = path.join(__dirname, 'scripts', 'setup_cron_on_deploy.sh');
     if (fs.existsSync(setupScript)) {
-      console.log('🔄 Setting up automatic launch sync cron job...');
-      exec(`bash ${setupScript}`, { cwd: __dirname }, (error, stdout, stderr) => {
-        if (error) {
-          console.log('⚠️  Cron setup warning:', error.message);
-          console.log('   You can set it up manually with: npm run setup:cron');
-        } else {
-          console.log('✅ Cron job configured automatically');
-          if (stdout) console.log(stdout.trim());
-        }
-      });
+      // Run in background, don't block server startup
+      setTimeout(() => {
+        console.log('🔄 Setting up automatic launch sync cron job...');
+        exec(`bash ${setupScript}`, { cwd: __dirname, timeout: 10000 }, (error, stdout, stderr) => {
+          if (error) {
+            // Don't log errors that might spam - just note it
+            if (!error.message.includes('timeout')) {
+              console.log('⚠️  Cron setup: Run manually with: npm run setup:cron');
+            }
+          } else {
+            console.log('✅ Cron job configured automatically');
+            if (stdout) console.log(stdout.trim());
+          }
+        });
+      }, 2000); // Wait 2 seconds after server starts
     }
   }
   console.log('  📡 Launches:');
