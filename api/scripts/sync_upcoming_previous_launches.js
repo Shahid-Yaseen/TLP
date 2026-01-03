@@ -106,7 +106,7 @@ function canMakeApiCall() {
  */
 async function waitForRateLimit() {
   let attempts = 0;
-  const maxAttempts = 10; // Prevent infinite loops
+  const maxAttempts = 60; // Allow more attempts (1 hour max wait)
   
   while (!canMakeApiCall() && attempts < maxAttempts) {
     attempts++;
@@ -122,12 +122,20 @@ async function waitForRateLimit() {
       
       if (waitTime > 0 && waitTime < 3600000) { // Don't wait more than 1 hour
         const waitMinutes = Math.ceil(waitTime / 60000);
-        log(`Rate limit reached (${state.calls.length}/${rateLimit} calls). Waiting ${waitMinutes} minute(s)...`, 'warn');
+        // Only log every 5 attempts to avoid spam
+        if (attempts % 5 === 1) {
+          log(`Rate limit reached (${state.calls.length}/${rateLimit} calls). Waiting ${waitMinutes} minute(s)...`, 'warn');
+        }
         await new Promise(resolve => setTimeout(resolve, Math.min(waitTime, 60000))); // Wait max 1 minute at a time
+      } else if (waitTime > 3600000) {
+        // If wait time is more than 1 hour, something is wrong - clear old state
+        log(`Rate limit state appears stale. Clearing old calls...`, 'warn');
+        state.calls = [];
+        saveRateLimitState(state);
+        break;
       } else {
-        // If wait time is too long, log error and break
-        log(`Rate limit wait time too long (${Math.ceil(waitTime / 60000)} minutes). Skipping this sync.`, 'error');
-        throw new Error('Rate limit exceeded. Please wait before running again.');
+        // Wait time is negative or zero, should be able to proceed
+        break;
       }
     } else {
       // Should be able to make call now
@@ -136,7 +144,13 @@ async function waitForRateLimit() {
   }
   
   if (attempts >= maxAttempts) {
-    throw new Error('Rate limit check failed after multiple attempts');
+    // Instead of throwing error, clear stale state and continue
+    log(`Rate limit wait exceeded max attempts. Clearing stale state and continuing...`, 'warn');
+    const state = loadRateLimitState();
+    const now = Date.now();
+    const oneHourAgo = now - (60 * 60 * 1000);
+    state.calls = state.calls.filter(timestamp => timestamp > oneHourAgo);
+    saveRateLimitState(state);
   }
 }
 

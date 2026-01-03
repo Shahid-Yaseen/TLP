@@ -32,6 +32,7 @@
     "sync:upcoming": "node scripts/sync_upcoming_previous_launches.js",
     "test:email": "node scripts/test-brevo-email.js",
     "setup:cron": "bash scripts/setup_cron_on_deploy.sh",
+    "check:cron": "bash scripts/check_cron_status.sh",
     "postinstall": "chmod +x scripts/*.sh 2>/dev/null || true",
     "start": "node index.js",
     "dev": "nodemon index.js"
