@@ -349,6 +349,11 @@ export const MissionUpdateEdit = () => {
   const refresh = useRefresh();
 
   const handleSave = async (data: any) => {
+    if (!record || !record.id) {
+      notify('Error: Record not found', { type: 'error' });
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(`${API_URL}/api/mission/updates/${record.id}`, {
