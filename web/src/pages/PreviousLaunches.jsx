@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import API_URL from '../config/api';
 import { getLaunchSlug } from '../utils/slug';
 import RedDotLoader from '../components/common/RedDotLoader';
+import RecoveryBadge from '../components/RecoveryBadge';
 
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
@@ -357,8 +358,8 @@ function PreviousLaunches() {
 
       {/* Main Navigation Bar */}
       <div className="bg-[#8B1A1A] border-t-2 border-white">
-        <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">
-          <div className="flex items-center justify-between">
+        <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0 bg-[#8B1A1A]">
+          <div className="flex items-center justify-between bg-[#8B1A1A]">
             {/* Logo and Title */}
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative" style={{ overflow: 'visible' }}>
@@ -533,9 +534,13 @@ function PreviousLaunches() {
                 );
               })()}
 
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-8 sm:mb-12 lg:mb-16 px-4">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl font-light text-white tracking-wide mb-4 sm:mb-6 lg:mb-8 px-4">
                 {previousLaunch?.site || previousLaunch?.site_name || 'Launch Site Information'}
               </p>
+              
+              <div className="mb-8 sm:mb-12 lg:mb-16">
+                <RecoveryBadge launch={previousLaunch} />
+              </div>
 
               <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 text-white px-4">
                 <div className="flex flex-col items-center">
@@ -652,6 +657,9 @@ function PreviousLaunches() {
                         <h4 className="text-[11px] font-bold text-white uppercase leading-tight mb-1">
                           {(launch.name || 'Launch Name').toUpperCase()}
                         </h4>
+                        <div className="mb-1 flex justify-center">
+                          <RecoveryBadge launch={launch} className="scale-75" />
+                        </div>
                         <p className="text-[8px] text-gray-400 leading-tight normal-case">
                           {launch.site || launch.site_name || 'Details here...'}
                         </p>
@@ -710,6 +718,9 @@ function PreviousLaunches() {
                       <h4 className="text-[11px] font-bold text-white uppercase leading-tight mb-1">
                         {(launch.name || 'Launch Name').toUpperCase()}
                       </h4>
+                      <div className="mb-1 flex justify-center">
+                        <RecoveryBadge launch={launch} className="scale-75" />
+                      </div>
                       <p className="text-[8px] text-gray-400 leading-tight normal-case">
                         {launch.site || launch.site_name || 'Details here...'}
                       </p>
@@ -917,6 +928,9 @@ function PreviousLaunches() {
                         <h3 className="text-base font-bold mb-2 leading-tight tracking-tight text-white uppercase">
                           {(launch.name || 'Launch Name').toUpperCase()}
                         </h3>
+                        <div className="mb-2">
+                          <RecoveryBadge launch={launch} />
+                        </div>
                         <p className="text-xs text-gray-400 leading-snug normal-case">
                           {launch.provider || launch.provider_abbrev || ''} {launch.rocket || ''} | {launch.site || launch.site_name || 'Location TBD'}
                         </p>

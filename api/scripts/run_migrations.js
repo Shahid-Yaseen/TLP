@@ -93,6 +93,9 @@ const MIGRATIONS = [
   '023_add_author_to_launches.sql',
   '024_create_stock_tickers.sql',
   '025_create_subscriptions.sql',
+  '026_add_zachary_aubert_author.sql',
+  '027_create_mission_content.sql',
+  '028_create_launch_related_articles.sql',
 ];
 
 // Track completed migrations

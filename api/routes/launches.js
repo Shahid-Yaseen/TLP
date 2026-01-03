@@ -391,7 +391,15 @@ function buildLaunchQuery(filters, args, options = {}) {
       countries.name as country_name,
       countries.alpha_2_code as country_code,
       celestial_bodies.id as celestial_body_id,
-      celestial_bodies.name as celestial_body_name
+      celestial_bodies.name as celestial_body_name,
+      authors.id as author_id,
+      authors.first_name as author_first_name,
+      authors.last_name as author_last_name,
+      authors.full_name as author_full_name,
+      authors.title as author_title,
+      authors.bio as author_bio,
+      authors.profile_image_url as author_profile_image_url,
+      authors.book_info as author_book_info
     FROM launches
     LEFT JOIN providers ON launches.provider_id = providers.id
     LEFT JOIN agencies ON launches.provider_id = agencies.id
@@ -403,6 +411,7 @@ function buildLaunchQuery(filters, args, options = {}) {
     LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
     LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
     LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+    LEFT JOIN authors ON launches.author_id = authors.id
   `;
 
   // Add joins for nested filters
@@ -963,15 +972,26 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
   let response;
   
   if (useRawData) {
+    // Extract vid_urls from raw_data according to Space Devs API structure
+    // In Space Devs API, vid_urls is at the top level (not in mission.vid_urls which is typically empty)
+    // Priority: database table > raw_data.vid_urls (top-level) > raw_data.mission.vid_urls (fallback)
+    let vidUrlsFromRaw = rawData.vid_urls || [];
+    if (vidUrlsFromRaw.length === 0 && rawData.mission && rawData.mission.vid_urls && rawData.mission.vid_urls.length > 0) {
+      vidUrlsFromRaw = rawData.mission.vid_urls;
+    }
+    
     // Use raw_data as base and merge with database fields and arrays
     response = {
       ...rawData, // Start with complete API response
       // Override with database-specific fields
       database_id: launchRow.id, // Include numeric database ID
       // Ensure arrays from database are included (they might be more complete)
+      // Priority: database > raw_data top-level > raw_data.mission
       updates: relatedData.updates || rawData.updates || [],
       info_urls: relatedData.info_urls || rawData.info_urls || [],
-      vid_urls: relatedData.vid_urls || rawData.vid_urls || [],
+      vid_urls: relatedData.vid_urls && relatedData.vid_urls.length > 0 
+        ? relatedData.vid_urls 
+        : (vidUrlsFromRaw && vidUrlsFromRaw.length > 0 ? vidUrlsFromRaw : []),
       timeline: relatedData.timeline || rawData.timeline || [],
       mission_patches: relatedData.mission_patches || rawData.mission_patches || [],
       // Additional related data from database
@@ -980,7 +1000,8 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
       hazards: relatedData.hazards || [],
       recovery: relatedData.recovery || null,
       windows: relatedData.windows || [],
-      engines: relatedData.engines || []
+      engines: relatedData.engines || [],
+      related_articles: relatedData.related_articles || []
     };
   } else {
     // Fallback to building response from individual fields
@@ -1020,12 +1041,21 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
       status: statusJson || status,
       launch_service_provider: launchServiceProviderJson || launchServiceProvider,
       rocket: rocketJson || rocket,
-      mission: missionJson || mission,
+      // Ensure mission includes vid_urls if available in mission_json
+      mission: missionJson ? {
+        ...missionJson,
+        vid_urls: missionJson.vid_urls || null
+      } : mission,
       pad: padJson || pad,
       // Array fields from database
+      // Video URLs: Priority is database table > mission_json (fallback, though typically empty in Space Devs API)
       updates: relatedData.updates || [],
       info_urls: relatedData.info_urls || [],
-      vid_urls: relatedData.vid_urls || [],
+      vid_urls: relatedData.vid_urls && relatedData.vid_urls.length > 0
+        ? relatedData.vid_urls
+        : (missionJson && missionJson.vid_urls && Array.isArray(missionJson.vid_urls) && missionJson.vid_urls.length > 0
+          ? missionJson.vid_urls
+          : []),
       timeline: relatedData.timeline || [],
       mission_patches: relatedData.mission_patches || [],
       // Additional related data
@@ -1034,7 +1064,22 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
       hazards: relatedData.hazards || [],
       recovery: relatedData.recovery || null,
       windows: relatedData.windows || [],
-      engines: relatedData.engines || []
+      engines: relatedData.engines || [],
+      related_articles: relatedData.related_articles || []
+    };
+  }
+
+  // Add author information if available
+  if (launchRow.author_id || launchRow.author_full_name) {
+    response.author = {
+      id: launchRow.author_id || null,
+      first_name: launchRow.author_first_name || null,
+      last_name: launchRow.author_last_name || null,
+      full_name: launchRow.author_full_name || null,
+      title: launchRow.author_title || null,
+      bio: launchRow.author_bio || null,
+      profile_image_url: launchRow.author_profile_image_url || null,
+      book_info: launchRow.author_book_info ? (typeof launchRow.author_book_info === 'string' ? JSON.parse(launchRow.author_book_info) : launchRow.author_book_info) : null
     };
   }
 
@@ -1073,7 +1118,15 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
           launch_pads.name as pad_name,
           mission_types.name as mission_type,
           launch_statuses.name as status_name,
-          launch_statuses.abbrev as status_abbrev
+          launch_statuses.abbrev as status_abbrev,
+          authors.id as author_id,
+          authors.first_name as author_first_name,
+          authors.last_name as author_last_name,
+          authors.full_name as author_full_name,
+          authors.title as author_title,
+          authors.bio as author_bio,
+          authors.profile_image_url as author_profile_image_url,
+          authors.book_info as author_book_info
         FROM launches
         LEFT JOIN providers ON launches.provider_id = providers.id
         LEFT JOIN rockets ON launches.rocket_id = rockets.id
@@ -1082,6 +1135,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
         LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
         LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
         LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+        LEFT JOIN authors ON launches.author_id = authors.id
         WHERE launches.slug = $1
       `, [id]);
       if (slugRows.length) {
@@ -1108,7 +1162,15 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
           launch_pads.name as pad_name,
           mission_types.name as mission_type,
           launch_statuses.name as status_name,
-          launch_statuses.abbrev as status_abbrev
+          launch_statuses.abbrev as status_abbrev,
+          authors.id as author_id,
+          authors.first_name as author_first_name,
+          authors.last_name as author_last_name,
+          authors.full_name as author_full_name,
+          authors.title as author_title,
+          authors.bio as author_bio,
+          authors.profile_image_url as author_profile_image_url,
+          authors.book_info as author_book_info
         FROM launches
         LEFT JOIN providers ON launches.provider_id = providers.id
         LEFT JOIN rockets ON launches.rocket_id = rockets.id
@@ -1117,6 +1179,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
         LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
         LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
         LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+        LEFT JOIN authors ON launches.author_id = authors.id
         WHERE launches.id = $1::integer
       `, [id]);
       launchRows = intRows;
@@ -1144,7 +1207,15 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
             launch_pads.name as pad_name,
             mission_types.name as mission_type,
             launch_statuses.name as status_name,
-            launch_statuses.abbrev as status_abbrev
+            launch_statuses.abbrev as status_abbrev,
+            authors.id as author_id,
+            authors.first_name as author_first_name,
+            authors.last_name as author_last_name,
+            authors.full_name as author_full_name,
+            authors.title as author_title,
+            authors.bio as author_bio,
+            authors.profile_image_url as author_profile_image_url,
+            authors.book_info as author_book_info
           FROM launches
           LEFT JOIN providers ON launches.provider_id = providers.id
           LEFT JOIN rockets ON launches.rocket_id = rockets.id
@@ -1153,6 +1224,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
           LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
           LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
           LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+          LEFT JOIN authors ON launches.author_id = authors.id
           WHERE launches.external_id = $1::uuid
         `, [id]);
         if (externalRows.length) {
@@ -1185,7 +1257,15 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
             launch_pads.name as pad_name,
             mission_types.name as mission_type,
             launch_statuses.name as status_name,
-            launch_statuses.abbrev as status_abbrev
+            launch_statuses.abbrev as status_abbrev,
+            authors.id as author_id,
+            authors.first_name as author_first_name,
+            authors.last_name as author_last_name,
+            authors.full_name as author_full_name,
+            authors.title as author_title,
+            authors.bio as author_bio,
+            authors.profile_image_url as author_profile_image_url,
+            authors.book_info as author_book_info
           FROM launches
           LEFT JOIN providers ON launches.provider_id = providers.id
           LEFT JOIN rockets ON launches.rocket_id = rockets.id
@@ -1194,6 +1274,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
           LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
           LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
           LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
+          LEFT JOIN authors ON launches.author_id = authors.id
           WHERE launches.id = $1
         `, [syncedLaunch.id]);
         
@@ -1574,27 +1655,28 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     }
   }));
 
-  // Format video URLs array
+  // Format video URLs array to match Space Devs API structure exactly
+  // In Space Devs API: type and language are always objects (not null), priority is number, live is boolean
   const vidUrls = vidUrlRows.map(row => ({
-    priority: row.priority,
-    source: row.source,
-    publisher: row.publisher,
-    title: row.title,
-    description: row.description,
-    feature_image: row.feature_image,
-    url: row.url,
+    priority: typeof row.priority === 'number' ? row.priority : (row.priority ? parseInt(row.priority, 10) : null),
+    source: row.source || null,
+    publisher: row.publisher || null,
+    title: row.title || null,
+    description: row.description || null,
+    feature_image: row.feature_image || null,
+    url: row.url || null,
     type: {
-      id: row.type_id,
-      name: row.type_name
+      id: row.type_id || null,
+      name: row.type_name || null
     },
     language: {
-      id: row.language_id,
-      name: row.language_name,
-      code: row.language_code
+      id: row.language_id || null,
+      name: row.language_name || null,
+      code: row.language_code || null
     },
-    start_time: row.start_time,
-    end_time: row.end_time,
-    live: row.live
+    start_time: row.start_time || null,
+    end_time: row.end_time || null,
+    live: typeof row.live === 'boolean' ? row.live : (row.live === true || row.live === 'true' || row.live === 1)
   }));
 
   // Fallback: Check mission_json for info_urls and vid_urls if not in separate tables
@@ -1886,6 +1968,38 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   
   console.log(`[API] Launch ${launchId}: Engine data - Found ${engineData.length} engines`);
 
+  // Get related articles (admin-managed)
+  const { rows: relatedArticleRows } = await pool.query(`
+    SELECT 
+      na.id,
+      na.title,
+      na.slug,
+      na.hero_image_url,
+      na.featured_image_url,
+      na.subtitle,
+      na.excerpt,
+      na.published_at,
+      na.status,
+      lra.display_order
+    FROM launch_related_articles lra
+    JOIN news_articles na ON lra.article_id = na.id
+    WHERE lra.launch_id = $1
+      AND na.status = 'published'
+    ORDER BY lra.display_order ASC, na.published_at DESC
+  `, [launchId]);
+
+  const relatedArticles = relatedArticleRows.map(row => ({
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    hero_image_url: row.hero_image_url,
+    featured_image_url: row.featured_image_url,
+    subtitle: row.subtitle,
+    excerpt: row.excerpt,
+    published_at: row.published_at,
+    status: row.status
+  }));
+
   // Prepare related data
   const relatedData = {
     payloads: allPayloads,
@@ -1898,7 +2012,8 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     info_urls: infoUrls,
     vid_urls: vidUrls,
     timeline: timeline,
-    mission_patches: missionPatches
+    mission_patches: missionPatches,
+    related_articles: relatedArticles
   };
 
   // Transform to Space Devs API format
@@ -2547,6 +2662,155 @@ router.post('/comments/:id/like', authenticate, asyncHandler(async (req, res) =>
     );
     res.json({ liked: true });
   }
+}));
+
+/**
+ * GET /api/launches/:id/related-articles
+ * Get related articles for a launch (admin)
+ */
+router.get('/:id/related-articles', authenticate, role('admin'), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const launchId = parseInt(id);
+  
+  if (isNaN(launchId)) {
+    return res.status(400).json({ error: 'Invalid launch ID' });
+  }
+
+  const { rows } = await pool.query(`
+    SELECT 
+      lra.id,
+      lra.launch_id,
+      lra.article_id,
+      lra.display_order,
+      na.id as article_id,
+      na.title,
+      na.slug,
+      na.hero_image_url,
+      na.featured_image_url,
+      na.status,
+      na.published_at
+    FROM launch_related_articles lra
+    JOIN news_articles na ON lra.article_id = na.id
+    WHERE lra.launch_id = $1
+    ORDER BY lra.display_order ASC, na.published_at DESC
+  `, [launchId]);
+
+  res.json(rows);
+}));
+
+/**
+ * POST /api/launches/:id/related-articles
+ * Add a related article to a launch (admin)
+ */
+router.post('/:id/related-articles', authenticate, role('admin'), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { article_id, display_order } = req.body;
+  const launchId = parseInt(id);
+  
+  if (isNaN(launchId)) {
+    return res.status(400).json({ error: 'Invalid launch ID' });
+  }
+
+  if (!article_id) {
+    return res.status(400).json({ error: 'article_id is required' });
+  }
+
+  // Check if launch exists
+  const { rows: launchRows } = await pool.query('SELECT id FROM launches WHERE id = $1', [launchId]);
+  if (!launchRows.length) {
+    return res.status(404).json({ error: 'Launch not found' });
+  }
+
+  // Check if article exists
+  const { rows: articleRows } = await pool.query('SELECT id FROM news_articles WHERE id = $1', [article_id]);
+  if (!articleRows.length) {
+    return res.status(404).json({ error: 'Article not found' });
+  }
+
+  // Check if relationship already exists
+  const { rows: existingRows } = await pool.query(
+    'SELECT id FROM launch_related_articles WHERE launch_id = $1 AND article_id = $2',
+    [launchId, article_id]
+  );
+
+  if (existingRows.length > 0) {
+    return res.status(409).json({ error: 'Article is already related to this launch' });
+  }
+
+  // Get max display_order if not provided
+  let order = display_order;
+  if (order === undefined || order === null) {
+    const { rows: maxOrderRows } = await pool.query(
+      'SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM launch_related_articles WHERE launch_id = $1',
+      [launchId]
+    );
+    order = maxOrderRows[0].next_order;
+  }
+
+  const { rows } = await pool.query(`
+    INSERT INTO launch_related_articles (launch_id, article_id, display_order, updated_at)
+    VALUES ($1, $2, $3, NOW())
+    RETURNING *
+  `, [launchId, article_id, order]);
+
+  res.status(201).json(rows[0]);
+}));
+
+/**
+ * DELETE /api/launches/:id/related-articles/:articleId
+ * Remove a related article from a launch (admin)
+ */
+router.delete('/:id/related-articles/:articleId', authenticate, role('admin'), asyncHandler(async (req, res) => {
+  const { id, articleId } = req.params;
+  const launchId = parseInt(id);
+  const articleIdNum = parseInt(articleId);
+  
+  if (isNaN(launchId) || isNaN(articleIdNum)) {
+    return res.status(400).json({ error: 'Invalid launch ID or article ID' });
+  }
+
+  const { rows } = await pool.query(
+    'DELETE FROM launch_related_articles WHERE launch_id = $1 AND article_id = $2 RETURNING *',
+    [launchId, articleIdNum]
+  );
+
+  if (!rows.length) {
+    return res.status(404).json({ error: 'Related article relationship not found' });
+  }
+
+  res.json({ message: 'Related article removed', data: rows[0] });
+}));
+
+/**
+ * PUT /api/launches/:id/related-articles/:articleId
+ * Update display order of a related article (admin)
+ */
+router.put('/:id/related-articles/:articleId', authenticate, role('admin'), asyncHandler(async (req, res) => {
+  const { id, articleId } = req.params;
+  const { display_order } = req.body;
+  const launchId = parseInt(id);
+  const articleIdNum = parseInt(articleId);
+  
+  if (isNaN(launchId) || isNaN(articleIdNum)) {
+    return res.status(400).json({ error: 'Invalid launch ID or article ID' });
+  }
+
+  if (display_order === undefined || display_order === null) {
+    return res.status(400).json({ error: 'display_order is required' });
+  }
+
+  const { rows } = await pool.query(`
+    UPDATE launch_related_articles 
+    SET display_order = $1, updated_at = NOW()
+    WHERE launch_id = $2 AND article_id = $3
+    RETURNING *
+  `, [display_order, launchId, articleIdNum]);
+
+  if (!rows.length) {
+    return res.status(404).json({ error: 'Related article relationship not found' });
+  }
+
+  res.json(rows[0]);
 }));
 
 module.exports = router;

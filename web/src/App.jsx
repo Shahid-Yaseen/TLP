@@ -53,7 +53,7 @@ function App() {
         <Route path="/launches/news" element={<LaunchNews />} />
         <Route path="/launches/news/:slug" element={<LaunchNewsDetail />} />
         <Route path="/launches/:slug" element={<LaunchDetail />} />
-        <Route path="/news" element={<News />} />
+        <Route path="/news" element={<ComingSoonSpaceNews />} />
         <Route path="/news/in-space" element={<InSpaceNews />} />
         <Route path="/news/technology" element={<TechnologyNews />} />
         <Route path="/news/military" element={<MilitaryNews />} />

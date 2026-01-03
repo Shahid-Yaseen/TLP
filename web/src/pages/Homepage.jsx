@@ -4,6 +4,7 @@ import axios from 'axios';
 import Layout from '../components/Layout';
 import LaunchCard from '../components/LaunchCard';
 import ArticleCard from '../components/ArticleCard';
+import RecoveryBadge from '../components/RecoveryBadge';
 import API_URL from '../config/api';
 import RedDotLoader from '../components/common/RedDotLoader';
 
@@ -119,6 +120,9 @@ const Homepage = () => {
                     </div>
                     <div className="font-semibold">{launch.name}</div>
                     <div className="text-sm text-gray-400">{launch.rocket || launch.rocket_id || 'TBD'}</div>
+                    <div className="mb-2">
+                      <RecoveryBadge launch={launch} />
+                    </div>
                     <div className="text-xs text-gray-500">{launch.site || launch.launch_site?.name || 'Location TBD'}</div>
                   </div>
                 ))

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
@@ -23,6 +23,7 @@ const LaunchDetail = () => {
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [rocketProgress, setRocketProgress] = useState(0); // 0-100 percentage
   
   // Comments state
   const [comments, setComments] = useState([]);
@@ -34,8 +35,6 @@ const LaunchDetail = () => {
   const [authorImageError, setAuthorImageError] = useState(false);
   const [replyContent, setReplyContent] = useState('');
 
-  const tabs = ['PAYLOAD', 'CREW', 'ROCKET', 'ENGINE', 'PROVIDER', 'PAD', 'HAZARDS']; // 'STATS' hidden for now
-
   useEffect(() => {
     fetchLaunch();
   }, [slug]);
@@ -44,6 +43,58 @@ const LaunchDetail = () => {
     if (launch?.net) {
       startCountdown(launch.net);
     }
+  }, [launch]);
+
+  // Update rocket position based on real-time progress through launch window
+  useEffect(() => {
+    if (!launch) return;
+
+    const updateRocketPosition = () => {
+      const now = new Date().getTime();
+      const windowStart = launch.window_start 
+        ? new Date(launch.window_start).getTime()
+        : launch.launch_date 
+        ? new Date(launch.launch_date).getTime()
+        : launch.net 
+        ? new Date(launch.net).getTime()
+        : null;
+      
+      const windowEnd = launch.window_end 
+        ? new Date(launch.window_end).getTime()
+        : windowStart 
+        ? windowStart + (4 * 60 * 60 * 1000) // Default 4 hour window if no end time
+        : null;
+
+      if (!windowStart || !windowEnd) {
+        setRocketProgress(0);
+        return;
+      }
+
+      // Calculate progress (0-100%)
+      let progress = 0;
+      if (now < windowStart) {
+        // Before window opens - rocket at start
+        progress = 0;
+      } else if (now > windowEnd) {
+        // After window closes - rocket at end
+        progress = 100;
+      } else {
+        // Within window - calculate progress
+        const totalDuration = windowEnd - windowStart;
+        const elapsed = now - windowStart;
+        progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+      }
+
+      setRocketProgress(progress);
+    };
+
+    // Update immediately
+    updateRocketPosition();
+
+    // Update every second for smooth animation
+    const interval = setInterval(updateRocketPosition, 1000);
+
+    return () => clearInterval(interval);
   }, [launch]);
 
   useEffect(() => {
@@ -112,6 +163,113 @@ const LaunchDetail = () => {
     }
   }, [location.hash, loading]);
 
+  // Helper to safely parse JSONB fields
+  const parseJsonb = (value) => {
+    if (!value) return null;
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return null;
+      }
+    }
+    return value;
+  };
+
+  // Extract launch data for tab content checking (safe even when launch is null)
+  const launchServiceProvider = launch?.launch_service_provider || parseJsonb(launch?.launch_service_provider_json) || {};
+  
+  // Handle rocket data - check if it's already an object or needs parsing
+  let rocketRaw = null;
+  if (launch?.rocket) {
+    if (typeof launch.rocket === 'object' && launch.rocket !== null) {
+      rocketRaw = launch.rocket;
+    } else if (typeof launch.rocket === 'string') {
+      try {
+        rocketRaw = JSON.parse(launch.rocket);
+      } catch (e) {
+        rocketRaw = { name: launch.rocket };
+      }
+    }
+  }
+  
+  if (!rocketRaw || (typeof rocketRaw === 'object' && Object.keys(rocketRaw).length === 0)) {
+    rocketRaw = parseJsonb(launch?.rocket_json) || {};
+  }
+  
+  if (typeof rocketRaw === 'string') {
+    rocketRaw = { name: rocketRaw };
+  }
+  
+  const rocket = rocketRaw && typeof rocketRaw === 'object' && (rocketRaw.configuration || rocketRaw.id || rocketRaw.name || Object.keys(rocketRaw).length > 0) ? rocketRaw : {};
+  const mission = launch?.mission || parseJsonb(launch?.mission_json) || {};
+  const pad = launch?.pad || parseJsonb(launch?.pad_json) || {};
+
+  // Check which tabs have content (must be called before any early returns)
+  const hasTabContent = useMemo(() => {
+    if (!launch) {
+      return {
+        PAYLOAD: false,
+        CREW: false,
+        ROCKET: false,
+        ENGINE: false,
+        PROVIDER: false,
+        PAD: false,
+        HAZARDS: false
+      };
+    }
+
+    // Check PAYLOAD
+    const hasPayload = launch.payloads && Array.isArray(launch.payloads) && launch.payloads.length > 0;
+    
+    // Check CREW
+    const hasCrew = launch.crew && Array.isArray(launch.crew) && launch.crew.length > 0;
+    
+    // Check ROCKET
+    const hasRocket = rocket && (rocket.configuration || rocket.id || rocket.name || (typeof rocket === 'object' && Object.keys(rocket).length > 0)) || mission.description;
+    
+    // Check ENGINE
+    let hasEngine = false;
+    if (launch.engines && Array.isArray(launch.engines) && launch.engines.length > 0) {
+      hasEngine = true;
+    } else if (rocket && rocket.launcher_stage && Array.isArray(rocket.launcher_stage) && rocket.launcher_stage.length > 0) {
+      hasEngine = rocket.launcher_stage.some(stage => stage.engines && Array.isArray(stage.engines) && stage.engines.length > 0);
+    } else if (rocket && rocket.configuration && rocket.configuration.launcher_stage && Array.isArray(rocket.configuration.launcher_stage) && rocket.configuration.launcher_stage.length > 0) {
+      hasEngine = rocket.configuration.launcher_stage.some(stage => stage.engines && Array.isArray(stage.engines) && stage.engines.length > 0);
+    }
+    
+    // Check PROVIDER
+    const hasProvider = launchServiceProvider && (launchServiceProvider.name || launchServiceProvider.id);
+    
+    // Check PAD
+    const hasPad = pad && (pad.name || pad.id);
+    
+    // Check HAZARDS
+    const hasHazards = launch.hazards && Array.isArray(launch.hazards) && launch.hazards.length > 0;
+    
+    return {
+      PAYLOAD: hasPayload,
+      CREW: hasCrew,
+      ROCKET: hasRocket,
+      ENGINE: hasEngine,
+      PROVIDER: hasProvider,
+      PAD: hasPad,
+      HAZARDS: hasHazards
+    };
+  }, [launch, rocket, mission, launchServiceProvider, pad]);
+
+  // Filter tabs to only show those with content
+  const availableTabs = useMemo(() => {
+    const allTabs = ['PAYLOAD', 'CREW', 'ROCKET', 'ENGINE', 'PROVIDER', 'PAD', 'HAZARDS'];
+    return allTabs.filter(tab => hasTabContent[tab]);
+  }, [hasTabContent]);
+
+  // Ensure activeTab is valid (if current tab is hidden, switch to first available tab)
+  useEffect(() => {
+    if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0]);
+    }
+  }, [availableTabs, activeTab]);
 
   const fetchLaunch = async () => {
     try {
@@ -209,12 +367,10 @@ const LaunchDetail = () => {
       
       setLaunch(launchData);
       
-      // Fetch related stories
-      const storiesRes = await axios.get(`${API_URL}/api/news?limit=4&status=published`);
-      const storiesData = Array.isArray(storiesRes.data) 
-        ? storiesRes.data 
-        : storiesRes.data?.data || [];
-      setRelatedStories(storiesData.slice(0, 4));
+      // Use related articles from launch response (admin-managed)
+      // By default, launches have no related stories unless added by admin
+      const relatedArticles = launchData.related_articles || [];
+      setRelatedStories(relatedArticles);
     } catch (error) {
       console.error('Error fetching launch:', error);
       setLaunch(null);
@@ -555,54 +711,6 @@ const LaunchDetail = () => {
   const isUpcoming = launch.net && new Date(launch.net) > new Date();
   const launchName = getLaunchName();
   
-  // Helper to safely parse JSONB fields
-  const parseJsonb = (value) => {
-    if (!value) return null;
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch (e) {
-        return null;
-      }
-    }
-    return value;
-  };
-
-  // Handle both transformed format (launch_service_provider) and raw format (launch_service_provider_json)
-  const launchServiceProvider = launch.launch_service_provider || parseJsonb(launch.launch_service_provider_json) || {};
-  
-  // Handle rocket data - check if it's already an object or needs parsing
-  let rocketRaw = null;
-  if (launch.rocket) {
-    // If rocket is already an object (from formatLaunchResponse), use it
-    if (typeof launch.rocket === 'object' && launch.rocket !== null) {
-      rocketRaw = launch.rocket;
-    } else if (typeof launch.rocket === 'string') {
-      // If it's a string (old database format), try to parse it or create a basic object
-      try {
-        rocketRaw = JSON.parse(launch.rocket);
-      } catch (e) {
-        // If parsing fails, it's just a name string, create a basic object
-        rocketRaw = { name: launch.rocket };
-      }
-    }
-  }
-  
-  // If rocket wasn't found or parsed, try rocket_json
-  if (!rocketRaw || (typeof rocketRaw === 'object' && Object.keys(rocketRaw).length === 0)) {
-    rocketRaw = parseJsonb(launch.rocket_json) || {};
-  }
-  
-  // Ensure rocket has configuration if it exists in the raw data
-  // The rocket object from API should have configuration nested inside it
-  // If rocketRaw is a string, convert it to an object with a name
-  if (typeof rocketRaw === 'string') {
-    rocketRaw = { name: rocketRaw };
-  }
-  
-  const rocket = rocketRaw && typeof rocketRaw === 'object' && (rocketRaw.configuration || rocketRaw.id || rocketRaw.name || Object.keys(rocketRaw).length > 0) ? rocketRaw : {};
-  const mission = launch.mission || parseJsonb(launch.mission_json) || {};
-  const pad = launch.pad || parseJsonb(launch.pad_json) || {};
   const status = launch.status || parseJsonb(launch.status_json) || {};
   const image = launch.image || parseJsonb(launch.image_json) || {};
   const infographic = launch.infographic || parseJsonb(launch.infographic_json) || {};
@@ -730,8 +838,9 @@ const LaunchDetail = () => {
   };
 
   const sectionNav = (
-    <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">
-      <div className="flex items-center justify-between">
+    <div className="bg-[#8B1A1A] border-t-2 border-white">
+      <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0 bg-[#8B1A1A]">
+        <div className="flex items-center justify-between bg-[#8B1A1A]">
         {/* Logo and Title */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="relative" style={{ overflow: 'visible' }}>
@@ -782,6 +891,7 @@ const LaunchDetail = () => {
         </a>
           </div>
       )}
+        </div>
       </div>
     </div>
   );
@@ -812,9 +922,11 @@ const LaunchDetail = () => {
                 <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-300 mt-2">{launchName.secondLine}</h2>
               )}
             </div>
-              <div className="text-sm sm:text-base lg:text-lg text-gray-300 mb-6 sm:mb-8">
-                {pad.name || 'Launch Pad TBD'} | {pad.location?.name || 'Location TBD'}, {pad.country_code || pad.location?.country_code || 'Country TBD'}
-            </div>
+              {(pad.location?.name || pad.country_code || pad.location?.country_code) && (
+                <div className="text-sm sm:text-base lg:text-lg text-gray-300 mb-6 sm:mb-8">
+                  {[pad.location?.name, pad.country_code || pad.location?.country_code].filter(Boolean).join(', ')}
+                </div>
+              )}
 
               {/* Countdown Timer - Centered */}
         {isUpcoming && (
@@ -1013,21 +1125,23 @@ const LaunchDetail = () => {
           <div className="lg:col-span-8">
                   
             {/* Tabs */}
-            <div className="bg-[#8B1A1A] flex flex-wrap mb-4 sm:mb-6 mt-6">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold uppercase transition-colors ${
-                    activeTab === tab
-                      ? 'bg-white text-black'
-                      : 'text-white hover:bg-[#A02A2A]'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-                  </div>
+            {availableTabs.length > 0 && (
+              <div className="bg-[#8B1A1A] flex flex-wrap mb-4 sm:mb-6 mt-6">
+                {availableTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold uppercase transition-colors ${
+                      activeTab === tab
+                        ? 'bg-white text-black'
+                        : 'text-white hover:bg-[#A02A2A]'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            )}
                   
             {/* Tab Content */}
             <div className="bg-[#121212] p-6 sm:p-8 min-h-[400px]">
@@ -1863,58 +1977,75 @@ const LaunchDetail = () => {
                         </div>
 
             {/* Author Information Section */}
-            <div className="bg-[#121212] p-6 mt-6 border-t-4 border-[#8B1A1A]">
-              
-              <div className="flex items-start gap-4">
-                {/* Profile Picture with red border */}
-                <div className="w-20 h-20 rounded-full shrink-0 border-4 border-[#8B1A1A] overflow-hidden">
-                  {!authorImageError ? (
-                    <img
-                      src="https://i.imgur.com/zachary-aubert-profile.jpg"
-                      alt="Zachary Aubert"
-                      className="w-full h-full object-cover"
-                      onError={() => setAuthorImageError(true)}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[#222222] flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                              </div>
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <div className="mb-3">
-                    <h3 className="text-xl font-bold inline text-[#8B1A1A] uppercase tracking-wide">ZACHARY AUBERT</h3>
-                    <span className="text-xl italic text-white uppercase tracking-wide ml-2">SPACE NEWS JOURNALIST</span>
-                  </div>
-                  <p className="text-sm text-white italic mb-3 leading-relaxed">
-                    Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.
-                  </p>
-                  <p className="text-sm text-white italic mb-3 leading-relaxed">
-                    He doesn't have a book yet but is working on the <span className="italic">Astro Guide: An UnOfficial Guide To The America Space Coast</span>
-                  </p>
-                  <Link
-                    to="/news?author=zac-aubert"
-                    className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm mt-2 inline-block font-semibold transition-colors"
-                  >
-                    More by Zac Aubert
-                  </Link>
-                          </div>
-                        </div>
+            {launch.author && (
+              <div className="bg-[#121212] p-6 mt-6 border-t-4 border-[#8B1A1A]">
+                <div className="flex items-start gap-4">
+                  {/* Profile Picture with red border */}
+                  <div className="w-20 h-20 rounded-full shrink-0 border-4 border-[#8B1A1A] overflow-hidden">
+                    {!authorImageError && launch.author.profile_image_url ? (
+                      <img
+                        src={launch.author.profile_image_url}
+                        alt={launch.author.full_name || 'Author'}
+                        className="w-full h-full object-cover"
+                        onError={() => setAuthorImageError(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#222222] flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-12 w-12 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
                       </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="mb-3">
+                      <h3 className="text-xl font-bold inline text-[#8B1A1A] uppercase tracking-wide">
+                        {launch.author.full_name || 'ZACHARY AUBERT'}
+                      </h3>
+                      <span className="text-xl italic text-white uppercase tracking-wide ml-2">
+                        {launch.author.title || 'SPACE NEWS JOURNALIST'}
+                      </span>
+                    </div>
+                    {launch.author.bio ? (
+                      <p className="text-sm text-white italic mb-3 leading-relaxed">
+                        {launch.author.bio}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-white italic mb-3 leading-relaxed">
+                        {launch.author.first_name || 'Zac'} {launch.author.last_name || 'Aubert'} is the founder and CEO of The Launch Pad, covering everything from rocket launches, space tech, and off planet missions.
+                      </p>
+                    )}
+                    {launch.author.book_info && launch.author.book_info.upcoming_books && launch.author.book_info.upcoming_books.length > 0 ? (
+                      <p className="text-sm text-white italic mb-3 leading-relaxed">
+                        He doesn't have a book yet but is working on the <span className="italic">{launch.author.book_info.upcoming_books[0].title}</span>
+                      </p>
+                    ) : (
+                      <p className="text-sm text-white italic mb-3 leading-relaxed">
+                        He doesn't have a book yet but is working on the <span className="italic">Astro Guide: An UnOfficial Guide To The America Space Coast</span>
+                      </p>
+                    )}
+                    <Link
+                      to={`/news?author=${launch.author.id || 'zac-aubert'}`}
+                      className="text-[#8B1A1A] hover:text-[#A02A2A] text-sm mt-2 inline-block font-semibold transition-colors"
+                    >
+                      More by {launch.author.first_name || 'Zac'} {launch.author.last_name || 'Aubert'}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Comments Section */}
             <div id="comments" className="bg-[#121212] p-6 mt-6 border-t-4 border-[#8B1A1A]">
@@ -2207,14 +2338,25 @@ const LaunchDetail = () => {
                       <div className="relative w-full h-2">
                         {/* Background bar (dark gray) */}
                         <div className="absolute inset-0 bg-[#333333] rounded"></div>
-                        {/* Foreground bar (dark red) */}
-                        <div className="absolute inset-0 bg-[#8B1A1A] rounded"></div>
-                        {/* Rocket Icon - positioned on the left, rotated -45deg like mobile app */}
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10">
+                        {/* Foreground bar (dark red) - shows progress */}
+                        <div 
+                          className="absolute inset-0 bg-[#8B1A1A] rounded"
+                          style={{ 
+                            width: `${rocketProgress}%`,
+                            transition: 'width 1s linear'
+                          }}
+                        ></div>
+                        {/* Rocket Icon - moves based on real-time progress, rotated -45deg like mobile app */}
+                        <div 
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-2 z-10 transition-all duration-1000 ease-linear"
+                          style={{ 
+                            left: `calc(${rocketProgress}% - 10px)`,
+                            transform: 'translateY(-50%) rotate(-45deg)'
+                          }}
+                        >
                           <IoRocket 
                             size={20} 
                             color="#FFFFFF" 
-                            style={{ transform: 'rotate(-45deg)' }}
                           />
                       </div>
                     </div>
@@ -2410,18 +2552,20 @@ const LaunchDetail = () => {
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
                             No Image
-                </div>
+                          </div>
                         )}
-              </div>
+                      </div>
                       <div className="text-sm text-white leading-tight line-clamp-2">
                         {story.title}
                       </div>
                     </Link>
-                    ))
-                  ) : (
-                  <div className="text-sm text-gray-400 text-center py-4">No related stories available.</div>
-                  )}
-                </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-400 text-center py-8">
+                    No related stories available.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

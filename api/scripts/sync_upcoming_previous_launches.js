@@ -295,6 +295,8 @@ async function fetchPreviousLaunches() {
 
 /**
  * Sync a launch to the database
+ * Fetches full launch details to ensure we get video URLs and other complete data
+ * The list endpoint often returns empty vid_urls arrays, so we fetch details for complete data
  */
 async function syncLaunch(launchData) {
   try {
@@ -307,10 +309,25 @@ async function syncLaunch(launchData) {
       return true;
     }
 
+    // ALWAYS fetch full launch details for upcoming launches to get complete data including video URLs
+    // The list endpoint (/launches/upcoming/) ALWAYS returns empty vid_urls arrays
+    // Only the detail endpoint (/launches/{id}/) returns populated vid_urls arrays
+    let fullLaunchData = launchData;
+    try {
+      await waitForRateLimit();
+      fullLaunchData = await spaceDevsApi.fetchLauncherById(launchData.id);
+      stats.apiCalls++;
+      const vidCount = fullLaunchData.vid_urls ? fullLaunchData.vid_urls.length : 0;
+      verboseLog(`Fetched full details for: ${fullLaunchData.name || launchData.id} (found ${vidCount} video URLs)`);
+    } catch (error) {
+      log(`Warning: Could not fetch full details for ${launchData.id}, using list data: ${error.message}`, 'warn');
+      // Continue with list data if detail fetch fails (but it won't have video URLs)
+    }
+
     // Map and sync
-    const mappedLaunch = launchMapper.mapLauncherToLaunch(launchData);
+    const mappedLaunch = launchMapper.mapLauncherToLaunch(fullLaunchData);
     if (!mappedLaunch || !mappedLaunch.external_id) {
-      verboseLog(`Skipping launch without external_id: ${launchData.name || launchData.id}`);
+      verboseLog(`Skipping launch without external_id: ${fullLaunchData.name || fullLaunchData.id}`);
       return false;
     }
 

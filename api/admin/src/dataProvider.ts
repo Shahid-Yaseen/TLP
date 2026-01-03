@@ -24,6 +24,8 @@ const getResourceEndpoint = (resource: string): string => {
     countries: 'countries',
     stock_tickers: 'stock-tickers',
     subscriptions: 'subscribers',
+    mission_content: 'mission/content',
+    mission_updates: 'mission/updates',
   };
   return resourceMap[resource] || resource;
 };

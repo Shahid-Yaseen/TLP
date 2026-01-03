@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { getLaunchSlug } from '../utils/slug';
+import RecoveryBadge from './RecoveryBadge';
 
 const LaunchCard = ({ launch }) => {
   const getStatusColor = (outcome) => {
@@ -39,6 +40,9 @@ const LaunchCard = ({ launch }) => {
         <div className="text-sm font-semibold">{launch.outcome || 'TBD'}</div>
       </div>
       <h3 className="text-xl font-bold mb-2">{launch.name}</h3>
+      <div className="mb-2">
+        <RecoveryBadge launch={launch} />
+      </div>
       <div className="text-sm text-gray-400 mb-1">
         {launch.site || launch.launch_site?.name || 'Location TBD'}
       </div>

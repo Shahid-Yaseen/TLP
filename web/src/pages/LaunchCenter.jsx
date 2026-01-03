@@ -6,6 +6,7 @@ import LaunchFilters from '../components/LaunchFilters';
 import { buildLaunchFilters } from '../utils/filters';
 import { getLaunchSlug } from '../utils/slug';
 import RedDotLoader from '../components/common/RedDotLoader';
+import RecoveryBadge from '../components/RecoveryBadge';
 
 // Use this exact image for 100% match
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
@@ -709,9 +710,13 @@ function LaunchCenter() {
                         <h3 className="text-base font-bold mb-2 leading-tight tracking-tight text-white uppercase">
                           {(launch.name || 'Launch Name').toUpperCase()}
                         </h3>
-                        <p className="text-xs text-gray-400 leading-snug normal-case">
+                        <p className="text-xs text-gray-400 leading-snug normal-case mb-2">
                           {launch.provider || launch.provider_abbrev || ''} {launch.rocket || ''} | {launch.site || launch.site_name || 'Location TBD'}
                         </p>
+                        
+                        <div className="mb-2">
+                          <RecoveryBadge launch={launch} />
+                        </div>
                         
                         {eventTags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3 justify-center">

@@ -673,7 +673,7 @@ async function syncLaunchVidUrls(launchId, vidUrls, client) {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       `, [
         launchId,
-        url.priority || null,
+        typeof url.priority === 'number' ? url.priority : (url.priority || null),
         url.source || null,
         url.publisher || null,
         url.title || null,
@@ -687,7 +687,7 @@ async function syncLaunchVidUrls(launchId, vidUrls, client) {
         url.language?.code || null,
         url.start_time || null,
         url.end_time || null,
-        url.live || false
+        typeof url.live === 'boolean' ? url.live : (url.live || false)
       ]);
       syncedCount++;
     } catch (error) {

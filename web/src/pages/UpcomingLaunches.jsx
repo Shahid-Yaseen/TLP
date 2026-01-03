@@ -8,29 +8,9 @@ import { useAuth } from '../contexts/AuthContext';
 import API_URL from '../config/api';
 import { getLaunchSlug } from '../utils/slug';
 import RedDotLoader from '../components/common/RedDotLoader';
+import RecoveryBadge from '../components/RecoveryBadge';
 
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
-
-// Helper function to format landing location to common abbreviations
-const formatLandingLocation = (location) => {
-  if (!location) return null;
-  const loc = location.toUpperCase();
-  
-  // Common abbreviations
-  if (loc.includes('JUST READ THE INSTRUCTIONS')) return 'JRTI';
-  if (loc.includes('A SHORTFALL OF GRAVITAS')) return 'ASOG';
-  if (loc.includes('OCISLY') || loc.includes('OF COURSE I STILL LOVE YOU')) return 'OCISLY';
-  if (loc.includes('SPLASHDOWN')) return 'SPLASHDOWN';
-  if (loc.includes('TOUCHDOWN')) return 'TOUCHDOWN';
-  if (loc.includes('LZ-')) return loc.match(/LZ-[0-9]+/)?.[0] || loc;
-  
-  // Return first few words if it's long, otherwise return as is
-  const words = loc.split(' ');
-  if (words.length > 3) {
-    return words.slice(0, 3).join(' ');
-  }
-  return loc;
-};
 
 // Helper function to get status bar color for upcoming launches
 const getUpcomingStatusBarColor = (launch) => {
@@ -134,14 +114,10 @@ const LaunchCardWithCountdown = ({ launch, getLaunchImageUrl }) => {
             {launch.provider || launch.provider_abbrev || ''} {launch.rocket || ''} | {launch.site || launch.site_name || 'Location TBD'}
           </p>
           
-          {/* Landing Location Icon Box */}
-          {launch.recovery?.landing_location && (
-            <div className="inline-flex items-center justify-center px-2 py-1 bg-black/40 border border-gray-600 rounded mb-2">
-              <span className="text-[9px] text-white uppercase font-semibold">
-                {formatLandingLocation(launch.recovery.landing_location)}
-              </span>
-            </div>
-          )}
+          {/* Recovery Badge */}
+          <div className="mb-2">
+            <RecoveryBadge launch={launch} />
+          </div>
           
           {launchDate && new Date(launchDate) > new Date() && (
             <div className="flex items-center justify-center gap-1 text-white mb-2">
@@ -533,8 +509,8 @@ function UpcomingLaunches() {
 
       {/* Main Navigation Bar */}
       <div className="bg-[#8B1A1A] border-t-2 border-white">
-        <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">
-          <div className="flex items-center justify-between">
+        <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0 bg-[#8B1A1A]">
+          <div className="flex items-center justify-between bg-[#8B1A1A]">
             {/* Logo and Title */}
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative" style={{ overflow: 'visible' }}>
@@ -821,6 +797,9 @@ function UpcomingLaunches() {
                         <h4 className="text-[11px] font-bold text-white uppercase leading-tight mb-1">
                           {(launch.name || 'Launch Name').toUpperCase()}
                         </h4>
+                        <div className="mb-1 flex justify-center">
+                          <RecoveryBadge launch={launch} className="scale-75" />
+                        </div>
                         <p className="text-[8px] text-gray-400 leading-tight normal-case">
                           {launch.site || launch.site_name || 'Details here...'}
                         </p>

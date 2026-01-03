@@ -91,7 +91,11 @@ function mapLauncherToLaunch(launcherData) {
     // Array fields (will be processed separately in sync service)
     updates: launcherData.updates || [],
     info_urls: launcherData.info_urls || [],
-    vid_urls: launcherData.vid_urls || [],
+    // Video URLs are primarily at top level in Space Devs API response
+    // mission.vid_urls is typically empty, so prioritize top-level and use mission as fallback
+    vid_urls: (launcherData.vid_urls && launcherData.vid_urls.length > 0)
+      ? launcherData.vid_urls
+      : (launcherData.mission?.vid_urls || []),
     timeline: launcherData.timeline || [],
     mission_patches: launcherData.mission_patches || [],
     
