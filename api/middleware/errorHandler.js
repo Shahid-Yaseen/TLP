@@ -8,6 +8,43 @@
 const errorHandler = (err, req, res, next) => {
   console.error('Error:', err);
 
+  // Database connection errors (handle first, before PostgreSQL error codes)
+  if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.code === 'ENOTFOUND') {
+    console.error('Database connection error:', {
+      code: err.code,
+      message: err.message,
+      address: err.address,
+      port: err.port
+    });
+    return res.status(503).json({
+      error: 'Database service unavailable',
+      code: 'DB_CONNECTION_ERROR',
+      message: 'Unable to connect to database. Please try again later.',
+      retryable: true
+    });
+  }
+
+  // AggregateError with connection errors (pg-pool throws these)
+  if (err.name === 'AggregateError' && err.errors && err.errors.length > 0) {
+    const connectionError = err.errors.find(e => 
+      e.code === 'ECONNREFUSED' || e.code === 'ETIMEDOUT' || e.code === 'ENOTFOUND'
+    );
+    if (connectionError) {
+      console.error('Database connection error (AggregateError):', {
+        code: connectionError.code,
+        message: connectionError.message,
+        address: connectionError.address,
+        port: connectionError.port
+      });
+      return res.status(503).json({
+        error: 'Database service unavailable',
+        code: 'DB_CONNECTION_ERROR',
+        message: 'Unable to connect to database. Please try again later.',
+        retryable: true
+      });
+    }
+  }
+
   // PostgreSQL errors
   if (err.code) {
     switch (err.code) {

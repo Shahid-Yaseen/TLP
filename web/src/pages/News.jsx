@@ -1,11 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import API_URL from '../config/api';
 
 const News = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tagParam = searchParams.get('tag');
+  const trendingParam = searchParams.get('trending');
+  const authorParam = searchParams.get('author');
+  
+  // Redirect to author profile page if author param exists
+  useEffect(() => {
+    if (authorParam) {
+      // If numeric, it's an ID, otherwise treat as slug
+      const isNumeric = !isNaN(authorParam);
+      if (isNumeric) {
+        // Fetch author to get name, then redirect to slug
+        axios.get(`${API_URL}/api/authors/${authorParam}`)
+          .then(response => {
+            const authorName = response.data.full_name || `${response.data.first_name} ${response.data.last_name}`;
+            const slug = authorName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            navigate(`/news/author/${slug}`, { replace: true });
+          })
+          .catch(() => {
+            navigate(`/news/author/${authorParam}`, { replace: true });
+          });
+      } else {
+        navigate(`/news/author/${authorParam}`, { replace: true });
+      }
+    }
+  }, [authorParam, navigate]);
   const [articles, setArticles] = useState([]);
   const [featuredArticle, setFeaturedArticle] = useState(null);
   const [topStories, setTopStories] = useState([]);
@@ -368,9 +394,16 @@ const News = () => {
   };
 
   useEffect(() => {
+    // If trending param exists, set it as selected
+    if (trendingParam) {
+      const trendingItem = trending.find(t => t.search === trendingParam || t.label.toLowerCase().replace(/\s+/g, '-') === trendingParam);
+      if (trendingItem) {
+        setSelectedTrending(trendingItem.label);
+      }
+    }
     fetchArticles();
     fetchStockTickers();
-  }, [timeFilter, selectedCategory, selectedTrending]);
+  }, [timeFilter, selectedCategory, selectedTrending, tagParam, trendingParam]);
 
   // Initialize scroll state for interviews carousel
   useEffect(() => {
@@ -396,14 +429,9 @@ const News = () => {
   };
 
   const handleTrendingClick = (trendingItem) => {
-    setSelectedTrending(trendingItem.label);
-    // Scroll to top stories section when trending is clicked
-    setTimeout(() => {
-      const topStoriesSection = document.getElementById('top-stories-section');
-      if (topStoriesSection) {
-        topStoriesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+    // Navigate to filtered news page with trending parameter
+    const trendingSlug = trendingItem.search || trendingItem.label.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/news?trending=${encodeURIComponent(trendingSlug)}`);
   };
 
   const fetchArticles = async () => {
@@ -450,12 +478,19 @@ const News = () => {
         params.category = categorySlug;
       }
 
-      // Add search filter if trending is selected
-      if (selectedTrending) {
+      // Add search filter if trending is selected or trending param exists
+      if (trendingParam) {
+        params.search = trendingParam;
+      } else if (selectedTrending) {
         const trendingItem = trending.find(t => t.label === selectedTrending);
         if (trendingItem && trendingItem.search) {
           params.search = trendingItem.search;
         }
+      }
+
+      // Add tag filter if tag parameter is present
+      if (tagParam) {
+        params.tag = tagParam;
       }
 
       const [articlesRes, featuredRes, interviewsRes, trendingRes] = await Promise.all([
@@ -582,7 +617,7 @@ const News = () => {
                   className="w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 object-contain"
                 />
               </div>
-              <div className="absolute top-full left-0 bg-orange-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
+              <div className="absolute top-full left-0 bg-red-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
                 {currentTime}
               </div>
             </div>
@@ -635,36 +670,303 @@ const News = () => {
     </div>
   );
 
+  // If trending parameter exists, show trending-filtered layout
+  if (trendingParam && !tagParam) {
+    const trendingItem = trending.find(t => t.search === trendingParam || t.label.toLowerCase().replace(/\s+/g, '-') === trendingParam);
+    const trendingName = trendingItem ? trendingItem.label : trendingParam.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    
+    return (
+      <Layout sectionNav={sectionNav}>
+        <div className="w-full px-6 pt-[2px] pb-[2px]">
+          {/* Trending Header */}
+          <div className="flex items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-6">
+            <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white uppercase px-4 sm:px-6 md:px-8" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+              {trendingName}
+            </h1>
+            <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
+          </div>
+
+          {/* Hero Section - Large Featured Article */}
+          {featuredArticle && (
+            <div className="mb-6">
+              <Link to={`/news/${featuredArticle?.slug || featuredArticle?.id}`}>
+                <div 
+                  className="relative h-[600px] overflow-hidden"
+                  style={{
+                    backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || getDemoImage(0)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                >
+                  <div 
+                    className="absolute inset-0"
+                    style={{
+                      background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
+                    }}
+                  ></div>
+                  <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
+                    <h1 
+                      className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
+                      style={{ fontFamily: 'Nasalization, sans-serif' }}
+                    >
+                      {featuredArticle?.title || 'Featured Article'}
+                    </h1>
+                    <p className="text-lg text-white mb-6 max-w-3xl">
+                      {featuredArticle?.excerpt || 'This is a featured article.'}
+                    </p>
+                    <button className="px-5 py-2 bg-newstheme text-white rounded-full font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                      {trendingName}
+                    </button>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* Secondary Hero Section - Two Smaller Cards */}
+          {articles.length >= 2 && (
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {articles.slice(0, 2).map((article, idx) => (
+                <Link key={article.id || idx} to={`/news/${article.slug || article.id}`}>
+                  <div 
+                    className="relative h-[300px] overflow-hidden"
+                    style={{
+                      backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1)})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    <div 
+                      className="absolute inset-0"
+                      style={{
+                        background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
+                      }}
+                    ></div>
+                    <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
+                      <h3 
+                        className="text-lg font-bold mb-2 text-white uppercase leading-tight"
+                        style={{ fontFamily: 'Nasalization, sans-serif' }}
+                      >
+                        {article.title}
+                      </h3>
+                      <button className="px-4 py-1.5 bg-newstheme text-white rounded-full text-sm font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                        {article.category_name || article.category?.name || trendingName}
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Article List Section */}
+          <div className="space-y-8">
+            {articles.map((article, idx) => (
+              <Link key={article.id} to={`/news/${article.slug || article.id}`}>
+                <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors mb-6">
+                  {/* Left Side - Image */}
+                  <div className="col-span-1">
+                    <img
+                      src={article.featured_image_url || getDemoImage(idx)}
+                      alt={article.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
+                  
+                  {/* Right Side - Text Content */}
+                  <div className="col-span-2 p-6 flex flex-col justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-3">
+                        {article.title}
+                      </h2>
+                      <p className="text-sm text-white leading-relaxed line-clamp-3">
+                        {article.excerpt}
+                      </p>
+                    </div>
+                    
+                    {/* Tags/Buttons */}
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                        {article.category_name || article.category?.name || trendingName}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // If tag parameter exists, show tag-filtered layout similar to LaunchNews
+  if (tagParam) {
+    const tagName = tagParam.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    
+    return (
+      <Layout sectionNav={sectionNav}>
+        <div className="w-full px-6 pt-[2px] pb-[2px]">
+          {/* Tag Header */}
+          <div className="flex items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-6">
+            <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white uppercase px-4 sm:px-6 md:px-8" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+              {tagName}
+            </h1>
+            <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
+          </div>
+
+          {/* Hero Section - Large Featured Article */}
+          {featuredArticle && (
+            <div className="mb-6">
+              <Link to={`/news/${featuredArticle?.slug || featuredArticle?.id}`}>
+                <div 
+                  className="relative h-[600px] overflow-hidden"
+                  style={{
+                    backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || getDemoImage(0)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                >
+                  <div 
+                    className="absolute inset-0"
+                    style={{
+                      background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
+                    }}
+                  ></div>
+                  <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
+                    <h1 
+                      className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
+                      style={{ fontFamily: 'Nasalization, sans-serif' }}
+                    >
+                      {featuredArticle?.title || 'Featured Article'}
+                    </h1>
+                    <p className="text-lg text-white mb-6 max-w-3xl">
+                      {featuredArticle?.excerpt || 'This is a featured article.'}
+                    </p>
+                    <button className="px-5 py-2 bg-newstheme text-white rounded-full font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                      {tagName}
+                    </button>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* Secondary Hero Section - Two Smaller Cards */}
+          {articles.length >= 2 && (
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {articles.slice(0, 2).map((article, idx) => (
+                <Link key={article.id || idx} to={`/news/${article.slug || article.id}`}>
+                  <div 
+                    className="relative h-[300px] overflow-hidden"
+                    style={{
+                      backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1)})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    <div 
+                      className="absolute inset-0"
+                      style={{
+                        background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
+                      }}
+                    ></div>
+                    <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
+                      <h3 
+                        className="text-lg font-bold mb-2 text-white uppercase leading-tight"
+                        style={{ fontFamily: 'Nasalization, sans-serif' }}
+                      >
+                        {article.title}
+                      </h3>
+                      <button className="px-4 py-1.5 bg-newstheme text-white rounded-full text-sm font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                        {tagName}
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Article List Section */}
+          <div className="space-y-8">
+            {articles.map((article, idx) => (
+              <Link key={article.id} to={`/news/${article.slug || article.id}`}>
+                <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors mb-6">
+                  {/* Left Side - Image */}
+                  <div className="col-span-1">
+                    <img
+                      src={article.featured_image_url || getDemoImage(idx)}
+                      alt={article.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
+                  
+                  {/* Right Side - Text Content */}
+                  <div className="col-span-2 p-6 flex flex-col justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-3">
+                        {article.title}
+                      </h2>
+                      <p className="text-sm text-white leading-relaxed line-clamp-3">
+                        {article.excerpt}
+                      </p>
+                    </div>
+                    
+                    {/* Tags/Buttons */}
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                        {article.category_name || article.category?.name || tagName}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout sectionNav={sectionNav}>
       {/* Trending Sub-Navigation */}
-      <div className="bg-white border-b border-gray-300 sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-[2px] pb-[2px]">
           <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
-            {trending.map((topic, idx) => (
-              <div key={idx} className="flex items-center shrink-0">
-                {idx > 0 && <span className="text-black mx-2 sm:mx-3">|</span>}
-                <button
-                  onClick={() => handleTrendingClick(topic)}
-                  className={`text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1 hover:text-orange-500 ${
-                    selectedTrending === topic.label 
-                      ? 'font-bold text-orange-500 border-b-2 border-orange-500' 
-                      : topic.label === 'SPACEX' && !selectedTrending
-                      ? 'font-bold' 
-                      : ''
-                  }`}
-                >
-                  {topic.label}
-                </button>
-              </div>
-            ))}
-            {selectedTrending && (
+            {trending.map((topic, idx) => {
+              const trendingSlug = topic.search || topic.label.toLowerCase().replace(/\s+/g, '-');
+              const isActive = trendingParam === trendingSlug || (selectedTrending === topic.label && !trendingParam);
+              
+              return (
+                <div key={idx} className="flex items-center shrink-0">
+                  {idx > 0 && <span className="text-black mx-2 sm:mx-3">|</span>}
+                  <button
+                    onClick={() => handleTrendingClick(topic)}
+                    className={`text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1 hover:text-newstheme ${
+                      isActive
+                        ? 'font-bold text-newstheme border-b-2 border-newstheme' 
+                        : topic.label === 'SPACEX' && !trendingParam && !selectedTrending
+                        ? 'font-bold' 
+                        : ''
+                    }`}
+                    style={isActive ? { color: '#fa9a00', borderBottomColor: '#fa9a00' } : {}}
+                  >
+                    {topic.label}
+                  </button>
+                </div>
+              );
+            })}
+            {(trendingParam || selectedTrending) && (
               <>
                 <span className="text-black mx-2 sm:mx-3">|</span>
                 <button
                   onClick={() => {
                     setSelectedTrending(null);
-                    fetchArticles();
+                    navigate('/news');
                   }}
                   className="text-xs sm:text-sm font-medium text-gray-500 hover:text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1"
                 >
@@ -703,7 +1005,7 @@ const News = () => {
                       <p className="text-white text-sm sm:text-base mb-4 sm:mb-6 max-w-3xl leading-relaxed">
                         {featuredArticle.excerpt || 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).'}
                       </p>
-                      <button className="bg-orange-500 text-white px-4 sm:px-5 py-1.5 sm:py-2 rounded-full font-semibold text-xs sm:text-sm hover:bg-orange-600 transition-colors">
+                      <button className="bg-newstheme text-white px-4 sm:px-5 py-1.5 sm:py-2 rounded-full font-semibold text-xs sm:text-sm hover:bg-newstheme/90 transition-colors" style={{ backgroundColor: '#fa9a00' }}>
                         {featuredArticle.category_name || featuredArticle.category?.name || 'NEWS'}
                       </button>
                     </div>
@@ -734,7 +1036,7 @@ const News = () => {
                         <p className="text-white text-xs mb-3 line-clamp-2 leading-relaxed max-w-full">
                           {featuredArticle.excerpt || 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).'}
                         </p>
-                        <button className="bg-orange-500 text-white px-4 py-1.5 rounded-full font-semibold text-xs hover:bg-orange-600 transition-colors">
+                        <button className="bg-newstheme text-white px-4 py-1.5 rounded-full font-semibold text-xs hover:bg-newstheme/90 transition-colors" style={{ backgroundColor: '#fa9a00' }}>
                           {featuredArticle.category_name || featuredArticle.category?.name || 'NEWS'}
                         </button>
                       </div>
@@ -794,7 +1096,7 @@ const News = () => {
                           </svg>
                           <span>{formatDate(articles[0]?.published_at || articles[0]?.created_at)}</span>
                         </div>
-                        <span className="bg-orange-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold">{articles[0]?.category_name || articles[0]?.category?.name || 'In Space'}</span>
+                        <span className="bg-newstheme text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{articles[0]?.category_name || articles[0]?.category?.name || 'In Space'}</span>
                       </div>
                     </div>
                   </div>
@@ -828,7 +1130,7 @@ const News = () => {
                             </svg>
                             <span>{formatDate(article.published_at || article.created_at)}</span>
                           </div>
-                          <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">{article.category_name || article.category?.name || 'In Space'}</span>
+                          <span className="bg-newstheme text-white px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{article.category_name || article.category?.name || 'In Space'}</span>
                         </div>
                       </div>
                     </div>
@@ -842,7 +1144,7 @@ const News = () => {
         {/* Recent Interviews */}
         {interviews.length > 0 && (
           <div className="mb-8 sm:mb-10 md:mb-12">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-orange-500 uppercase" style={{ fontFamily: 'sans-serif' }}>RECENT INTERVIEWS</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-newstheme uppercase" style={{ fontFamily: 'sans-serif', color: '#fa9a00' }}>RECENT INTERVIEWS</h2>
             <div className="relative">
               <div 
                 ref={interviewCarouselRef}
@@ -875,7 +1177,7 @@ const News = () => {
                       />
                     </div>
                     <div className="p-3 sm:p-4 bg-black">
-                      <div className="text-orange-500 font-bold text-base sm:text-lg mb-1 uppercase line-clamp-2" style={{ fontFamily: 'sans-serif' }}>
+                      <div className="text-newstheme font-bold text-base sm:text-lg mb-1 uppercase line-clamp-2" style={{ fontFamily: 'sans-serif', color: '#fa9a00' }}>
                         {interview.title || 'JARED ISAACMAN'}
                       </div>
                       <div className="text-white text-xs sm:text-sm uppercase line-clamp-2" style={{ fontFamily: 'sans-serif' }}>
@@ -889,7 +1191,7 @@ const News = () => {
                   <div className="shrink-0 w-64 sm:w-72 md:w-80 flex items-center justify-center bg-black">
                     <Link
                       to="/news/interviews"
-                      className="bg-orange-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded font-bold uppercase hover:bg-orange-600 transition-colors text-sm sm:text-base"
+                      className="bg-newstheme text-white px-4 sm:px-6 py-2 sm:py-3 rounded font-bold uppercase hover:bg-newstheme/90 transition-colors text-sm sm:text-base" style={{ backgroundColor: '#fa9a00' }}
                       style={{ fontFamily: 'sans-serif' }}
                     >
                       MORE
@@ -984,7 +1286,7 @@ const News = () => {
                           </svg>
                           <span>{formatDate(topStories[0]?.published_at || topStories[0]?.created_at)}</span>
                         </div>
-                        <span className="bg-orange-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold">{topStories[0]?.category_name || topStories[0]?.category?.name || 'NEWS'}</span>
+                        <span className="bg-newstheme text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{topStories[0]?.category_name || topStories[0]?.category?.name || 'NEWS'}</span>
                       </div>
                     </div>
                   </div>
@@ -1019,7 +1321,7 @@ const News = () => {
                           </svg>
                           <span>{formatDate(article.published_at || article.created_at)}</span>
                         </div>
-                        <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">{article.category_name || article.category?.name || 'NEWS'}</span>
+                        <span className="bg-newstheme text-white px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{article.category_name || article.category?.name || 'NEWS'}</span>
                       </div>
                     </div>
                   </div>
@@ -1059,12 +1361,12 @@ const News = () => {
                         </svg>
                         <span>{formatDate(americaArticles[0]?.published_at || americaArticles[0]?.created_at)}</span>
                       </div>
-                      <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                      <span className="bg-newstheme text-white px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>
                         {americaArticles[0]?.category_name || americaArticles[0]?.category?.name || 'NEWS'}
                       </span>
                     </div>
                     <div className="flex justify-end mt-auto">
-                      <Link to="/news/america" className="text-orange-500 hover:text-orange-400 text-xs sm:text-sm font-semibold">
+                      <Link to="/news/america" className="text-newstheme hover:text-newstheme/80 text-xs sm:text-sm font-semibold" style={{ color: '#fa9a00' }}>
                         See More
                       </Link>
                     </div>

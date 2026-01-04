@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import API_URL from '../config/api';
@@ -10,6 +10,7 @@ import RedDotLoader from '../components/common/RedDotLoader';
 const LaunchNewsDetail = () => {
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [article, setArticle] = useState(null);
   const [relatedArticles, setRelatedArticles] = useState([]);
@@ -276,7 +277,7 @@ const LaunchNewsDetail = () => {
   };
 
   const sectionNav = (
-    <div className="bg-orange-500 border-t-2 border-white">
+    <div className="bg-newstheme border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>
       <div className="max-w-full mx-auto px-6 flex items-center justify-between py-0">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3">
@@ -288,7 +289,7 @@ const LaunchNewsDetail = () => {
                   className="w-10 h-10 object-contain"
                 />
               </div>
-              <div className="absolute top-full left-0 bg-orange-500 px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
+              <div className="absolute top-full left-0 bg-red-500 px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
                 {currentTime}
               </div>
             </div>
@@ -347,7 +348,7 @@ const LaunchNewsDetail = () => {
       <Layout sectionNav={sectionNav}>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Article Not Found</h1>
-          <Link to="/launches/news" className="text-orange-500 hover:text-orange-400">
+          <Link to="/launches/news" className="text-newstheme hover:text-newstheme/80" style={{ color: '#fa9a00' }}>
             Return to Launch News
           </Link>
         </div>
@@ -483,18 +484,26 @@ const LaunchNewsDetail = () => {
               {/* Tags */}
               <div className="flex gap-2 mt-8 flex-wrap">
                 {article.tags && Array.isArray(article.tags) && article.tags.length > 0
-                  ? article.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold uppercase"
-                      >
-                        {typeof tag === 'string' ? tag : tag.name || tag.slug?.toUpperCase()}
-                      </span>
-                    ))
+                  ? article.tags.map((tag, idx) => {
+                      const tagName = typeof tag === 'string' ? tag : tag.name || tag.slug?.toUpperCase();
+                      const tagSlug = typeof tag === 'string' ? tag.toLowerCase().replace(/\s+/g, '-') : (tag.slug || tag.name?.toLowerCase().replace(/\s+/g, '-'));
+                      return (
+                        <Link
+                          key={idx}
+                          to={`/news?tag=${encodeURIComponent(tagSlug)}`}
+                          className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold uppercase hover:bg-yellow-600 transition-colors cursor-pointer"
+                        >
+                          {tagName}
+                        </Link>
+                      );
+                    })
                   : article.category_name && (
-                      <span className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold uppercase">
+                      <Link
+                        to={`/news?category=${encodeURIComponent(article.category_name.toLowerCase().replace(/\s+/g, '-'))}`}
+                        className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold uppercase hover:bg-yellow-600 transition-colors cursor-pointer"
+                      >
                         {article.category_name}
-                      </span>
+                      </Link>
                     )
                 }
               </div>

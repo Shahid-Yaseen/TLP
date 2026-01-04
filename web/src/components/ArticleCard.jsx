@@ -38,7 +38,7 @@ const ArticleCard = ({ article, size = 'normal' }) => {
           {article.category && (
             <>
               <span>•</span>
-              <span className="text-orange-500">{article.category.name}</span>
+              <span className="text-newstheme" style={{ color: '#fa9a00' }}>{article.category.name}</span>
             </>
           )}
         </div>

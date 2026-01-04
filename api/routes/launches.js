@@ -454,7 +454,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   sql += ` ORDER BY launches.launch_date ${sortOrder}`;
 
   // Pagination
-  const limit = parseInt(req.query.limit) || 100;
+  const limit = parseInt(req.query.limit) || 50;
   const offset = parseInt(req.query.offset) || 0;
   const finalSql = sql + ` LIMIT $${args.length + 1} OFFSET $${args.length + 2}`;
   const finalArgs = [...args, limit, offset];
@@ -1920,23 +1920,24 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     return extracted;
   };
   
-  // METHOD 1: Try to fetch from configuration URL first (most complete data)
-  if (rocketJson && rocketJson.configuration && rocketJson.configuration.url) {
-    try {
-      console.log(`[API] Launch ${launchId}: Fetching engine data from configuration URL: ${rocketJson.configuration.url}`);
-      const configData = await spaceDevsApi.fetchLauncherConfiguration(rocketJson.configuration.url);
-      
-      if (configData && configData.launcher_stage && Array.isArray(configData.launcher_stage)) {
-        console.log(`[API] Launch ${launchId}: Found ${configData.launcher_stage.length} launcher_stage entries in configuration`);
-        engineData = extractEnginesFromStages(configData.launcher_stage, 'api-configuration-url');
-      }
-    } catch (error) {
-      console.error(`[API] Launch ${launchId}: Error fetching configuration from URL:`, error.message);
-      // Fall through to JSONB extraction
-    }
-  }
+  // METHOD 1: DISABLED - Don't fetch from configuration URL (causes 404 errors)
+  // Using only database JSONB data instead
+  // if (rocketJson && rocketJson.configuration && rocketJson.configuration.url) {
+  //   try {
+  //     console.log(`[API] Launch ${launchId}: Fetching engine data from configuration URL: ${rocketJson.configuration.url}`);
+  //     const configData = await spaceDevsApi.fetchLauncherConfiguration(rocketJson.configuration.url);
+  //     
+  //     if (configData && configData.launcher_stage && Array.isArray(configData.launcher_stage)) {
+  //       console.log(`[API] Launch ${launchId}: Found ${configData.launcher_stage.length} launcher_stage entries in configuration`);
+  //       engineData = extractEnginesFromStages(configData.launcher_stage, 'api-configuration-url');
+  //     }
+  //   } catch (error) {
+  //     console.error(`[API] Launch ${launchId}: Error fetching configuration from URL:`, error.message);
+  //     // Fall through to JSONB extraction
+  //   }
+  // }
   
-  // METHOD 2: Extract from rocket.configuration.launcher_stage (if nested in configuration)
+  // METHOD 1 (NEW): Extract from rocket.configuration.launcher_stage (if nested in configuration)
   if (engineData.length === 0 && rocketJson) {
     const configLauncherStage = rocketJson.configuration?.launcher_stage || null;
     if (configLauncherStage && Array.isArray(configLauncherStage)) {
@@ -1945,7 +1946,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     }
   }
   
-  // METHOD 3: Extract from rocket.launcher_stage (direct in rocket object)
+  // METHOD 2: Extract from rocket.launcher_stage (direct in rocket object)
   if (engineData.length === 0 && rocketJson) {
     if (rocketJson.launcher_stage && Array.isArray(rocketJson.launcher_stage)) {
       console.log(`[API] Launch ${launchId}: Found ${rocketJson.launcher_stage.length} launcher_stage entries in rocket JSONB`);

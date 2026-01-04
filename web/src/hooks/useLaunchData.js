@@ -16,7 +16,7 @@ export function useLaunchData(type = 'upcoming') {
   const [searchQuery, setSearchQuery] = useState(''); // Actual search query (triggers fetch)
   const [hideTBD, setHideTBD] = useState(false);
   const [filters, setFilters] = useState({});
-  const [pagination, setPagination] = useState({ total: 0, limit: 100, offset: 0, has_more: false });
+  const [pagination, setPagination] = useState({ total: 0, limit: 50, offset: 0, has_more: false });
 
   const fetchLaunchesWithPagination = async (paginationToUse = pagination, append = false) => {
     try {
@@ -25,7 +25,7 @@ export function useLaunchData(type = 'upcoming') {
       // Build filter params
       const filterParams = buildLaunchFilters({
         ...filters,
-        limit: paginationToUse.limit || 100,
+        limit: paginationToUse.limit || 50,
         offset: paginationToUse.offset || 0,
       });
 
@@ -163,7 +163,7 @@ export function useLaunchData(type = 'upcoming') {
 
   // Reset and fetch when filters change (but NOT searchQuery - that's triggered by button)
   useEffect(() => {
-    const resetPagination = { total: 0, limit: 100, offset: 0, has_more: false };
+    const resetPagination = { total: 0, limit: 50, offset: 0, has_more: false };
     setPagination(resetPagination);
     setLaunches([]);
     fetchLaunchesWithPagination(resetPagination, false);
@@ -176,7 +176,7 @@ export function useLaunchData(type = 'upcoming') {
   // Note: Hero launch is NOT affected by search
   useEffect(() => {
     if (searchQuery !== undefined) {
-      const resetPagination = { total: 0, limit: 100, offset: 0, has_more: false };
+      const resetPagination = { total: 0, limit: 50, offset: 0, has_more: false };
       setPagination(resetPagination);
       setLaunches([]);
       fetchLaunchesWithPagination(resetPagination, false);

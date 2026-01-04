@@ -24,24 +24,64 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
 
 /**
  * GET /api/authors/:id
- * Get a single author by ID
+ * Get a single author by ID or slug (generated from full_name)
  */
 router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { rows } = await pool.query('SELECT * FROM authors WHERE id = $1', [id]);
-
-  if (!rows.length) {
-    return res.status(404).json({ error: 'Author not found', code: 'NOT_FOUND' });
+  const isNumeric = !isNaN(id) && !isNaN(parseFloat(id));
+  
+  let query;
+  let params;
+  
+  if (isNumeric) {
+    // If numeric, search by ID
+    query = 'SELECT * FROM authors WHERE id = $1';
+    params = [parseInt(id)];
+  } else {
+    // If not numeric, search by slug (generated from full_name)
+    // Try multiple matching strategies
+    const slugLower = id.toLowerCase().trim();
+    const nameFromSlug = id.split('-').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ');
+    
+    // Match by slug pattern: LOWER(REPLACE(full_name, ' ', '-')) = slug
+    // Also try matching the full name directly
+    query = `
+      SELECT * FROM authors 
+      WHERE LOWER(REPLACE(full_name, ' ', '-')) = $1 
+         OR LOWER(full_name) = $2
+         OR LOWER(full_name) = $3
+    `;
+    params = [
+      slugLower,
+      nameFromSlug.toLowerCase(),
+      slugLower.replace(/-/g, ' ') // slug with spaces instead of hyphens
+    ];
   }
+  
+  try {
+    const { rows } = await pool.query(query, params);
 
-  // Get article count
-  const { rows: countRows } = await pool.query(
-    'SELECT COUNT(*) as count FROM news_articles WHERE author_id = $1',
-    [id]
-  );
-  rows[0].articles_count = parseInt(countRows[0].count);
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Author not found', code: 'NOT_FOUND' });
+    }
 
-  res.json(rows[0]);
+    const author = rows[0];
+    const authorId = author.id;
+
+    // Get article count
+    const { rows: countRows } = await pool.query(
+      'SELECT COUNT(*) as count FROM news_articles WHERE author_id = $1 AND status = $2',
+      [authorId, 'published']
+    );
+    author.articles_count = parseInt(countRows[0].count);
+
+    res.json(author);
+  } catch (error) {
+    console.error('Error fetching author:', error);
+    return res.status(500).json({ error: 'Internal server error', code: 'SERVER_ERROR' });
+  }
 }));
 
 /**

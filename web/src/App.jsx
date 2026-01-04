@@ -7,6 +7,7 @@ import Homepage from './pages/Homepage';
 import AboutUs from './pages/AboutUs';
 import Mission from './pages/Mission';
 import News from './pages/News';
+import ComingSoonSpaceNews from './pages/ComingSoonSpaceNews';
 import ArticleDetail from './pages/ArticleDetail';
 import AstronautsList from './pages/spacebase/AstronautsList';
 import AstronautProfile from './pages/spacebase/AstronautProfile';
@@ -24,6 +25,7 @@ import InSpaceNews from './pages/InSpaceNews';
 import TechnologyNews from './pages/TechnologyNews';
 import MilitaryNews from './pages/MilitaryNews';
 import FinanceNews from './pages/FinanceNews';
+import AuthorProfile from './pages/AuthorProfile';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -32,7 +34,6 @@ import EmailVerification from './pages/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import EarthOrbitNavigator from './pages/EarthOrbitNavigator';
 import AdvancedOrbitNavigator from './pages/AdvancedOrbitNavigator';
-import ComingSoonSpaceNews from './pages/ComingSoonSpaceNews';
 import ComingSoonSpaceBase from './pages/ComingSoonSpaceBase';
 import ComingSoonOrbitNavigator from './pages/ComingSoonOrbitNavigator';
 import ComingSoonSupport from './pages/ComingSoonSupport';
@@ -58,6 +59,7 @@ function App() {
         <Route path="/news/technology" element={<TechnologyNews />} />
         <Route path="/news/military" element={<MilitaryNews />} />
         <Route path="/news/finance" element={<FinanceNews />} />
+        <Route path="/news/author/:slug" element={<AuthorProfile />} />
         <Route path="/news/:slug" element={<ArticleDetail />} />
         <Route path="/spacebase" element={<ComingSoonSpaceBase />} />
         <Route path="/spacebase/astronauts" element={<AstronautsList />} />

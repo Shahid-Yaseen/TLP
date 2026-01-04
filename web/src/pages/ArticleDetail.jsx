@@ -528,7 +528,7 @@ const ArticleDetail = () => {
       <Layout>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Article Not Found</h1>
-          <Link to="/news" className="text-[#fa9a00] hover:text-[#d87a00]">
+          <Link to="/news" className="text-newstheme hover:text-newstheme/80" style={{ color: '#fa9a00' }}>
             Return to News
           </Link>
         </div>
@@ -543,7 +543,7 @@ const ArticleDetail = () => {
   }
 
   const sectionNav = (
-    <div className="border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>
+    <div className="border-t-2 border-white bg-newstheme" style={{ backgroundColor: '#fa9a00' }}>
       <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between py-0">
         <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-wrap">
           {/* Logo Section */}
@@ -556,7 +556,7 @@ const ArticleDetail = () => {
                   className="w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 object-contain"
                 />
               </div>
-              <div className="absolute top-full left-0 bg-orange-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
+              <div className="absolute top-full left-0 bg-red-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
                 {currentTime}
               </div>
             </div>
@@ -636,7 +636,7 @@ const ArticleDetail = () => {
   return (
     <Layout sectionNav={sectionNav}>
       {/* Trending Sub-Navigation */}
-      <div className="bg-white border-b border-gray-300 sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-[2px] pb-[2px]">
           <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
             {trending.map((topic, idx) => (
@@ -654,7 +654,7 @@ const ArticleDetail = () => {
                     const route = categorySlugMap[topic.label] || '/news';
                     navigate(route);
                   }}
-                  className="text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1 hover:text-orange-500"
+                  className="text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1 hover:text-newstheme" style={{ '--hover-color': '#fa9a00' }}
                 >
                   {topic.label}
                 </button>
@@ -695,7 +695,7 @@ const ArticleDetail = () => {
           {/* Main Content */}
           <div className="md:col-span-2">
             {/* Article Content */}
-            <div className="bg-[#121212] border-t-4 border-[#fa9a00] mb-8">
+            <div className="bg-[#121212] border-t-4 border-newstheme mb-8" style={{ borderTopColor: '#fa9a00' }}>
               <div className="p-6">
               <div
                 className="prose prose-invert max-w-none text-white text-base leading-relaxed"
@@ -712,23 +712,27 @@ const ArticleDetail = () => {
 
             {/* Tags */}
               <div className="px-6 pb-6 flex gap-2 flex-wrap">
-              {tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                    className="text-white px-4 py-2 text-sm font-semibold"
+              {tags.map((tag, idx) => {
+                const tagSlug = tag.toLowerCase().replace(/\s+/g, '-');
+                return (
+                  <Link
+                    key={idx}
+                    to={`/news?tag=${encodeURIComponent(tagSlug)}`}
+                    className="bg-newstheme text-white px-4 py-2 text-sm font-semibold rounded-full hover:opacity-80 transition-opacity cursor-pointer"
                     style={{ backgroundColor: '#fa9a00' }}
-                >
-                  {tag}
-                </span>
-              ))}
+                  >
+                    {tag}
+                  </Link>
+                );
+              })}
               </div>
             </div>
 
             {/* Author Information Section */}
-            <div className="bg-[#121212] p-6 mt-6 border-t-4 border-[#fa9a00]">
+            <div className="bg-[#121212] p-6 mt-6 border-t-4 border-newstheme" style={{ borderTopColor: '#fa9a00' }}>
               <div className="flex items-start gap-4">
                 {/* Profile Picture with orange border */}
-                <div className="w-20 h-20 rounded-full shrink-0 border-4 border-[#fa9a00] overflow-hidden">
+                <div className="w-20 h-20 rounded-full shrink-0 border-4 border-newstheme overflow-hidden" style={{ borderColor: '#fa9a00' }}>
                   {!authorImageError && (article.author_image || article.author?.profile_image_url) ? (
                     <img
                       src={article.author_image || article.author.profile_image_url}
@@ -758,7 +762,7 @@ const ArticleDetail = () => {
                 
                 <div className="flex-1">
                   <div className="mb-3">
-                    <h3 className="text-xl font-bold inline text-[#fa9a00] uppercase tracking-wide">
+                    <h3 className="text-xl font-bold inline text-newstheme uppercase tracking-wide" style={{ color: '#fa9a00' }}>
                       {article.author_name || article.author?.full_name || 'ZACHARY AUBERT'}
                     </h3>
                     <span className="text-xl italic text-white uppercase tracking-wide ml-2">
@@ -778,8 +782,8 @@ const ArticleDetail = () => {
                     He doesn't have a book yet but is working on the <span className="italic">Astro Guide: An UnOfficial Guide To The America Space Coast</span>
                   </p>
                   <Link
-                    to={`/news?author=${article.author_id || article.author?.id || 'zac-aubert'}`}
-                    className="text-[#fa9a00] hover:text-[#d87a00] text-sm mt-2 inline-block font-semibold transition-colors"
+                    to={`/news/author/${article.author_name ? article.author_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : (article.author_id || article.author?.id || 'zac-aubert')}`}
+                    className="text-newstheme hover:text-newstheme/80 text-sm mt-2 inline-block font-semibold transition-colors" style={{ color: '#fa9a00' }}
                   >
                     More by {article.author_first_name || article.author?.first_name || article.author_name?.split(' ')[0] || 'Zac'} {article.author_last_name || article.author?.last_name || article.author_name?.split(' ').slice(1).join(' ') || 'Aubert'}
                   </Link>
@@ -856,7 +860,7 @@ const ArticleDetail = () => {
                           <button
                             onClick={handleReply}
                             disabled={!replyContent.trim()}
-                            className="mt-2 px-4 py-2 bg-[#fa9a00] text-white rounded hover:bg-[#d87a00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="mt-2 px-4 py-2 bg-newstheme text-white rounded hover:bg-newstheme/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#fa9a00' }}
                           >
                             Post Reply
                           </button>
@@ -907,7 +911,7 @@ const ArticleDetail = () => {
                           <button
                             onClick={handleSubmitComment}
                             disabled={!newComment.trim()}
-                            className="px-4 py-2 bg-[#fa9a00] text-white rounded hover:bg-[#d87a00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2 bg-newstheme text-white rounded hover:bg-newstheme/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: '#fa9a00' }}
                           >
                             Post Comment
                           </button>
@@ -921,7 +925,7 @@ const ArticleDetail = () => {
                   <p className="text-gray-400 mb-2">Please log in to join the discussion.</p>
                   <Link
                     to={`/login?returnUrl=${encodeURIComponent(location.pathname + location.search + '#comments')}`}
-                    className="text-[#fa9a00] hover:text-[#d87a00] font-semibold"
+                    className="text-newstheme hover:text-newstheme/80 font-semibold" style={{ color: '#fa9a00' }}
                   >
                     Log In
                   </Link>
@@ -934,7 +938,7 @@ const ArticleDetail = () => {
                   onClick={() => setCommentSort('best')}
                   className={`text-sm transition-colors px-1 pb-1 ${
                     commentSort === 'best'
-                      ? 'font-semibold text-[#fa9a00] border-b-2 border-[#fa9a00]'
+                      ? 'font-semibold text-newstheme border-b-2 border-newstheme'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -944,7 +948,7 @@ const ArticleDetail = () => {
                   onClick={() => setCommentSort('newest')}
                   className={`text-sm transition-colors px-1 pb-1 ${
                     commentSort === 'newest'
-                      ? 'font-semibold text-[#fa9a00] border-b-2 border-[#fa9a00]'
+                      ? 'font-semibold text-newstheme border-b-2 border-newstheme'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -954,7 +958,7 @@ const ArticleDetail = () => {
                   onClick={() => setCommentSort('oldest')}
                   className={`text-sm transition-colors px-1 pb-1 ${
                     commentSort === 'oldest'
-                      ? 'font-semibold text-[#fa9a00] border-b-2 border-[#fa9a00]'
+                      ? 'font-semibold text-newstheme border-b-2 border-newstheme'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -991,7 +995,7 @@ const ArticleDetail = () => {
             {/* Social Sharing Icons */}
             <div className="bg-black p-3 flex gap-2 justify-center">
               <button
-                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Share on X (Twitter)"
                 onClick={() => {
                   window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentPageUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'noopener,noreferrer');
@@ -1000,7 +1004,7 @@ const ArticleDetail = () => {
                 <span className="text-sm font-bold">X</span>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Share on Facebook"
                 onClick={() => {
                   window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentPageUrl)}`, '_blank', 'noopener,noreferrer');
@@ -1009,7 +1013,7 @@ const ArticleDetail = () => {
                 <span className="text-sm font-bold">f</span>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Share on LinkedIn"
                 onClick={() => {
                   window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentPageUrl)}`, '_blank', 'noopener,noreferrer');
@@ -1020,7 +1024,7 @@ const ArticleDetail = () => {
                 </svg>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Share"
                 onClick={() => {
                   if (navigator.share) {
@@ -1040,7 +1044,7 @@ const ArticleDetail = () => {
                 </svg>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Email"
                 onClick={() => {
                   window.location.href = `mailto:?subject=${encodeURIComponent(article.title)}&body=${encodeURIComponent(currentPageUrl)}`;
@@ -1051,7 +1055,7 @@ const ArticleDetail = () => {
                 </svg>
               </button>
               <button 
-                className="w-10 h-10 rounded-full bg-[#fa9a00] flex items-center justify-center hover:opacity-90 text-white transition-opacity"
+                className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Copy link"
                 onClick={() => {
                   navigator.clipboard.writeText(currentPageUrl);

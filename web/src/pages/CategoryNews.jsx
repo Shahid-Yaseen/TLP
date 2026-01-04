@@ -23,6 +23,26 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
     'NEWS': 'news'
   };
 
+  // Demo images for articles
+  const getDemoImage = (index = 0, categorySeed = '') => {
+    const images = [
+      'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1516841273335-c42b1e89f3e6?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1517976487492-5750f3195933?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1517976377994-20541aec3835?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1521185496955-15021babc2d4?w=1200&h=800&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=1200&h=800&fit=crop&q=80',
+    ];
+    // Create a seed from category slug to ensure different images per category
+    const categoryHash = categorySeed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const imageIndex = (index + categoryHash) % images.length;
+    return images[imageIndex];
+  };
+
   // Dummy data for fallback
   const dummyFeaturedArticle = {
     id: 1,
@@ -123,7 +143,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
   };
 
   const sectionNav = (
-    <div className="bg-orange-500 border-t-2 border-white">
+    <div className="bg-newstheme border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>
       <div className="max-w-full mx-auto px-6 flex items-center justify-between py-0">
         <div className="flex items-center gap-8">
           {/* Logo Section */}
@@ -136,7 +156,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
                   className="w-10 h-10 object-contain"
                 />
               </div>
-              <div className="absolute top-full left-0 bg-orange-500 px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
+              <div className="absolute top-full left-0 bg-red-500 px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
                 {currentTime}
               </div>
             </div>
@@ -188,13 +208,22 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
   return (
     <Layout sectionNav={sectionNav}>
       <div className="w-full px-6 pt-[2px] pb-[2px]">
+        {/* Category Header */}
+        <div className="flex items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-6">
+          <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white uppercase px-4 sm:px-6 md:px-8" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+            {categoryName}
+          </h1>
+          <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
+        </div>
+
         {/* Hero Section - Large Featured Article */}
         <div className="mb-6">
           <Link to={`${routePrefix}/${featuredArticle?.slug || featuredArticle?.id}`}>
             <div 
               className="relative h-[600px] overflow-hidden"
               style={{
-                backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop'})`,
+                backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || getDemoImage(0, categorySlug)})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
               }}
@@ -215,7 +244,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
                 <p className="text-lg text-white mb-6 max-w-3xl">
                   {featuredArticle?.excerpt || `This is a featured article in the ${categoryName} category.`}
                 </p>
-                <button className="px-5 py-2 bg-orange-500 text-white rounded-full font-semibold hover:bg-orange-600 transition-colors uppercase">
+                <button className="px-5 py-2 bg-newstheme text-white rounded-full font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
                   {featuredArticle?.category_name || categoryName}
                 </button>
               </div>
@@ -230,7 +259,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
               <div 
                 className="relative h-[300px] overflow-hidden"
                 style={{
-                  backgroundImage: `url(${article.featured_image_url || article.hero_image_url || 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop'})`,
+                  backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1, categorySlug)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                 }}
@@ -248,7 +277,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
                   >
                     {article.title}
                   </h3>
-                  <button className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-semibold hover:bg-orange-600 transition-colors uppercase">
+                  <button className="px-4 py-1.5 bg-newstheme text-white rounded-full text-sm font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
                     {article.category_name || categoryName}
                   </button>
                 </div>
@@ -259,13 +288,13 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
 
         {/* Article List Section - 6 Cards */}
         <div className="space-y-4">
-          {articles.slice(0, 6).map((article) => (
+          {articles.slice(0, 6).map((article, idx) => (
             <Link key={article.id} to={`${routePrefix}/${article.slug || article.id}`}>
-              <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors">
+              <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors mb-6">
                 {/* Left Side - Image */}
                 <div className="col-span-1">
                   <img
-                    src={article.featured_image_url || 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop'}
+                    src={article.featured_image_url || getDemoImage(idx, categorySlug)}
                     alt={article.title}
                     className="w-full h-48 object-cover"
                   />
@@ -284,7 +313,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
                   
                   {/* Category Tag */}
                   <div className="flex gap-2 mt-4 flex-wrap">
-                    <span className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded uppercase">
+                    <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
                       {article.category_name || categoryName}
                     </span>
                   </div>
