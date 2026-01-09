@@ -18,7 +18,7 @@ NODE_PATH=$(which node)
 CRON_SCRIPT="$API_DIR/scripts/sync_upcoming_previous_launches.js"
 LOG_DIR="$API_DIR/logs"
 CRON_LOG="$LOG_DIR/upcoming_previous_sync.log"
-RATE_LIMIT=${SPACE_DEVS_RATE_LIMIT:-15}  # Default: 15, can be set via env var
+RATE_LIMIT=${SPACE_DEVS_RATE_LIMIT:-210}  # Default: 210 (Advanced Supporter), can be set via env var
 
 # Create logs directory if it doesn't exist
 mkdir -p "$LOG_DIR"

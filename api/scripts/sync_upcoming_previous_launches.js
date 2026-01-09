@@ -6,8 +6,8 @@
  * and syncs them to the database while respecting rate limits.
  * 
  * Rate Limits:
- * - Default: 15 calls per hour
- * - Advanced Supporter: 210 calls per hour
+ * - Default: 210 calls per hour (Advanced Supporter)
+ * - Free tier: 15 calls per hour
  * 
  * Usage:
  *   node scripts/sync_upcoming_previous_launches.js [options]
@@ -15,7 +15,7 @@
  * Options:
  *   --dry-run    : Show what would be synced without making changes
  *   --verbose    : Show detailed progress information
- *   --rate-limit N : Set custom rate limit (default: 15 calls/hour)
+ *   --rate-limit N : Set custom rate limit (default: 210 calls/hour)
  *   --upcoming-only : Only sync upcoming launches
  *   --previous-only : Only sync previous launches
  */
@@ -37,7 +37,7 @@ const previousOnly = args.includes('--previous-only');
 const rateLimitIndex = args.indexOf('--rate-limit');
 const rateLimit = rateLimitIndex !== -1 && args[rateLimitIndex + 1] 
   ? parseInt(args[rateLimitIndex + 1]) 
-  : parseInt(process.env.SPACE_DEVS_RATE_LIMIT) || 15; // Default: 15 calls/hour
+  : parseInt(process.env.SPACE_DEVS_RATE_LIMIT) || 210; // Default: 210 calls/hour (Advanced Supporter)
 
 // Rate limiting state file
 const RATE_LIMIT_STATE_FILE = path.join(__dirname, '../.rate_limit_state.json');
@@ -57,7 +57,19 @@ function loadRateLimitState() {
   try {
     if (fs.existsSync(RATE_LIMIT_STATE_FILE)) {
       const data = fs.readFileSync(RATE_LIMIT_STATE_FILE, 'utf8');
-      return JSON.parse(data);
+      const state = JSON.parse(data);
+      // Clean up stale entries (older than 1 hour) automatically
+      const now = Date.now();
+      const oneHourAgo = now - (60 * 60 * 1000);
+      if (state.calls && Array.isArray(state.calls)) {
+        const originalLength = state.calls.length;
+        state.calls = state.calls.filter(timestamp => timestamp > oneHourAgo);
+        // Save cleaned state if entries were removed
+        if (state.calls.length !== originalLength) {
+          saveRateLimitState(state);
+        }
+      }
+      return state;
     }
   } catch (error) {
     // If file doesn't exist or is corrupted, start fresh

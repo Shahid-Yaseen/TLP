@@ -16,7 +16,7 @@ LOG_DIR="$API_DIR/logs"
 CRON_LOG="$LOG_DIR/upcoming_previous_sync.log"
 
 # Get rate limit from environment variable or use default
-RATE_LIMIT=${SPACE_DEVS_RATE_LIMIT:-15}
+RATE_LIMIT=${SPACE_DEVS_RATE_LIMIT:-210}  # Default: 210 (Advanced Supporter)
 
 # Create logs directory if it doesn't exist
 mkdir -p "$LOG_DIR"

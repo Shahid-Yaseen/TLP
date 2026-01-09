@@ -1,0 +1,10 @@
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+[2026-01-05T13:10:57.997Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-05T13:10:57.998Z] ℹ️ Mode: LIVE SYNC
+[2026-01-05T13:10:57.998Z] ℹ️ Rate Limit: 15 calls/hour
+
+[2026-01-05T13:10:58.011Z] ✅ Database connection established
+
+[2026-01-05T13:10:58.011Z] ℹ️ === UPCOMING LAUNCHES ===
+[2026-01-05T13:10:58.011Z] ℹ️ Fetching upcoming launches from Space Devs API...
+[2026-01-05T13:10:58.012Z] ⚠️ Rate limit reached (15/15 calls). Waiting 51 minute(s)...

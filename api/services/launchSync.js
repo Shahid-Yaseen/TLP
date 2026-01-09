@@ -419,11 +419,12 @@ async function upsertLaunchStatus(statusData, client) {
   
   if (!name) return null;
   
-  // Check if status exists by name first
-  const findQuery = `SELECT id FROM launch_statuses WHERE name = $1 LIMIT 1`;
-  const findResult = await client.query(findQuery, [name]);
-  
-  if (findResult.rows.length > 0) {
+  try {
+    // Check if status exists by name first
+    const findQuery = `SELECT id FROM launch_statuses WHERE name = $1 LIMIT 1`;
+    const findResult = await client.query(findQuery, [name]);
+    
+    if (findResult.rows.length > 0) {
     // Update existing (only if abbrev is provided and doesn't conflict)
     if (abbrev) {
       try {
@@ -441,18 +442,30 @@ async function upsertLaunchStatus(statusData, client) {
           typeof statusData === 'object' ? (statusData.description || null) : null
         ]);
       } catch (error) {
+        // If transaction is aborted, we can't continue - rethrow to trigger rollback
+        if (error.code === '25P02') {
+          throw error;
+        }
         // If abbrev conflict, just update description
         if (error.code === '23505') {
-          const updateQuery = `
-            UPDATE launch_statuses 
-            SET description = COALESCE($2, launch_statuses.description)
-            WHERE id = $1
-            RETURNING id
-          `;
-          await client.query(updateQuery, [
-            findResult.rows[0].id,
-            typeof statusData === 'object' ? (statusData.description || null) : null
-          ]);
+          try {
+            const updateQuery = `
+              UPDATE launch_statuses 
+              SET description = COALESCE($2, launch_statuses.description)
+              WHERE id = $1
+              RETURNING id
+            `;
+            await client.query(updateQuery, [
+              findResult.rows[0].id,
+              typeof statusData === 'object' ? (statusData.description || null) : null
+            ]);
+          } catch (retryError) {
+            // If transaction is aborted during retry, rethrow
+            if (retryError.code === '25P02') {
+              throw retryError;
+            }
+            throw retryError;
+          }
         } else {
           throw error;
         }
@@ -474,22 +487,48 @@ async function upsertLaunchStatus(statusData, client) {
       ]);
       return result.rows[0]?.id || null;
     } catch (error) {
+      // If transaction is aborted, we can't continue - rethrow to trigger rollback
+      if (error.code === '25P02') {
+        throw error;
+      }
       // If abbrev conflict, insert without abbrev
       if (error.code === '23505') {
-        const insertQuery = `
-          INSERT INTO launch_statuses (name, description)
-          VALUES ($1, $2)
-          RETURNING id
-        `;
-        const result = await client.query(insertQuery, [
-          name,
-          typeof statusData === 'object' ? (statusData.description || null) : null
-        ]);
-        return result.rows[0]?.id || null;
+        try {
+          const insertQuery = `
+            INSERT INTO launch_statuses (name, description)
+            VALUES ($1, $2)
+            RETURNING id
+          `;
+          const result = await client.query(insertQuery, [
+            name,
+            typeof statusData === 'object' ? (statusData.description || null) : null
+          ]);
+          return result.rows[0]?.id || null;
+        } catch (retryError) {
+          // If transaction is aborted during retry, rethrow
+          if (retryError.code === '25P02') {
+            throw retryError;
+          }
+          // If still a conflict, the status might already exist - try to find it
+          const findQuery = `SELECT id FROM launch_statuses WHERE name = $1 LIMIT 1`;
+          const findResult = await client.query(findQuery, [name]);
+          if (findResult.rows.length > 0) {
+            return findResult.rows[0].id;
+          }
+          throw retryError;
+        }
       } else {
         throw error;
       }
     }
+    }
+  } catch (error) {
+    // If transaction is aborted, we can't continue - rethrow to trigger rollback
+    if (error.code === '25P02') {
+      throw error;
+    }
+    // Re-throw any other errors
+    throw error;
   }
 }
 
@@ -712,6 +751,12 @@ async function syncLaunchFromApi(mappedLaunch) {
   try {
     await client.query('BEGIN');
     
+    // Check if transaction is in a good state before proceeding
+    const testQuery = await client.query('SELECT 1');
+    if (!testQuery || testQuery.rows.length === 0) {
+      throw new Error('Transaction test failed');
+    }
+    
     // Upsert related entities
     const providerId = mappedLaunch.provider_data 
       ? await upsertProvider(launchMapper.mapProvider(mappedLaunch.provider_data), client)
@@ -876,7 +921,12 @@ async function syncLaunchFromApi(mappedLaunch) {
     
     return launchResult.rows[0];
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      // Ignore rollback errors - transaction might already be rolled back
+      console.error('Error during rollback (ignored):', rollbackError.message);
+    }
     console.error('Error syncing launch:', error);
     throw error;
   } finally {

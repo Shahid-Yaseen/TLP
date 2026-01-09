@@ -7,7 +7,6 @@ import Homepage from './pages/Homepage';
 import AboutUs from './pages/AboutUs';
 import Mission from './pages/Mission';
 import News from './pages/News';
-import ComingSoonSpaceNews from './pages/ComingSoonSpaceNews';
 import ArticleDetail from './pages/ArticleDetail';
 import AstronautsList from './pages/spacebase/AstronautsList';
 import AstronautProfile from './pages/spacebase/AstronautProfile';
@@ -54,7 +53,7 @@ function App() {
         <Route path="/launches/news" element={<LaunchNews />} />
         <Route path="/launches/news/:slug" element={<LaunchNewsDetail />} />
         <Route path="/launches/:slug" element={<LaunchDetail />} />
-        <Route path="/news" element={<ComingSoonSpaceNews />} />
+        <Route path="/news" element={<News />} />
         <Route path="/news/in-space" element={<InSpaceNews />} />
         <Route path="/news/technology" element={<TechnologyNews />} />
         <Route path="/news/military" element={<MilitaryNews />} />
