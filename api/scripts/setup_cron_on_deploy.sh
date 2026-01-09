@@ -45,43 +45,42 @@ echo "  Rate Limit: $RATE_LIMIT calls/hour"
 echo "  Log File: $CRON_LOG"
 echo ""
 
-# Calculate safe interval based on rate limit
-if [ "$RATE_LIMIT" -ge 210 ]; then
-    # Advanced Supporter: Every 2 minutes
-    CRON_SCHEDULE="*/2 * * * *"
-    INTERVAL_DESC="Every 2 minutes"
-elif [ "$RATE_LIMIT" -ge 100 ]; then
-    # Higher tier: Every 3 minutes
-    CRON_SCHEDULE="*/3 * * * *"
-    INTERVAL_DESC="Every 3 minutes"
-else
-    # Default: Every 5 minutes (safe for 15 calls/hour)
-    CRON_SCHEDULE="*/5 * * * *"
-    INTERVAL_DESC="Every 5 minutes"
-fi
+# Set schedule: Every 1 minute (1 call per run × 60 runs/hour = 60 calls/hour)
+CRON_SCHEDULE="* * * * *"  # Every 1 minute
+INTERVAL_DESC="Every 1 minute (60 runs/hour, 1 API call per run)"
 
 echo "  Schedule: $INTERVAL_DESC"
 echo ""
 
-# Remove existing cron job if it exists
+# Remove existing cron jobs if they exist
 if crontab -l 2>/dev/null | grep -q "sync_upcoming_previous_launches.js"; then
-    echo "⚠️  Removing existing cron job..."
+    echo "⚠️  Removing existing cron jobs..."
     crontab -l 2>/dev/null | grep -v "sync_upcoming_previous_launches.js" | crontab - || true
 fi
 
-# Build cron command with absolute paths
-CRON_COMMAND="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --rate-limit $RATE_LIMIT >> $CRON_LOG 2>&1"
-CRON_ENTRY="$CRON_SCHEDULE $CRON_COMMAND"
+# Build cron commands
+# Upcoming launches: every 1 minute (60 calls/hour)
+CRON_SCHEDULE_UPCOMING="* * * * *"
+CRON_COMMAND_UPCOMING="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --upcoming-only --rate-limit $RATE_LIMIT >> $CRON_LOG 2>&1"
+CRON_ENTRY_UPCOMING="$CRON_SCHEDULE_UPCOMING $CRON_COMMAND_UPCOMING"
 
-# Add cron job
-(crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+# Previous launches: every 10 minutes (6 calls/hour)
+CRON_LOG_PREVIOUS="$LOG_DIR/previous_launches_sync.log"
+CRON_SCHEDULE_PREVIOUS="*/10 * * * *"
+CRON_COMMAND_PREVIOUS="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --previous-only --rate-limit $RATE_LIMIT >> $CRON_LOG_PREVIOUS 2>&1"
+CRON_ENTRY_PREVIOUS="$CRON_SCHEDULE_PREVIOUS $CRON_COMMAND_PREVIOUS"
 
-echo "✅ Cron job configured successfully!"
+# Add both cron jobs
+(crontab -l 2>/dev/null; echo "$CRON_ENTRY_UPCOMING"; echo "$CRON_ENTRY_PREVIOUS") | crontab -
+
+echo "✅ Cron jobs configured successfully!"
 echo ""
 echo "Cron job details:"
-echo "  Schedule: $CRON_SCHEDULE ($INTERVAL_DESC)"
-echo "  Command: $CRON_COMMAND"
+echo "  📅 Upcoming Launches: Every 1 minute (60 calls/hour)"
+echo "  📅 Previous Launches: Every 10 minutes (6 calls/hour)"
 echo ""
 echo "To verify: crontab -l"
-echo "To view logs: tail -f $CRON_LOG"
+echo "To view logs:"
+echo "  tail -f $CRON_LOG (upcoming)"
+echo "  tail -f $CRON_LOG_PREVIOUS (previous)"
 

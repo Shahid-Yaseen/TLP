@@ -44,7 +44,7 @@ const RATE_LIMIT_STATE_FILE = path.join(__dirname, '../.rate_limit_state.json');
 
 // Statistics
 const stats = {
-  upcoming: { fetched: 0, synced: 0, errors: 0 },
+  upcoming: { fetched: 0, synced: 0, errors: 0, fullDetails: 0, listData: 0 },
   previous: { fetched: 0, synced: 0, errors: 0 },
   apiCalls: 0,
   startTime: Date.now()
@@ -185,51 +185,32 @@ function verboseLog(message) {
 }
 
 /**
- * Fetch upcoming launches with pagination and rate limiting
+ * Fetch upcoming launches - makes 1 API call per run
+ * Cron runs every 1 minute, so 1 call × 60 runs/hour = 60 calls/hour
  */
 async function fetchUpcomingLaunches() {
   log('Fetching upcoming launches from Space Devs API...', 'info');
   const allLaunches = [];
-  let offset = 0;
-  const limit = 100;
-  let hasMore = true;
-  let pageCount = 0;
   
   try {
-    while (hasMore) {
-      // Check rate limit before each API call
-      await waitForRateLimit();
-      
-      verboseLog(`Fetching upcoming launches page ${pageCount + 1} (offset: ${offset})...`);
-      const response = await spaceDevsApi.fetchUpcomingLaunches({ limit, offset });
-      stats.apiCalls++;
-      
-      if (response.results && Array.isArray(response.results)) {
-        allLaunches.push(...response.results);
-        log(`Fetched ${response.results.length} upcoming launches (total: ${allLaunches.length})`, 'success');
-        
-        // Check if there are more results
-        hasMore = response.next !== null && response.results.length === limit;
-        offset += limit;
-        pageCount++;
-        
-        // Small delay between pages to be respectful
-        if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      } else {
-        hasMore = false;
-      }
-      
-      // Safety limit: don't fetch more than 1000 launches at once
-      if (allLaunches.length >= 1000) {
-        log(`Reached safety limit of 1000 upcoming launches`, 'warn');
-        hasMore = false;
-      }
+    // Check rate limit before API call
+    await waitForRateLimit();
+    
+    // Fetch first page (most recent launches) - 1 API call per run
+    const offset = 0;
+    const limit = 100;
+    
+    verboseLog(`Fetching upcoming launches (offset: ${offset}, limit: ${limit})...`);
+    const response = await spaceDevsApi.fetchUpcomingLaunches({ limit, offset });
+    stats.apiCalls++;
+    
+    if (response.results && Array.isArray(response.results)) {
+      allLaunches.push(...response.results);
+      log(`Fetched ${response.results.length} upcoming launches`, 'success');
     }
     
     stats.upcoming.fetched = allLaunches.length;
-    log(`Total upcoming launches fetched: ${allLaunches.length}`, 'success');
+    log(`Total upcoming launches fetched: ${allLaunches.length} (1 API call)`, 'success');
     return allLaunches;
   } catch (error) {
     log(`Error fetching upcoming launches: ${error.message}`, 'error');
@@ -241,60 +222,41 @@ async function fetchUpcomingLaunches() {
 }
 
 /**
- * Fetch previous launches with pagination and rate limiting
+ * Fetch previous launches - makes 1 API call per run
+ * Cron runs every 10 minutes, so 1 call × 6 runs/hour = 6 calls/hour
  */
 async function fetchPreviousLaunches() {
   log('Fetching previous launches from Space Devs API...', 'info');
   const allLaunches = [];
-  let offset = 0;
-  const limit = 100;
-  let hasMore = true;
-  let pageCount = 0;
   
   try {
+    // Check rate limit before API call
+    await waitForRateLimit();
+    
+    // Fetch first page (most recent previous launches) - 1 API call per run
+    const offset = 0;
+    const limit = 100;
+    
     // Only fetch recent previous launches (last 30 days) to avoid too many API calls
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateFilter = thirtyDaysAgo.toISOString().split('T')[0];
     
-    while (hasMore) {
-      // Check rate limit before each API call
-      await waitForRateLimit();
-      
-      verboseLog(`Fetching previous launches page ${pageCount + 1} (offset: ${offset})...`);
-      const response = await spaceDevsApi.fetchPreviousLaunches({ 
-        limit, 
-        offset,
-        net__gte: dateFilter // Only fetch launches from last 30 days
-      });
-      stats.apiCalls++;
-      
-      if (response.results && Array.isArray(response.results)) {
-        allLaunches.push(...response.results);
-        log(`Fetched ${response.results.length} previous launches (total: ${allLaunches.length})`, 'success');
-        
-        // Check if there are more results
-        hasMore = response.next !== null && response.results.length === limit;
-        offset += limit;
-        pageCount++;
-        
-        // Small delay between pages
-        if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      } else {
-        hasMore = false;
-      }
-      
-      // Safety limit: don't fetch more than 500 recent previous launches
-      if (allLaunches.length >= 500) {
-        log(`Reached safety limit of 500 previous launches`, 'warn');
-        hasMore = false;
-      }
+    verboseLog(`Fetching previous launches (offset: ${offset}, limit: ${limit})...`);
+    const response = await spaceDevsApi.fetchPreviousLaunches({ 
+      limit, 
+      offset,
+      net__gte: dateFilter // Only fetch launches from last 30 days
+    });
+    stats.apiCalls++;
+    
+    if (response.results && Array.isArray(response.results)) {
+      allLaunches.push(...response.results);
+      log(`Fetched ${response.results.length} previous launches (1 API call)`, 'success');
     }
     
     stats.previous.fetched = allLaunches.length;
-    log(`Total previous launches fetched: ${allLaunches.length}`, 'success');
+    log(`Total previous launches fetched: ${allLaunches.length} (1 API call)`, 'success');
     return allLaunches;
   } catch (error) {
     log(`Error fetching previous launches: ${error.message}`, 'error');
@@ -306,9 +268,35 @@ async function fetchPreviousLaunches() {
 }
 
 /**
+ * Check if launch date is within the next 2 days (today and tomorrow only)
+ * @param {string} launchDate - ISO date string
+ * @returns {boolean} True if launch is within today or tomorrow
+ */
+function isLaunchInNextDays(launchDate) {
+  if (!launchDate) return false;
+  
+  try {
+    const launch = new Date(launchDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 59, 999); // End of tomorrow
+    
+    const launchDateOnly = new Date(launch);
+    launchDateOnly.setHours(0, 0, 0, 0);
+    
+    return launchDateOnly >= today && launchDateOnly <= tomorrow;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Sync a launch to the database
- * Fetches full launch details to ensure we get video URLs and other complete data
- * The list endpoint often returns empty vid_urls arrays, so we fetch details for complete data
+ * Only fetches full launch details for launches in the next 2-3 days to optimize API calls
+ * The list endpoint often returns empty vid_urls arrays, so we fetch details for recent launches only
  */
 async function syncLaunch(launchData) {
   try {
@@ -321,19 +309,32 @@ async function syncLaunch(launchData) {
       return true;
     }
 
-    // ALWAYS fetch full launch details for upcoming launches to get complete data including video URLs
-    // The list endpoint (/launches/upcoming/) ALWAYS returns empty vid_urls arrays
-    // Only the detail endpoint (/launches/{id}/) returns populated vid_urls arrays
+    // Only fetch full launch details for launches in the next 2 days (today and tomorrow)
+    // This optimizes API calls - we only need complete data with video URLs for immediate launches
+    // For launches further out, list data is sufficient
+    const launchDate = launchData.net || launchData.launch_date;
+    const shouldFetchDetails = isLaunchInNextDays(launchDate); // Only today and tomorrow
+    
     let fullLaunchData = launchData;
-    try {
-      await waitForRateLimit();
-      fullLaunchData = await spaceDevsApi.fetchLauncherById(launchData.id);
-      stats.apiCalls++;
-      const vidCount = fullLaunchData.vid_urls ? fullLaunchData.vid_urls.length : 0;
-      verboseLog(`Fetched full details for: ${fullLaunchData.name || launchData.id} (found ${vidCount} video URLs)`);
-    } catch (error) {
-      log(`Warning: Could not fetch full details for ${launchData.id}, using list data: ${error.message}`, 'warn');
-      // Continue with list data if detail fetch fails (but it won't have video URLs)
+    
+    if (shouldFetchDetails) {
+      // Fetch full details for recent launches (to get video URLs and complete data)
+      try {
+        await waitForRateLimit();
+        fullLaunchData = await spaceDevsApi.fetchLauncherById(launchData.id);
+        stats.apiCalls++;
+        stats.upcoming.fullDetails++;
+        const vidCount = fullLaunchData.vid_urls ? fullLaunchData.vid_urls.length : 0;
+        verboseLog(`Fetched full details for: ${fullLaunchData.name || launchData.id} (found ${vidCount} video URLs)`);
+      } catch (error) {
+        log(`Warning: Could not fetch full details for ${launchData.id}, using list data: ${error.message}`, 'warn');
+        stats.upcoming.listData++;
+        // Continue with list data if detail fetch fails
+      }
+    } else {
+      // Use list data for launches further out (saves API calls)
+      stats.upcoming.listData++;
+      verboseLog(`Using list data for: ${launchData.name || launchData.id} (launch date: ${launchDate || 'TBD'})`);
     }
 
     // Map and sync
@@ -453,6 +454,9 @@ async function main() {
     log('📊 Sync Complete', 'info');
     log(`   API Calls Made: ${stats.apiCalls}/${rateLimit} (rate limit)`, 'info');
     log(`   Upcoming: ${stats.upcoming.fetched} fetched, ${stats.upcoming.synced} synced, ${stats.upcoming.errors} errors`, 'info');
+      if (stats.upcoming.fullDetails > 0 || stats.upcoming.listData > 0) {
+        log(`   Upcoming Details: ${stats.upcoming.fullDetails} full details (next 2 days only), ${stats.upcoming.listData} list data (further out)`, 'info');
+      }
     log(`   Previous: ${stats.previous.fetched} fetched, ${stats.previous.synced} synced, ${stats.previous.errors} errors`, 'info');
     log(`   Duration: ${durationSeconds}s (${durationMinutes} min)`, 'info');
     

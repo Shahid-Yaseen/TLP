@@ -24,8 +24,8 @@ crontab -e
 ### Step 2: Add this line (adjust paths as needed)
 
 ```cron
-# Sync upcoming and previous launches every hour
-0 * * * * cd /path/to/your/project/api && /usr/bin/node scripts/sync_upcoming_previous_launches.js --rate-limit 15 >> logs/upcoming_previous_sync.log 2>&1
+# Sync upcoming launches only every hour
+0 * * * * cd /path/to/your/project/api && /usr/bin/node scripts/sync_upcoming_previous_launches.js --upcoming-only --rate-limit 15 >> logs/upcoming_previous_sync.log 2>&1
 ```
 
 **Important:** Replace `/path/to/your/project/api` with your actual project path.
@@ -50,7 +50,7 @@ You should see your cron job listed.
 
 ### Every Hour (Recommended)
 ```cron
-0 * * * * cd /path/to/api && node scripts/sync_upcoming_previous_launches.js --rate-limit 15 >> logs/upcoming_previous_sync.log 2>&1
+0 * * * * cd /path/to/api && node scripts/sync_upcoming_previous_launches.js --upcoming-only --rate-limit 15 >> logs/upcoming_previous_sync.log 2>&1
 ```
 
 ### Every 4 Hours
@@ -164,7 +164,7 @@ cat .env | grep SPACE_DEVS_API_KEY
 ## What Gets Synced
 
 - **Upcoming Launches**: All launches with `launch_date >= NOW()`
-- **Previous Launches**: Launches from the last 30 days with `launch_date < NOW()`
+- **Previous Launches**: Disabled by default (use `--previous-only` flag if needed)
 - **Rate Limiting**: Automatically respects API limits
 - **Database Updates**: Upserts existing launches, creates new ones
 

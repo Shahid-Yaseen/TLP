@@ -42,58 +42,55 @@ echo ""
 read -p "Enter your API rate limit (default: 15, Advanced Supporter: 210): " USER_RATE_LIMIT
 RATE_LIMIT=${USER_RATE_LIMIT:-$RATE_LIMIT}
 
-# Calculate safe interval based on rate limit
-if [ "$RATE_LIMIT" -ge 210 ]; then
-    # Advanced Supporter: Can run every 2 minutes safely
-    CRON_SCHEDULE="*/2 * * * *"
-    INTERVAL_DESC="Every 2 minutes (Advanced Supporter - 210 calls/hour)"
-elif [ "$RATE_LIMIT" -ge 100 ]; then
-    # Higher tier: Every 3 minutes
-    CRON_SCHEDULE="*/3 * * * *"
-    INTERVAL_DESC="Every 3 minutes ($RATE_LIMIT calls/hour)"
-else
-    # Default: Every 5 minutes (safe for 15 calls/hour)
-    # Each sync uses ~2-4 calls, so 5 min = 12 runs/hour = max 24-48 calls/hour
-    # But the script's rate limiter will wait if needed
-    CRON_SCHEDULE="*/5 * * * *"
-    INTERVAL_DESC="Every 5 minutes ($RATE_LIMIT calls/hour - script will auto-wait if limit reached)"
-fi
+# Set schedule: Every 1 minute (1 call per run × 60 runs/hour = 60 calls/hour)
+CRON_SCHEDULE="* * * * *"  # Every 1 minute
+INTERVAL_DESC="Every 1 minute (60 runs/hour, 1 API call per run)"
 
 echo ""
 echo "Selected schedule: $INTERVAL_DESC"
 echo ""
 
-# Remove existing cron job if it exists
+# Remove existing cron jobs if they exist
 if crontab -l 2>/dev/null | grep -q "sync_upcoming_previous_launches.js"; then
-    echo "⚠️  Removing existing cron job..."
+    echo "⚠️  Removing existing cron jobs..."
     crontab -l 2>/dev/null | grep -v "sync_upcoming_previous_launches.js" | crontab -
 fi
 
-# Build cron command
-CRON_COMMAND="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --rate-limit $RATE_LIMIT >> $CRON_LOG 2>&1"
-CRON_ENTRY="$CRON_SCHEDULE $CRON_COMMAND"
+# Build cron commands
+# Upcoming launches: every 1 minute (60 calls/hour)
+CRON_SCHEDULE_UPCOMING="* * * * *"
+CRON_COMMAND_UPCOMING="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --upcoming-only --rate-limit $RATE_LIMIT >> $CRON_LOG 2>&1"
+CRON_ENTRY_UPCOMING="$CRON_SCHEDULE_UPCOMING $CRON_COMMAND_UPCOMING"
 
-# Add cron job
-(crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+# Previous launches: every 10 minutes (6 calls/hour)
+CRON_LOG_PREVIOUS="$LOG_DIR/previous_launches_sync.log"
+CRON_SCHEDULE_PREVIOUS="*/10 * * * *"
+CRON_COMMAND_PREVIOUS="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --previous-only --rate-limit $RATE_LIMIT >> $CRON_LOG_PREVIOUS 2>&1"
+CRON_ENTRY_PREVIOUS="$CRON_SCHEDULE_PREVIOUS $CRON_COMMAND_PREVIOUS"
 
-echo "✅ Cron job configured successfully!"
+# Add both cron jobs
+(crontab -l 2>/dev/null; echo "$CRON_ENTRY_UPCOMING"; echo "$CRON_ENTRY_PREVIOUS") | crontab -
+
+echo "✅ Cron jobs configured successfully!"
 echo ""
 echo "Configuration:"
-echo "  Schedule: $INTERVAL_DESC"
+echo "  📅 Upcoming Launches: Every 1 minute (60 calls/hour)"
+echo "  📅 Previous Launches: Every 10 minutes (6 calls/hour)"
 echo "  Rate Limit: $RATE_LIMIT calls/hour"
 echo "  Script: $CRON_SCRIPT"
-echo "  Logs: $CRON_LOG"
+echo "  Logs: $CRON_LOG (upcoming), $CRON_LOG_PREVIOUS (previous)"
 echo ""
 echo "Safety Features:"
 echo "  ✅ Built-in rate limiting - script will wait if limit is reached"
 echo "  ✅ Rate limit state tracking across runs"
-echo "  ✅ Automatic pagination handling"
+echo "  ✅ Separate counts for upcoming and previous"
 echo ""
-echo "The cron job will:"
-echo "  - Sync upcoming launches from the API"
-echo "  - Sync previous launches (last 30 days) from the API"
+echo "The cron jobs will:"
+echo "  - Upcoming: Sync every 1 minute (1 API call per run)"
+echo "  - Previous: Sync every 10 minutes (1 API call per run)"
+echo "  - Details: Only for launches in next 2 days"
 echo "  - Automatically wait if rate limit is reached"
-echo "  - Keep your database up to date every few minutes"
+echo "  - Keep your database up to date"
 echo ""
 echo "To view cron jobs:"
 echo "  crontab -l"

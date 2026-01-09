@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick Setup Script for Automatic Launch Sync Cron Job
 #
-# This script automatically sets up a cron job to sync upcoming and previous launches
+# This script automatically sets up a cron job to sync upcoming launches only
 # from the Space Devs API every hour.
 #
 # Usage:
@@ -44,27 +44,55 @@ if crontab -l 2>/dev/null | grep -q "sync_upcoming_previous_launches.js"; then
     crontab -l 2>/dev/null | grep -v "sync_upcoming_previous_launches.js" | crontab -
 fi
 
-# Set up cron job to run every hour
-CRON_SCHEDULE="0 * * * *"  # Every hour at minute 0
-CRON_COMMAND="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --rate-limit $RATE_LIMIT >> $CRON_LOG 2>&1"
-CRON_ENTRY="$CRON_SCHEDULE $CRON_COMMAND"
+# Set up cron job for upcoming launches - runs every 1 minute (1 call per run × 60 runs/hour = 60 calls/hour)
+CRON_SCHEDULE_UPCOMING="* * * * *"  # Every 1 minute
+CRON_COMMAND_UPCOMING="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --upcoming-only --rate-limit $RATE_LIMIT >> $CRON_LOG 2>&1"
+CRON_ENTRY_UPCOMING="$CRON_SCHEDULE_UPCOMING $CRON_COMMAND_UPCOMING"
 
-# Add cron job
-(crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+# Set up cron job for previous launches - runs every 10 minutes (1 call per run × 6 runs/hour = 6 calls/hour)
+CRON_SCHEDULE_PREVIOUS="*/10 * * * *"  # Every 10 minutes
+CRON_LOG_PREVIOUS="$LOG_DIR/previous_launches_sync.log"
+CRON_COMMAND_PREVIOUS="cd $API_DIR && $NODE_PATH $CRON_SCRIPT --previous-only --rate-limit $RATE_LIMIT >> $CRON_LOG_PREVIOUS 2>&1"
+CRON_ENTRY_PREVIOUS="$CRON_SCHEDULE_PREVIOUS $CRON_COMMAND_PREVIOUS"
+
+# Remove existing cron jobs if they exist
+if crontab -l 2>/dev/null | grep -q "sync_upcoming_previous_launches.js"; then
+    echo "⚠️  Removing existing cron jobs..."
+    crontab -l 2>/dev/null | grep -v "sync_upcoming_previous_launches.js" | crontab -
+fi
+
+# Add both cron jobs
+(crontab -l 2>/dev/null; echo "$CRON_ENTRY_UPCOMING"; echo "$CRON_ENTRY_PREVIOUS") | crontab -
 
 echo "✅ Cron job configured successfully!"
 echo ""
 echo "Configuration:"
-echo "  Schedule: Every hour (at minute 0)"
-echo "  Rate Limit: $RATE_LIMIT calls/hour"
-echo "  Script: $CRON_SCRIPT"
+echo ""
+echo "📅 Upcoming Launches Cron:"
+echo "  Schedule: Every 1 minute (60 runs per hour)"
+echo "  Calls per run: 1 API call (list only)"
+echo "  Total calls/hour: 60 calls (1 × 60 runs)"
 echo "  Logs: $CRON_LOG"
 echo ""
-echo "The cron job will:"
-echo "  - Sync upcoming launches from the API"
-echo "  - Sync previous launches (last 30 days) from the API"
-echo "  - Respect rate limits automatically"
-echo "  - Keep your database up to date"
+echo "📅 Previous Launches Cron:"
+echo "  Schedule: Every 10 minutes (6 runs per hour)"
+echo "  Calls per run: 1 API call (list only)"
+echo "  Total calls/hour: 6 calls (1 × 6 runs)"
+echo "  Logs: $CRON_LOG_PREVIOUS"
+echo ""
+echo "📊 Total API Calls:"
+echo "  Upcoming: 60 calls/hour"
+echo "  Previous: 6 calls/hour"
+echo "  Details (next 2 days): ~5-10 calls/hour"
+echo "  Grand Total: ~71-76 calls/hour"
+echo "  Rate Limit: $RATE_LIMIT calls/hour"
+echo ""
+echo "The cron jobs will:"
+echo "  ✅ Upcoming: Run every 1 minute, 1 API call per run"
+echo "  ✅ Previous: Run every 10 minutes, 1 API call per run"
+echo "  ✅ Fetch full details only for launches in next 2 days"
+echo "  ✅ Respect rate limits automatically"
+echo "  ✅ Keep your database up to date"
 echo ""
 echo "To view cron jobs:"
 echo "  crontab -l"
