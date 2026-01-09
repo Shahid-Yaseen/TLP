@@ -315,7 +315,7 @@ async function syncLaunch(launchData) {
     // This solves the user's concern about "syncing 100 each time"
     const pool = getPool();
     const { rows: existingLaunches } = await pool.query(
-      'SELECT id, updated_at, last_updated FROM launches WHERE external_id = $1',
+      'SELECT id, updated_at FROM launches WHERE external_id = $1',
       [launchData.id]
     );
 
@@ -323,7 +323,7 @@ async function syncLaunch(launchData) {
     const apiLastUpdated = launchData.last_updated;
 
     if (dbLaunch && apiLastUpdated) {
-      const dbUpdated = dbLaunch.updated_at || dbLaunch.last_updated;
+      const dbUpdated = dbLaunch.updated_at;
       if (dbUpdated && new Date(apiLastUpdated) <= new Date(dbUpdated)) {
         // Skip syncing if database version is already current/newer
         verboseLog(`Skipping unchanged launch: ${launchData.name || launchData.id} (last_updated: ${apiLastUpdated})`);

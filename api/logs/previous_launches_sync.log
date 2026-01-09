@@ -6742,3 +6742,76 @@ Node.js v20.19.6
 [2026-01-09T18:40:10.104Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
 [2026-01-09T18:40:10.104Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
 [2026-01-09T18:40:10.104Z] ℹ️    Duration: 9.4s (0.2 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[2026-01-09T18:50:00.803Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T18:50:00.811Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T18:50:00.811Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T18:50:00.859Z] ✅ Database connection established
+
+[2026-01-09T18:50:00.859Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T18:50:00.859Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T18:50:05.326Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T18:50:05.328Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T18:50:05.328Z] ℹ️ Syncing 29 previous launches...
+[2026-01-09T18:50:05.353Z] ❌ Error syncing launch ae315ab0-ecda-4c54-99c6-0a8818f55b0d: column "last_updated" does not exist
+[2026-01-09T18:50:05.463Z] ❌ Error syncing launch 63ddb2d1-8369-4681-8a50-e95819150382: column "last_updated" does not exist
+[2026-01-09T18:50:05.571Z] ❌ Error syncing launch fb6d9dd6-2087-40b7-b3ca-c807b5b2be43: column "last_updated" does not exist
+[2026-01-09T18:50:05.686Z] ❌ Error syncing launch 53aad862-af92-44b5-91ef-70e92a079ba4: column "last_updated" does not exist
+[2026-01-09T18:50:05.802Z] ❌ Error syncing launch 43cfdc96-8481-446f-ace5-ddc5ed60fb14: column "last_updated" does not exist
+[2026-01-09T18:50:05.914Z] ❌ Error syncing launch 9d69b85a-940d-4c1a-be75-6449d3b2a836: column "last_updated" does not exist
+[2026-01-09T18:50:06.026Z] ❌ Error syncing launch f4909efe-4764-43fa-9e4a-07e479af1ba7: column "last_updated" does not exist
+[2026-01-09T18:50:06.140Z] ❌ Error syncing launch 7b60de1e-7d8a-4213-a2f5-44a01ae21e28: column "last_updated" does not exist
+[2026-01-09T18:50:06.251Z] ❌ Error syncing launch 1c040590-5157-4850-86e2-f878dd7d49d4: column "last_updated" does not exist
+[2026-01-09T18:50:06.366Z] ❌ Error syncing launch c7ae20f6-347c-4039-a933-0ed9b28ad4b9: column "last_updated" does not exist
+[2026-01-09T18:50:06.467Z] ℹ️ Synced 10/29 previous launches...
+[2026-01-09T18:50:06.484Z] ❌ Error syncing launch a81fcb21-ed57-47ef-ab57-33ddd9c6ffcd: column "last_updated" does not exist
+[2026-01-09T18:50:06.596Z] ❌ Error syncing launch dc1b1aea-7a5f-4b39-9df5-1fd38dd670cf: column "last_updated" does not exist
+[2026-01-09T18:50:06.710Z] ❌ Error syncing launch 1e562a6b-f1eb-4c9c-a074-4172c831ed70: column "last_updated" does not exist
+[2026-01-09T18:50:06.823Z] ❌ Error syncing launch 9936c9c4-faff-4e67-9adb-c8c147239d57: column "last_updated" does not exist
+[2026-01-09T18:50:06.939Z] ❌ Error syncing launch 3eb3a9c4-65b8-49fa-afb3-8eee0c3ddfd2: column "last_updated" does not exist
+[2026-01-09T18:50:07.052Z] ❌ Error syncing launch 4a0681be-ed20-40b9-870b-38de1583c0ef: column "last_updated" does not exist
+[2026-01-09T18:50:07.161Z] ❌ Error syncing launch 0b5da6e2-9141-427b-ab22-bcdd3ca6520a: column "last_updated" does not exist
+[2026-01-09T18:50:07.272Z] ❌ Error syncing launch 9d12fbac-53de-4517-9191-4697fbc07dd2: column "last_updated" does not exist
+[2026-01-09T18:50:07.387Z] ❌ Error syncing launch 8e7d57b1-b5c0-4d0d-a575-fe23606bdeee: column "last_updated" does not exist
+[2026-01-09T18:50:07.497Z] ❌ Error syncing launch 0dcbd5ee-2728-4c79-8dc5-051ea11b888f: column "last_updated" does not exist
+[2026-01-09T18:50:07.599Z] ℹ️ Synced 20/29 previous launches...
+[2026-01-09T18:50:07.608Z] ❌ Error syncing launch 4be383b3-3997-4bd9-822b-33d9ca83a8fc: column "last_updated" does not exist
+[2026-01-09T18:50:07.717Z] ❌ Error syncing launch 49e52470-1dd4-45a9-b549-cfb417031823: column "last_updated" does not exist
+[2026-01-09T18:50:07.827Z] ❌ Error syncing launch faf4a0bc-7dad-4842-b74c-73a9f648b5cc: column "last_updated" does not exist
+[2026-01-09T18:50:07.936Z] ❌ Error syncing launch de6db617-3d40-414a-86d6-f365b130df30: column "last_updated" does not exist
+[2026-01-09T18:50:08.048Z] ❌ Error syncing launch 9599500a-7c85-4d58-a3cb-aaf4915ad5fb: column "last_updated" does not exist
+[2026-01-09T18:50:08.160Z] ❌ Error syncing launch 1966d347-ce76-43ee-8a1c-caf00d61453c: column "last_updated" does not exist
+[2026-01-09T18:50:08.277Z] ❌ Error syncing launch bea05b91-9cfa-48da-8fe0-c85c902f25ee: column "last_updated" does not exist
+[2026-01-09T18:50:08.386Z] ❌ Error syncing launch a5f8ab2c-6a2c-4b83-a866-e6cd5bf63545: column "last_updated" does not exist
+[2026-01-09T18:50:08.494Z] ❌ Error syncing launch c8d6f024-0a6a-4b07-8c05-97648be4d827: column "last_updated" does not exist
+[2026-01-09T18:50:08.494Z] ℹ️ Previous launches: 0 synced, 29 errors
+
+
+[2026-01-09T18:50:08.494Z] ℹ️ 📊 Sync Complete
+[2026-01-09T18:50:08.494Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T18:50:08.494Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T18:50:08.494Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
+[2026-01-09T18:50:08.494Z] ℹ️    Duration: 7.7s (0.1 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[2026-01-09T19:00:01.167Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T19:00:01.173Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T19:00:01.173Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T19:00:01.203Z] ✅ Database connection established
+
+[2026-01-09T19:00:01.204Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T19:00:01.204Z] ℹ️ Fetching previous launches from Space Devs API...
+Error fetching previous launches from Space Devs API: API request failed with status 429: {"detail":"Request was throttled. Expected available in 598 seconds."}
+[2026-01-09T19:00:02.263Z] ❌ Error fetching previous launches: API request failed with status 429: {"detail":"Request was throttled. Expected available in 598 seconds."}
+
+[2026-01-09T19:00:02.263Z] ℹ️ No previous launches found
+
+
+[2026-01-09T19:00:02.264Z] ℹ️ 📊 Sync Complete
+[2026-01-09T19:00:02.264Z] ℹ️    API Calls Made: 0/210 (rate limit)
+[2026-01-09T19:00:02.264Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T19:00:02.265Z] ℹ️    Previous: 0 fetched, 0 synced, 0 errors
+[2026-01-09T19:00:02.265Z] ℹ️    Duration: 1.1s (0.0 min)
+[2026-01-09T19:00:02.265Z] ✅ ✅ Database is up to date
