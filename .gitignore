@@ -15,3 +15,6 @@ dist/
 # Rate limit state file
 /api/.rate_limit_state.json
 
+# Logs
+/api/logs/*.log
+/api/server.log

@@ -6386,3 +6386,237 @@ Error fetching previous launches from Space Devs API: API request failed with st
 [2026-01-09T16:00:26.742Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
 [2026-01-09T16:00:26.742Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
 [2026-01-09T16:00:26.742Z] ℹ️    Duration: 23.3s (0.4 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889
+  syncAllLaunchesFromExternal,
+  ^
+
+ReferenceError: syncAllLaunchesFromExternal is not defined
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/services/launchSync.js:889:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/muhammadshahid/Desktop/projects/TLP_P2/TLP/api/scripts/sync_upcoming_previous_launches.js:25:20)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.6
