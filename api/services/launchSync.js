@@ -10,131 +10,7 @@ const launchMapper = require('./launchMapper');
 
 const pool = getPool();
 
-// Flag to prevent multiple simultaneous syncs
-let isSyncing = false;
-let lastSyncStart = null;
-
-/**
- * Check if launch needs syncing by comparing timestamps
- * @param {Object} dbLaunch - Launch from database
- * @param {string} apiLastUpdated - Last updated timestamp from API
- * @returns {boolean} True if sync is needed
- */
-function shouldSync(dbLaunch, apiLastUpdated) {
-  if (!dbLaunch) return true; // Launch doesn't exist in DB
-
-  if (!apiLastUpdated) return false; // No API timestamp, assume DB is current
-
-  const dbUpdated = dbLaunch.updated_at || dbLaunch.last_updated;
-  if (!dbUpdated) return true; // No DB timestamp, sync to be safe
-
-  return new Date(apiLastUpdated) > new Date(dbUpdated);
-}
-
-/**
- * Check if cache is older than specified days (default 1 day)
- * @param {number} days - Number of days for cache validity (default: 1)
- * @returns {Promise<boolean>} True if cache needs refresh
- */
-async function isCacheExpired(days = 1) {
-  try {
-    // Check the most recent updated_at timestamp in the launches table
-    const { rows } = await pool.query(`
-      SELECT MAX(updated_at) as last_sync 
-      FROM launches 
-      WHERE updated_at IS NOT NULL
-    `);
-
-    if (!rows[0] || !rows[0].last_sync) {
-      // No data in database, cache is expired
-      return true;
-    }
-
-    const lastSync = new Date(rows[0].last_sync);
-    const now = new Date();
-    const daysSinceSync = (now - lastSync) / (1000 * 60 * 60 * 24);
-
-    return daysSinceSync >= days;
-  } catch (error) {
-    console.error('Error checking cache expiration:', error);
-    // If we can't check, assume cache is expired to be safe
-    return true;
-  }
-}
-
-/**
- * Sync all launches from external API and save to database
- * This is called when cache is expired
- * Prevents multiple simultaneous syncs
- * @returns {Promise<Object>} Sync results
- */
-async function syncAllLaunchesFromExternal() {
-  // Prevent multiple simultaneous syncs
-  if (isSyncing) {
-    console.log('Sync already in progress, skipping...');
-    // Wait a bit and check if sync completed
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    if (isSyncing) {
-      throw new Error('Sync already in progress');
-    }
-    return { message: 'Sync was already in progress' };
-  }
-
-  // Prevent sync if one started less than 5 minutes ago (avoid rapid re-syncs)
-  if (lastSyncStart && (Date.now() - lastSyncStart) < 5 * 60 * 1000) {
-    console.log('Sync started recently, skipping to avoid rapid re-syncs');
-    return { message: 'Sync started recently' };
-  }
-
-  isSyncing = true;
-  lastSyncStart = Date.now();
-
-  try {
-    console.log('Cache expired, fetching all launches from external API...');
-    const allLaunchers = await spaceDevsApi.fetchAllLaunchers();
-
-    let successCount = 0;
-    let errorCount = 0;
-    const errors = [];
-
-    for (let i = 0; i < allLaunchers.length; i++) {
-      const launcher = allLaunchers[i];
-      try {
-        const mappedLaunch = launchMapper.mapLauncherToLaunch(launcher);
-        if (mappedLaunch && mappedLaunch.external_id) {
-          await syncLaunchFromApi(mappedLaunch);
-          successCount++;
-
-          if ((i + 1) % 50 === 0) {
-            console.log(`Synced ${i + 1}/${allLaunchers.length} launches...`);
-          }
-        }
-      } catch (error) {
-        errorCount++;
-        const errorId = launcher.id || launcher.uuid || `index-${i}`;
-        errors.push({
-          id: errorId,
-          error: error.message
-        });
-        console.error(`Error syncing launcher ${errorId}:`, error.message);
-      }
-    }
-
-    console.log(`Full sync complete: ${successCount} successful, ${errorCount} errors`);
-
-    return {
-      total: allLaunchers.length,
-      successful: successCount,
-      errors: errorCount,
-      errorDetails: errors
-    };
-  } catch (error) {
-    console.error('Error in full sync from external API:', error);
-    throw error;
-  } finally {
-    isSyncing = false;
-  }
-}
+// Flag and state removed as on-demand sync is disabled in favor of cron only
 
 /**
  * Upsert provider/agency
@@ -142,17 +18,36 @@ async function syncAllLaunchesFromExternal() {
 async function upsertProvider(providerData, client) {
   if (!providerData || !providerData.name) return null;
 
-  const query = `
+  // 1. Try to find existing provider by name
+  const findQuery = `SELECT id FROM providers WHERE name = $1 LIMIT 1`;
+  const findResult = await client.query(findQuery, [providerData.name]);
+
+  if (findResult.rows.length > 0) {
+    const id = findResult.rows[0].id;
+    // 2. Update existing
+    const updateQuery = `
+      UPDATE providers 
+      SET 
+        abbrev = COALESCE($2, abbrev),
+        url = COALESCE($3, url)
+      WHERE id = $1
+      RETURNING id
+    `;
+    const updateResult = await client.query(updateQuery, [
+      id,
+      providerData.abbrev || null,
+      providerData.url || null
+    ]);
+    return updateResult.rows[0]?.id || id;
+  }
+
+  // 3. Insert new
+  const insertQuery = `
     INSERT INTO providers (name, abbrev, url)
     VALUES ($1, $2, $3)
-    ON CONFLICT (name) 
-    DO UPDATE SET 
-      abbrev = COALESCE(EXCLUDED.abbrev, providers.abbrev),
-      url = COALESCE(EXCLUDED.url, providers.url)
     RETURNING id
   `;
-
-  const result = await client.query(query, [
+  const result = await client.query(insertQuery, [
     providerData.name,
     providerData.abbrev || null,
     providerData.url || null
@@ -167,15 +62,33 @@ async function upsertProvider(providerData, client) {
 async function upsertOrbit(orbitData, client) {
   if (!orbitData || !orbitData.code) return null;
 
-  const query = `
+  // 1. Try to find existing orbit by code
+  const findQuery = `SELECT id FROM orbits WHERE code = $1 LIMIT 1`;
+  const findResult = await client.query(findQuery, [orbitData.code]);
+
+  if (findResult.rows.length > 0) {
+    const id = findResult.rows[0].id;
+    // 2. Update existing
+    const updateQuery = `
+      UPDATE orbits 
+      SET description = COALESCE($2, description)
+      WHERE id = $1
+      RETURNING id
+    `;
+    const updateResult = await client.query(updateQuery, [
+      id,
+      orbitData.description || null
+    ]);
+    return updateResult.rows[0]?.id || id;
+  }
+
+  // 3. Insert new
+  const insertQuery = `
     INSERT INTO orbits (code, description)
     VALUES ($1, $2)
-    ON CONFLICT (code) 
-    DO UPDATE SET description = COALESCE(EXCLUDED.description, orbits.description)
     RETURNING id
   `;
-
-  const result = await client.query(query, [
+  const result = await client.query(insertQuery, [
     orbitData.code,
     orbitData.description || null
   ]);
@@ -238,12 +151,13 @@ async function upsertLaunchSite(siteData, client) {
   const validLatitude = (latitude != null && !isNaN(latitude)) ? latitude : null;
   const validLongitude = (longitude != null && !isNaN(longitude)) ? longitude : null;
 
-  // First, try to find by name
-  const findQuery = `SELECT id FROM launch_sites WHERE name = $1`;
+  // 1. Try to find by name first
+  const findQuery = `SELECT id FROM launch_sites WHERE name = $1 LIMIT 1`;
   const findResult = await client.query(findQuery, [siteData.name]);
 
   if (findResult.rows.length > 0) {
-    // Update existing
+    const id = findResult.rows[0].id;
+    // 2. Update existing
     const updateQuery = `
       UPDATE launch_sites 
       SET 
@@ -256,31 +170,31 @@ async function upsertLaunchSite(siteData, client) {
       RETURNING id
     `;
     await client.query(updateQuery, [
-      findResult.rows[0].id,
+      id,
       siteData.country || null,
       countryId,
       validLatitude,
       validLongitude,
       siteData.timezone || null
     ]);
-    return findResult.rows[0].id;
-  } else {
-    // Insert new
-    const insertQuery = `
-      INSERT INTO launch_sites (name, country, country_id, latitude, longitude, timezone_name)
-      VALUES ($1, $2, $3, $4::double precision, $5::double precision, $6)
-      RETURNING id
-    `;
-    const result = await client.query(insertQuery, [
-      siteData.name,
-      siteData.country || null,
-      countryId,
-      validLatitude,
-      validLongitude,
-      siteData.timezone || null
-    ]);
-    return result.rows[0]?.id || null;
+    return id;
   }
+
+  // 3. Insert new
+  const insertQuery = `
+    INSERT INTO launch_sites (name, country, country_id, latitude, longitude, timezone_name)
+    VALUES ($1, $2, $3, $4::double precision, $5::double precision, $6)
+    RETURNING id
+  `;
+  const result = await client.query(insertQuery, [
+    siteData.name,
+    siteData.country || null,
+    countryId,
+    validLatitude,
+    validLongitude,
+    siteData.timezone || null
+  ]);
+  return result.rows[0]?.id || null;
 }
 
 /**
@@ -301,14 +215,15 @@ async function upsertLaunchPad(padData, siteId, client) {
   const validLatitude = (latitude != null && !isNaN(latitude)) ? latitude : null;
   const validLongitude = (longitude != null && !isNaN(longitude)) ? longitude : null;
 
-  // Check if pad exists
+  // 1. Try to find existing pad by name and siteId
   const findQuery = `SELECT id FROM launch_pads WHERE name = $1 AND launch_site_id = $2::integer LIMIT 1`;
   const findResult = await client.query(findQuery, [padData.name, siteIdInt]);
 
   if (findResult.rows.length > 0) {
-    // Update existing - build dynamic query based on what we have
+    const id = findResult.rows[0].id;
+    // 2. Update existing - build dynamic query based on what we have
     const updates = [];
-    const params = [findResult.rows[0].id];
+    const params = [id];
     let paramIndex = 2;
 
     if (validLatitude !== null) {
@@ -339,24 +254,24 @@ async function upsertLaunchPad(padData, siteId, client) {
       RETURNING id
     `;
     const result = await client.query(updateQuery, params);
-    return result.rows[0]?.id || null;
-  } else {
-    // Insert new
-    const insertQuery = `
-      INSERT INTO launch_pads (name, launch_site_id, latitude, longitude, description, active)
-      VALUES ($1, $2::integer, $3::double precision, $4::double precision, $5, $6)
-      RETURNING id
-    `;
-    const result = await client.query(insertQuery, [
-      padData.name,
-      siteIdInt,
-      validLatitude,
-      validLongitude,
-      padData.description || null,
-      padData.active !== undefined ? padData.active : true
-    ]);
-    return result.rows[0]?.id || null;
+    return result.rows[0]?.id || id;
   }
+
+  // 3. Insert new
+  const insertQuery = `
+    INSERT INTO launch_pads (name, launch_site_id, latitude, longitude, description, active)
+    VALUES ($1, $2::integer, $3::double precision, $4::double precision, $5, $6)
+    RETURNING id
+  `;
+  const result = await client.query(insertQuery, [
+    padData.name,
+    siteIdInt,
+    validLatitude,
+    validLongitude,
+    padData.description || null,
+    padData.active !== undefined ? padData.active : true
+  ]);
+  return result.rows[0]?.id || null;
 }
 
 /**
@@ -365,7 +280,7 @@ async function upsertLaunchPad(padData, siteId, client) {
 async function upsertRocket(rocketData, providerId, client) {
   if (!rocketData || !rocketData.name) return null;
 
-  // Check if rocket exists
+  // 1. Try to find existing rocket by name
   const findQuery = `SELECT id FROM rockets WHERE name = $1 LIMIT 1`;
   const findResult = await client.query(findQuery, [rocketData.name]);
 
@@ -377,7 +292,8 @@ async function upsertRocket(rocketData, providerId, client) {
   };
 
   if (findResult.rows.length > 0) {
-    // Update existing
+    const id = findResult.rows[0].id;
+    // 2. Update existing
     const updateQuery = `
       UPDATE rockets 
       SET 
@@ -387,25 +303,25 @@ async function upsertRocket(rocketData, providerId, client) {
       RETURNING id
     `;
     const result = await client.query(updateQuery, [
-      findResult.rows[0].id,
+      id,
       providerId,
       JSON.stringify(spec)
     ]);
-    return result.rows[0]?.id || null;
-  } else {
-    // Insert new
-    const insertQuery = `
-      INSERT INTO rockets (name, provider_id, spec)
-      VALUES ($1, $2, $3)
-      RETURNING id
-    `;
-    const result = await client.query(insertQuery, [
-      rocketData.name,
-      providerId,
-      JSON.stringify(spec)
-    ]);
-    return result.rows[0]?.id || null;
+    return result.rows[0]?.id || id;
   }
+
+  // 3. Insert new
+  const insertQuery = `
+    INSERT INTO rockets (name, provider_id, spec)
+    VALUES ($1, $2, $3)
+    RETURNING id
+  `;
+  const result = await client.query(insertQuery, [
+    rocketData.name,
+    providerId,
+    JSON.stringify(spec)
+  ]);
+  return result.rows[0]?.id || null;
 }
 
 /**

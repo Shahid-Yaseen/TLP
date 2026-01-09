@@ -365,7 +365,7 @@ function buildLaunchQuery(filters, args, options = {}) {
     includeWindows = false,
     includeHazards = false
   } = options;
-  
+
   let sql = `
     SELECT DISTINCT
       launches.*,
@@ -441,9 +441,9 @@ function buildLaunchQuery(filters, args, options = {}) {
  */
 router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   const { filters, args, needsJoins } = buildFilters(req.query);
-  
+
   let sql = buildLaunchQuery(filters, args);
-  
+
   // Determine sort order based on whether we're filtering for upcoming or previous
   // If net__gte is present (upcoming), sort ASC (soonest first)
   // If net__lt is present (previous), sort DESC (most recent first)
@@ -463,25 +463,10 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   let apiUnavailable = false;
 
   try {
-    // Check if cache is expired (older than 1 day)
-    const cacheExpired = await launchSync.isCacheExpired(1);
-    
-    // Start sync in background if cache is expired (non-blocking)
-    if (cacheExpired) {
-      console.log('Cache expired, starting background sync from external API...');
-      // Don't await - let it run in background
-      launchSync.syncAllLaunchesFromExternal()
-        .then(() => {
-          console.log('Background sync completed successfully');
-        })
-        .catch((syncError) => {
-          console.error('Error in background sync from external API:', syncError.message);
-          apiUnavailable = true;
-        });
-    }
-    
-    // Always query database (either fresh data or cached)
-    // This returns immediately, even if sync is still running in background
+    // Rely on the automated cron job for data freshness.
+    // Removed legacy background sync to prevent 429 rate limiting issues.
+
+    // Always query database
     const { rows: dbRows } = await pool.query(finalSql, finalArgs);
     rows = dbRows;
   } catch (error) {
@@ -493,15 +478,15 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   // Only count if explicitly requested or for small result sets
   let totalCount = rows.length;
   let hasMore = false;
-  
+
   if (req.query.include_count === 'true' || limit <= 20) {
     try {
       // Simplified count query - just count launches matching filters
-  let countSql = 'SELECT COUNT(DISTINCT launches.id) as count FROM launches';
+      let countSql = 'SELECT COUNT(DISTINCT launches.id) as count FROM launches';
       const countFilters = [];
       const countArgs = [];
       let countParamCount = 1;
-      
+
       // Add only the essential filters for counting
       if (filters.length > 0) {
         // Extract just the launch_date and basic filters
@@ -511,12 +496,12 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
             countArgs.push(args[idx]);
           }
         });
-        
+
         if (countFilters.length > 0) {
           countSql += ' WHERE ' + countFilters.join(' AND ');
         }
       }
-      
+
       const { rows: countRows } = await pool.query(countSql, countArgs);
       totalCount = parseInt(countRows[0]?.count || rows.length);
       hasMore = offset + rows.length < totalCount;
@@ -559,7 +544,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
 router.get('/upcoming', optionalAuth, asyncHandler(async (req, res) => {
   req.query.net__gte = new Date().toISOString();
   const { filters, args } = buildFilters(req.query);
-  
+
   let sql = buildLaunchQuery(filters, args);
   if (filters.length) {
     sql += ' WHERE launches.launch_date >= NOW() AND ' + filters.join(' AND ');
@@ -580,7 +565,7 @@ router.get('/upcoming', optionalAuth, asyncHandler(async (req, res) => {
 router.get('/previous', optionalAuth, asyncHandler(async (req, res) => {
   req.query.net__lt = new Date().toISOString();
   const { filters, args } = buildFilters(req.query);
-  
+
   let sql = buildLaunchQuery(filters, args);
   if (filters.length) {
     sql += ' WHERE launches.launch_date < NOW() AND ' + filters.join(' AND ');
@@ -626,9 +611,9 @@ router.get('/featured', optionalAuth, asyncHandler(async (req, res) => {
  */
 router.get('/historical', optionalAuth, asyncHandler(async (req, res) => {
   const { month, day, currentYear } = req.query;
-  
+
   if (!month || !day) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Month and day parameters are required',
       code: 'MISSING_PARAMS'
     });
@@ -638,11 +623,11 @@ router.get('/historical', optionalAuth, asyncHandler(async (req, res) => {
     const monthNum = parseInt(month);
     const dayNum = parseInt(day);
     const yearNum = currentYear ? parseInt(currentYear) : new Date().getFullYear();
-    
+
     console.log(`[Historical] Fetching for month=${monthNum}, day=${dayNum}, year=${yearNum}`);
-    
+
     const targetCount = 5;
-    
+
     // Query database ONLY - no external API calls
     console.log(`[Historical] Querying database...`);
     const { rows: dbRows } = await pool.query(`
@@ -691,29 +676,29 @@ router.get('/historical', optionalAuth, asyncHandler(async (req, res) => {
       ORDER BY launches.launch_date DESC
       LIMIT $4
     `, [monthNum, dayNum, yearNum, targetCount]);
-    
+
     console.log(`[Historical] Found ${dbRows.length} launches in DB for month=${monthNum}, day=${dayNum}`);
-    
+
     // Format the data to match frontend expectations exactly
     const formattedLaunches = dbRows.map(row => {
       // Parse image_json if it exists
       let imageJson = null;
       let imageUrl = null;
-      
+
       try {
         if (row.image_json_text) {
-          imageJson = typeof row.image_json_text === 'string' 
-            ? JSON.parse(row.image_json_text) 
+          imageJson = typeof row.image_json_text === 'string'
+            ? JSON.parse(row.image_json_text)
             : row.image_json_text;
           imageUrl = imageJson?.image_url || null;
         }
       } catch (e) {
         console.warn('[Historical] Error parsing image_json:', e.message);
       }
-      
+
       // Get image URL from various sources
       const finalImageUrl = row.mission_image_url || imageUrl || null;
-      
+
       return {
         id: row.id,
         name: row.name || 'Unknown Launch',
@@ -745,7 +730,7 @@ router.get('/historical', optionalAuth, asyncHandler(async (req, res) => {
         pad_name: row.pad_name
       };
     });
-    
+
     console.log(`[Historical] Returning ${formattedLaunches.length} launches`);
     if (formattedLaunches.length > 0) {
       console.log(`[Historical] Sample launch data:`, JSON.stringify(formattedLaunches[0], null, 2));
@@ -758,7 +743,7 @@ router.get('/historical', optionalAuth, asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('[Historical] Error fetching historical launches from database:', error);
     console.error('[Historical] Error stack:', error.stack);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch historical launches from database',
       code: 'DATABASE_ERROR',
       message: error.message
@@ -787,7 +772,7 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
   // If we have raw_data, use it as the base and merge with database fields
   // This ensures we have the complete detailed API response
   let rawData = parseJsonb(launchRow.raw_data);
-  
+
   // Parse JSONB columns
   const statusJson = parseJsonb(launchRow.status_json);
   const imageJson = parseJsonb(launchRow.image_json);
@@ -800,7 +785,7 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
   const netPrecision = parseJsonb(launchRow.net_precision);
   const weatherConcernsJson = parseJsonb(launchRow.weather_concerns_json);
   const hashtagJson = parseJsonb(launchRow.hashtag_json);
-  
+
   // If we have raw_data, prefer fields from it (they're the complete API response)
   // Otherwise use the individual JSONB fields
   const useRawData = rawData && typeof rawData === 'object';
@@ -970,7 +955,7 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
   // Build response object matching Space Devs API format EXACTLY
   // If we have raw_data, use it as base and merge with database-specific fields
   let response;
-  
+
   if (useRawData) {
     // Extract vid_urls from raw_data according to Space Devs API structure
     // In Space Devs API, vid_urls is at the top level (not in mission.vid_urls which is typically empty)
@@ -979,7 +964,7 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
     if (vidUrlsFromRaw.length === 0 && rawData.mission && rawData.mission.vid_urls && rawData.mission.vid_urls.length > 0) {
       vidUrlsFromRaw = rawData.mission.vid_urls;
     }
-    
+
     // Use raw_data as base and merge with database fields and arrays
     response = {
       ...rawData, // Start with complete API response
@@ -989,8 +974,8 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
       // Priority: database > raw_data top-level > raw_data.mission
       updates: relatedData.updates || rawData.updates || [],
       info_urls: relatedData.info_urls || rawData.info_urls || [],
-      vid_urls: relatedData.vid_urls && relatedData.vid_urls.length > 0 
-        ? relatedData.vid_urls 
+      vid_urls: relatedData.vid_urls && relatedData.vid_urls.length > 0
+        ? relatedData.vid_urls
         : (vidUrlsFromRaw && vidUrlsFromRaw.length > 0 ? vidUrlsFromRaw : []),
       timeline: relatedData.timeline || rawData.timeline || [],
       mission_patches: relatedData.mission_patches || rawData.mission_patches || [],
@@ -1027,10 +1012,10 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
       image: imageJson || image,
       infographic: infographicJson || infographic,
       program: programJson || program,
-    orbital_launch_attempt_count: launchRow.orbital_launch_attempt_count !== null && launchRow.orbital_launch_attempt_count !== undefined ? launchRow.orbital_launch_attempt_count : null,
-    location_launch_attempt_count: launchRow.location_launch_attempt_count !== null && launchRow.location_launch_attempt_count !== undefined ? launchRow.location_launch_attempt_count : null,
-    pad_launch_attempt_count: launchRow.pad_launch_attempt_count !== null && launchRow.pad_launch_attempt_count !== undefined ? launchRow.pad_launch_attempt_count : null,
-    agency_launch_attempt_count: launchRow.agency_launch_attempt_count !== null && launchRow.agency_launch_attempt_count !== undefined ? launchRow.agency_launch_attempt_count : null,
+      orbital_launch_attempt_count: launchRow.orbital_launch_attempt_count !== null && launchRow.orbital_launch_attempt_count !== undefined ? launchRow.orbital_launch_attempt_count : null,
+      location_launch_attempt_count: launchRow.location_launch_attempt_count !== null && launchRow.location_launch_attempt_count !== undefined ? launchRow.location_launch_attempt_count : null,
+      pad_launch_attempt_count: launchRow.pad_launch_attempt_count !== null && launchRow.pad_launch_attempt_count !== undefined ? launchRow.pad_launch_attempt_count : null,
+      agency_launch_attempt_count: launchRow.agency_launch_attempt_count !== null && launchRow.agency_launch_attempt_count !== undefined ? launchRow.agency_launch_attempt_count : null,
       orbital_launch_attempt_count_year: launchRow.orbital_launch_attempt_count_year !== null && launchRow.orbital_launch_attempt_count_year !== undefined ? launchRow.orbital_launch_attempt_count_year : null,
       location_launch_attempt_count_year: launchRow.location_launch_attempt_count_year !== null && launchRow.location_launch_attempt_count_year !== undefined ? launchRow.location_launch_attempt_count_year : null,
       pad_launch_attempt_count_year: launchRow.pad_launch_attempt_count_year !== null && launchRow.pad_launch_attempt_count_year !== undefined ? launchRow.pad_launch_attempt_count_year : null,
@@ -1094,14 +1079,14 @@ function formatLaunchResponse(launchRow, relatedData = {}) {
 router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
   let apiUnavailable = false;
-  
+
   // Determine if ID is UUID, numeric external_id, internal integer ID, or slug
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   const isNumeric = /^\d+$/.test(id);
   const isSlug = !isUUID && !isNumeric; // If it's not UUID or numeric, treat as slug
-  
+
   let launchRows = [];
-  
+
   // Try to find launch by slug first (if it's not numeric or UUID)
   if (isSlug) {
     try {
@@ -1145,7 +1130,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       console.log(`[API] Launch ${id}: Not found by slug, trying other methods...`);
     }
   }
-  
+
   // Try to find launch by internal integer ID first (if it's numeric)
   if (!launchRows.length && isNumeric) {
     try {
@@ -1188,7 +1173,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       console.log(`[API] Launch ${id}: Not found by internal ID, trying external_id...`);
     }
   }
-  
+
   // If not found by internal ID, try external_id (UUID type in DB)
   if (!launchRows.length) {
     // Only try external_id if it looks like a UUID
@@ -1235,58 +1220,9 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
         console.log(`[API] Launch ${id}: Not found by external_id UUID, will try API fetch...`);
       }
     }
-    
+
     if (!launchRows.length) {
-      // Not found in DB, try fetching from API
-      try {
-        const apiData = await spaceDevsApi.fetchLauncherById(id);
-        const mappedLaunch = launchMapper.mapLauncherToLaunch(apiData);
-        const syncedLaunch = await launchSync.syncLaunchFromApi(mappedLaunch);
-        
-        // Re-fetch from DB with all joins
-        const { rows: newRows } = await pool.query(`
-          SELECT 
-            launches.*,
-            providers.name as provider,
-            providers.abbrev as provider_abbrev,
-            rockets.name as rocket,
-            orbits.code as orbit,
-            orbits.description as orbit_name,
-            launch_sites.name as site,
-            launch_sites.country as site_country,
-            launch_pads.name as pad_name,
-            mission_types.name as mission_type,
-            launch_statuses.name as status_name,
-            launch_statuses.abbrev as status_abbrev,
-            authors.id as author_id,
-            authors.first_name as author_first_name,
-            authors.last_name as author_last_name,
-            authors.full_name as author_full_name,
-            authors.title as author_title,
-            authors.bio as author_bio,
-            authors.profile_image_url as author_profile_image_url,
-            authors.book_info as author_book_info
-          FROM launches
-          LEFT JOIN providers ON launches.provider_id = providers.id
-          LEFT JOIN rockets ON launches.rocket_id = rockets.id
-          LEFT JOIN orbits ON launches.orbit_id = orbits.id
-          LEFT JOIN launch_sites ON launches.site_id = launch_sites.id
-          LEFT JOIN launch_pads ON launches.launch_pad_id = launch_pads.id
-          LEFT JOIN mission_types ON launches.mission_type_id = mission_types.id
-          LEFT JOIN launch_statuses ON launches.status_id = launch_statuses.id
-          LEFT JOIN authors ON launches.author_id = authors.id
-          WHERE launches.id = $1
-        `, [syncedLaunch.id]);
-        
-        launchRows = newRows;
-      } catch (apiError) {
-        console.error('Error fetching launch from API:', apiError.message);
-        return res.status(404).json({ 
-          error: 'Launch not found', 
-          code: 'NOT_FOUND',
-          message: 'Launch not found in database or external API'
-        });
-      }
+      return res.status(404).json({ error: 'Launch not found', code: 'NOT_FOUND' });
     }
   }
 
@@ -1295,11 +1231,11 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   }
 
   let launch = launchRows[0];
-  
+
   // Track data source for logging
   const dataSource = launch.raw_data ? 'DATABASE (raw_data)' : 'DATABASE (individual fields)';
   const hasRawData = !!launch.raw_data;
-  
+
   // Use database data - no external API calls if we have raw_data
   // The raw_data contains the complete detailed API response
   if (launch.raw_data) {
@@ -1333,11 +1269,11 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   const { rows: hazardRows } = await pool.query(`
     SELECT * FROM launch_hazards WHERE launch_id = $1
   `, [launchId]);
-  
+
   // Extract hazards from launch object fields (weather_concerns, failreason, probability, status)
   // According to Space Devs API schema, these are the primary hazard fields
   const launchHazards = [];
-  
+
   // Weather concerns
   if (launch.weather_concerns) {
     launchHazards.push({
@@ -1347,7 +1283,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       source: 'api-field'
     });
   }
-  
+
   // Failure reason
   if (launch.failreason) {
     launchHazards.push({
@@ -1357,7 +1293,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       source: 'api-field'
     });
   }
-  
+
   // Probability (success probability - lower is more hazardous)
   if (launch.probability !== null && launch.probability !== undefined) {
     const probabilityHazard = {
@@ -1369,7 +1305,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     };
     launchHazards.push(probabilityHazard);
   }
-  
+
   // Status-based hazards (if launch failed)
   if (launch.status_id) {
     const statusName = launch.status_name || '';
@@ -1382,7 +1318,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       });
     }
   }
-  
+
   // Merge database hazards with launch field hazards
   const allHazards = [...launchHazards];
   if (hazardRows && hazardRows.length > 0) {
@@ -1422,13 +1358,13 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     }
     return value;
   };
-  
+
   // Extract crew from external API response (mission JSONB or rocket JSONB)
   // Space Devs API stores crew in mission.crew or spacecraft_flight.launch_crew
   let apiCrew = [];
   const missionJson = parseJsonb(launch.mission_json);
   const rocketJson = parseJsonb(launch.rocket_json);
-  
+
   if (missionJson) {
     // Check for direct crew array in mission
     if (missionJson.crew && Array.isArray(missionJson.crew)) {
@@ -1437,8 +1373,8 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
         id: member.id || null,
         name: member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || null,
         role: member.role || member.job || null,
-        nationality: typeof member.nationality === 'string' 
-          ? member.nationality 
+        nationality: typeof member.nationality === 'string'
+          ? member.nationality
           : member.nationality?.nationality_name || member.nationality?.name || null,
         date_of_birth: member.date_of_birth || null,
         flights_count: member.flights_count || member.flight_count || null,
@@ -1459,8 +1395,8 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
               id: member.id || null,
               name: member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || null,
               role: member.role || member.job || null,
-              nationality: typeof member.nationality === 'string' 
-                ? member.nationality 
+              nationality: typeof member.nationality === 'string'
+                ? member.nationality
                 : member.nationality?.nationality_name || member.nationality?.name || null,
               date_of_birth: member.date_of_birth || null,
               flights_count: member.flights_count || member.flight_count || null,
@@ -1481,54 +1417,10 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       });
     }
   }
-  
-  // PRIMARY: Fetch crew from astronaut endpoint (correct API-native approach)
-  // According to Space Devs API schema, crew is not in launch object - query astronaut endpoint
+
+  // PRIMARY: Crew is fetched from local database (crewRows)
   let astronautEndpointCrew = [];
-  try {
-    // Only fetch if this is a crewed mission (check mission type or if we have external_id)
-    const isCrewedMission = missionJson?.type?.toLowerCase().includes('crew') || 
-                           missionJson?.name?.toLowerCase().includes('crew') ||
-                           launch.name?.toLowerCase().includes('crew');
-    
-    if (isCrewedMission || launch.external_id) {
-      console.log(`[API] Launch ${launchId}: Fetching crew from astronaut endpoint...`);
-      const astronauts = await spaceDevsApi.fetchAstronautsByLaunchId(launch.external_id || launch.id);
-      
-      if (astronauts && Array.isArray(astronauts) && astronauts.length > 0) {
-        console.log(`[API] Launch ${launchId}: Found ${astronauts.length} crew members from astronaut endpoint`);
-        astronautEndpointCrew = astronauts.map(astronaut => {
-          // Find the flight for this launch to get the role
-          const flight = astronaut.flights?.find(f => 
-            f.launch?.id === launch.external_id || 
-            f.launch?.id === launch.id?.toString() ||
-            f.launch?.url?.includes(launch.external_id) ||
-            f.launch?.url?.includes(launch.id?.toString())
-          );
-          
-          return {
-            id: astronaut.id || null,
-            name: astronaut.name || `${astronaut.first_name || ''} ${astronaut.last_name || ''}`.trim() || null,
-            role: flight?.role || astronaut.role || null,
-            nationality: typeof astronaut.nationality === 'string' 
-              ? astronaut.nationality 
-              : astronaut.nationality?.nationality_name || astronaut.nationality?.name || null,
-            date_of_birth: astronaut.date_of_birth || null,
-            flights_count: astronaut.flights_count || (astronaut.flights?.length || 0),
-            bio: astronaut.bio || astronaut.biography || null,
-            wiki_url: astronaut.wiki_url || astronaut.wiki || null,
-            profile_image: astronaut.profile_image || astronaut.profile_image_thumbnail || null,
-            agency: astronaut.agency?.name || null,
-            _source: 'api-astronaut-endpoint'
-          };
-        });
-      }
-    }
-  } catch (error) {
-    console.error(`[API] Launch ${launchId}: Error fetching crew from astronaut endpoint:`, error.message);
-    // Continue with fallback methods
-  }
-  
+
   // Merge all crew sources: database > astronaut endpoint > JSONB fallback
   let allCrew = [];
   if (crewRows && crewRows.length > 0) {
@@ -1547,7 +1439,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       _source: 'database'
     }));
   }
-  
+
   // Add astronaut endpoint crew (if not already in database)
   if (astronautEndpointCrew.length > 0) {
     const existingIds = new Set(allCrew.map(c => c.id).filter(Boolean));
@@ -1562,7 +1454,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       }
     });
   }
-  
+
   // Add JSONB crew as fallback (if not already added)
   if (apiCrew.length > 0) {
     const existingIds = new Set(allCrew.map(c => c.id).filter(Boolean));
@@ -1577,7 +1469,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       }
     });
   }
-  
+
   console.log(`[API] Launch ${launchId}: Crew summary - DB: ${crewRows.length}, Astronaut Endpoint: ${astronautEndpointCrew.length}, JSONB: ${apiCrew.length}, Total: ${allCrew.length}`);
 
   // Get updates (after sync, this should have all the latest data)
@@ -1610,7 +1502,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   const { rows: vidUrlRows } = await pool.query(`
     SELECT * FROM launch_vid_urls WHERE launch_id = $1 ORDER BY priority ASC
   `, [launchId]);
-  
+
   console.log(`[API] Launch ${launchId}: Fetched array data - Updates: ${updateRows.length}, Timeline: ${timelineRows.length}, Patches: ${patchRows.length}, Info URLs: ${infoUrlRows.length}, Vid URLs: ${vidUrlRows.length}`);
 
   // Format updates array
@@ -1695,7 +1587,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   if (missionJson) {
     console.log(`[API] Launch ${launchId}: Checking mission JSONB for payloads...`);
     console.log(`[API] Launch ${launchId}: missionJson keys:`, Object.keys(missionJson || {}));
-    
+
     // PRIMARY: Extract mission object as the primary payload (this is the correct approach per API schema)
     if (missionJson.name || missionJson.id) {
       console.log(`[API] Launch ${launchId}: Found primary mission payload: ${missionJson.name || missionJson.id}`);
@@ -1712,7 +1604,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       };
       apiPayloads.push(primaryPayload);
     }
-    
+
     // SECONDARY: Also check for spacecraft_flight array (for rideshare/secondary payloads)
     if (missionJson.spacecraft_flight && Array.isArray(missionJson.spacecraft_flight)) {
       console.log(`[API] Launch ${launchId}: Found ${missionJson.spacecraft_flight.length} spacecraft_flight entries (secondary payloads)`);
@@ -1813,7 +1705,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   } else {
     console.log(`[API] Launch ${launchId}: No mission JSONB available`);
   }
-  
+
   // Also check rocket JSONB for payloads (sometimes stored there)
   // rocketJson is already defined above in crew extraction
   if (rocketJson && rocketJson.spacecraft_stage && Array.isArray(rocketJson.spacecraft_stage)) {
@@ -1859,7 +1751,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       description: row.description,
       _source: 'database'
     }));
-    
+
     // Add API payloads that don't exist in database (by name matching)
     const dbPayloadNames = new Set(allPayloads.map(p => p.name?.toLowerCase()));
     apiPayloads.forEach(apiPayload => {
@@ -1882,11 +1774,11 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   // PRIMARY: Fetch from rocket.configuration.url (correct API-native approach per Space Devs schema)
   // Extract engine data from multiple possible sources
   let engineData = [];
-  
+
   // Helper function to extract engines from a launcher_stage array
   const extractEnginesFromStages = (stages, source) => {
     if (!stages || !Array.isArray(stages)) return [];
-    
+
     const extracted = [];
     stages.forEach((stage, stageIdx) => {
       if (stage.engines && Array.isArray(stage.engines)) {
@@ -1919,7 +1811,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     });
     return extracted;
   };
-  
+
   // METHOD 1: DISABLED - Don't fetch from configuration URL (causes 404 errors)
   // Using only database JSONB data instead
   // if (rocketJson && rocketJson.configuration && rocketJson.configuration.url) {
@@ -1936,7 +1828,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   //     // Fall through to JSONB extraction
   //   }
   // }
-  
+
   // METHOD 1 (NEW): Extract from rocket.configuration.launcher_stage (if nested in configuration)
   if (engineData.length === 0 && rocketJson) {
     const configLauncherStage = rocketJson.configuration?.launcher_stage || null;
@@ -1945,7 +1837,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       engineData = extractEnginesFromStages(configLauncherStage, 'api-rocket-configuration-jsonb');
     }
   }
-  
+
   // METHOD 2: Extract from rocket.launcher_stage (direct in rocket object)
   if (engineData.length === 0 && rocketJson) {
     if (rocketJson.launcher_stage && Array.isArray(rocketJson.launcher_stage)) {
@@ -1953,7 +1845,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       engineData = extractEnginesFromStages(rocketJson.launcher_stage, 'api-rocket-jsonb');
     }
   }
-  
+
   // Log detailed information for debugging
   if (engineData.length === 0 && rocketJson) {
     console.log(`[API] Launch ${launchId}: No engines found. Rocket JSONB structure:`, {
@@ -1966,7 +1858,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       configurationKeys: Object.keys(rocketJson.configuration || {})
     });
   }
-  
+
   console.log(`[API] Launch ${launchId}: Engine data - Found ${engineData.length} engines`);
 
   // Get related articles (admin-managed)
@@ -2021,7 +1913,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   let formattedLaunch;
   try {
     formattedLaunch = formatLaunchResponse(launch, relatedData);
-    
+
     // Log what we're sending to frontend
     console.log(`[API] Launch ${launchId}: Sending response with arrays - Updates: ${formattedLaunch.updates?.length || 0}, Timeline: ${formattedLaunch.timeline?.length || 0}, Patches: ${formattedLaunch.mission_patches?.length || 0}, Info URLs: ${formattedLaunch.info_urls?.length || 0}, Vid URLs: ${formattedLaunch.vid_urls?.length || 0}`);
     console.log(`[API] Launch ${launchId}: Has launch_service_provider: ${!!formattedLaunch.launch_service_provider}, Has rocket: ${!!formattedLaunch.rocket}, Has mission: ${!!formattedLaunch.mission}, Has pad: ${!!formattedLaunch.pad}`);
@@ -2040,17 +1932,17 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
         console.log(`[API] Launch ${launchId}: Sample allPayloads[0]:`, JSON.stringify(allPayloads[0], null, 2));
       }
     }
-    
+
     // Verify transformation worked
     if (!formattedLaunch.launch_service_provider && launch.launch_service_provider_json) {
       console.warn(`[API] Launch ${launchId}: Transformation warning - launch_service_provider missing but launch_service_provider_json exists`);
     }
-    
+
     // Add cache metadata to response - track data source
     const now = new Date();
     const updatedAt = launch.updated_at ? new Date(launch.updated_at) : null;
     const cacheAge = updatedAt ? Math.round((now - updatedAt) / (1000 * 60 * 60)) : null;
-    
+
     formattedLaunch._cache = {
       cached: true, // Always true since we're using database
       data_source: hasRawData ? 'database_raw_data' : 'database_individual_fields',
@@ -2058,7 +1950,7 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
       age_hours: cacheAge,
       source: dataSource // Track where data came from
     };
-    
+
     // Add warning if API was unavailable
     if (apiUnavailable) {
       formattedLaunch._cache.api_unavailable = true;
@@ -2110,9 +2002,9 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
   } = req.body;
 
   if (!name || !launch_date) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Missing required fields: name, launch_date',
-      code: 'VALIDATION_ERROR' 
+      code: 'VALIDATION_ERROR'
     });
   }
 
@@ -2148,11 +2040,11 @@ router.patch('/:id', authenticate, role('admin', 'writer'), asyncHandler(async (
   ];
 
   const updates = Object.keys(req.body).filter(key => allowedFields.includes(key));
-  
+
   if (updates.length === 0) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'No valid fields to update',
-      code: 'VALIDATION_ERROR' 
+      code: 'VALIDATION_ERROR'
     });
   }
 
@@ -2672,7 +2564,7 @@ router.post('/comments/:id/like', authenticate, asyncHandler(async (req, res) =>
 router.get('/:id/related-articles', authenticate, role('admin'), asyncHandler(async (req, res) => {
   const { id } = req.params;
   const launchId = parseInt(id);
-  
+
   if (isNaN(launchId)) {
     return res.status(400).json({ error: 'Invalid launch ID' });
   }
@@ -2707,7 +2599,7 @@ router.post('/:id/related-articles', authenticate, role('admin'), asyncHandler(a
   const { id } = req.params;
   const { article_id, display_order } = req.body;
   const launchId = parseInt(id);
-  
+
   if (isNaN(launchId)) {
     return res.status(400).json({ error: 'Invalid launch ID' });
   }
@@ -2765,7 +2657,7 @@ router.delete('/:id/related-articles/:articleId', authenticate, role('admin'), a
   const { id, articleId } = req.params;
   const launchId = parseInt(id);
   const articleIdNum = parseInt(articleId);
-  
+
   if (isNaN(launchId) || isNaN(articleIdNum)) {
     return res.status(400).json({ error: 'Invalid launch ID or article ID' });
   }
@@ -2791,7 +2683,7 @@ router.put('/:id/related-articles/:articleId', authenticate, role('admin'), asyn
   const { display_order } = req.body;
   const launchId = parseInt(id);
   const articleIdNum = parseInt(articleId);
-  
+
   if (isNaN(launchId) || isNaN(articleIdNum)) {
     return res.status(400).json({ error: 'Invalid launch ID or article ID' });
   }

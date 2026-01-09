@@ -35,8 +35,8 @@ const verbose = args.includes('--verbose');
 const upcomingOnly = args.includes('--upcoming-only');
 const previousOnly = args.includes('--previous-only');
 const rateLimitIndex = args.indexOf('--rate-limit');
-const rateLimit = rateLimitIndex !== -1 && args[rateLimitIndex + 1] 
-  ? parseInt(args[rateLimitIndex + 1]) 
+const rateLimit = rateLimitIndex !== -1 && args[rateLimitIndex + 1]
+  ? parseInt(args[rateLimitIndex + 1])
   : parseInt(process.env.SPACE_DEVS_RATE_LIMIT) || 210; // Default: 210 calls/hour (Advanced Supporter)
 
 // Rate limiting state file
@@ -96,19 +96,19 @@ function canMakeApiCall() {
   const state = loadRateLimitState();
   const now = Date.now();
   const oneHourAgo = now - (60 * 60 * 1000);
-  
+
   // Remove calls older than 1 hour
   state.calls = state.calls.filter(timestamp => timestamp > oneHourAgo);
-  
+
   // Check if we're under the limit
   const canCall = state.calls.length < rateLimit;
-  
+
   if (canCall) {
     // Record this call
     state.calls.push(now);
     saveRateLimitState(state);
   }
-  
+
   return canCall;
 }
 
@@ -119,19 +119,19 @@ function canMakeApiCall() {
 async function waitForRateLimit() {
   let attempts = 0;
   const maxAttempts = 60; // Allow more attempts (1 hour max wait)
-  
+
   while (!canMakeApiCall() && attempts < maxAttempts) {
     attempts++;
     const state = loadRateLimitState();
     const now = Date.now();
     const oneHourAgo = now - (60 * 60 * 1000);
     state.calls = state.calls.filter(timestamp => timestamp > oneHourAgo);
-    
+
     if (state.calls.length >= rateLimit) {
       // Find the oldest call
       const oldestCall = Math.min(...state.calls);
       const waitTime = (oldestCall + (60 * 60 * 1000)) - now + 1000; // Add 1 second buffer
-      
+
       if (waitTime > 0 && waitTime < 3600000) { // Don't wait more than 1 hour
         const waitMinutes = Math.ceil(waitTime / 60000);
         // Only log every 5 attempts to avoid spam
@@ -154,7 +154,7 @@ async function waitForRateLimit() {
       break;
     }
   }
-  
+
   if (attempts >= maxAttempts) {
     // Instead of throwing error, clear stale state and continue
     log(`Rate limit wait exceeded max attempts. Clearing stale state and continuing...`, 'warn');
@@ -191,24 +191,26 @@ function verboseLog(message) {
 async function fetchUpcomingLaunches() {
   log('Fetching upcoming launches from Space Devs API...', 'info');
   const allLaunches = [];
-  
+
   try {
     // Check rate limit before API call
     await waitForRateLimit();
-    
+
     // Fetch first page (most recent launches) - 1 API call per run
     const offset = 0;
-    const limit = 100;
-    
+    // Lower limit to 20 for more efficiency as requested by user
+    // most cron runs will only have a few new/updated launches
+    const limit = 20;
+
     verboseLog(`Fetching upcoming launches (offset: ${offset}, limit: ${limit})...`);
     const response = await spaceDevsApi.fetchUpcomingLaunches({ limit, offset });
     stats.apiCalls++;
-    
+
     if (response.results && Array.isArray(response.results)) {
       allLaunches.push(...response.results);
       log(`Fetched ${response.results.length} upcoming launches`, 'success');
     }
-    
+
     stats.upcoming.fetched = allLaunches.length;
     log(`Total upcoming launches fetched: ${allLaunches.length} (1 API call)`, 'success');
     return allLaunches;
@@ -228,33 +230,33 @@ async function fetchUpcomingLaunches() {
 async function fetchPreviousLaunches() {
   log('Fetching previous launches from Space Devs API...', 'info');
   const allLaunches = [];
-  
+
   try {
     // Check rate limit before API call
     await waitForRateLimit();
-    
+
     // Fetch first page (most recent previous launches) - 1 API call per run
     const offset = 0;
     const limit = 100;
-    
+
     // Only fetch recent previous launches (last 30 days) to avoid too many API calls
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateFilter = thirtyDaysAgo.toISOString().split('T')[0];
-    
+
     verboseLog(`Fetching previous launches (offset: ${offset}, limit: ${limit})...`);
-    const response = await spaceDevsApi.fetchPreviousLaunches({ 
-      limit, 
+    const response = await spaceDevsApi.fetchPreviousLaunches({
+      limit,
       offset,
       net__gte: dateFilter // Only fetch launches from last 30 days
     });
     stats.apiCalls++;
-    
+
     if (response.results && Array.isArray(response.results)) {
       allLaunches.push(...response.results);
       log(`Fetched ${response.results.length} previous launches (1 API call)`, 'success');
     }
-    
+
     stats.previous.fetched = allLaunches.length;
     log(`Total previous launches fetched: ${allLaunches.length} (1 API call)`, 'success');
     return allLaunches;
@@ -274,19 +276,19 @@ async function fetchPreviousLaunches() {
  */
 function isLaunchInNextDays(launchDate) {
   if (!launchDate) return false;
-  
+
   try {
     const launch = new Date(launchDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
-    
+
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(23, 59, 59, 999); // End of tomorrow
-    
+
     const launchDateOnly = new Date(launch);
     launchDateOnly.setHours(0, 0, 0, 0);
-    
+
     return launchDateOnly >= today && launchDateOnly <= tomorrow;
   } catch (error) {
     return false;
@@ -309,14 +311,34 @@ async function syncLaunch(launchData) {
       return true;
     }
 
+    // Efficiency check: Check if launch needs syncing before doing heavy work
+    // This solves the user's concern about "syncing 100 each time"
+    const pool = getPool();
+    const { rows: existingLaunches } = await pool.query(
+      'SELECT id, updated_at, last_updated FROM launches WHERE external_id = $1',
+      [launchData.id]
+    );
+
+    const dbLaunch = existingLaunches[0];
+    const apiLastUpdated = launchData.last_updated;
+
+    if (dbLaunch && apiLastUpdated) {
+      const dbUpdated = dbLaunch.updated_at || dbLaunch.last_updated;
+      if (dbUpdated && new Date(apiLastUpdated) <= new Date(dbUpdated)) {
+        // Skip syncing if database version is already current/newer
+        verboseLog(`Skipping unchanged launch: ${launchData.name || launchData.id} (last_updated: ${apiLastUpdated})`);
+        return true;
+      }
+    }
+
     // Only fetch full launch details for launches in the next 2 days (today and tomorrow)
     // This optimizes API calls - we only need complete data with video URLs for immediate launches
     // For launches further out, list data is sufficient
     const launchDate = launchData.net || launchData.launch_date;
     const shouldFetchDetails = isLaunchInNextDays(launchDate); // Only today and tomorrow
-    
+
     let fullLaunchData = launchData;
-    
+
     if (shouldFetchDetails) {
       // Fetch full details for recent launches (to get video URLs and complete data)
       try {
@@ -379,29 +401,29 @@ async function main() {
 
       if (upcomingLaunches.length > 0) {
         log(`Syncing ${upcomingLaunches.length} upcoming launches...`, 'info');
-        
+
         for (let i = 0; i < upcomingLaunches.length; i++) {
           const launch = upcomingLaunches[i];
           const success = await syncLaunch(launch);
-          
+
           if (success) {
             stats.upcoming.synced++;
           } else {
             stats.upcoming.errors++;
           }
-          
+
           // Small delay between syncs
           if (i < upcomingLaunches.length - 1 && !isDryRun) {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
-          
+
           if ((i + 1) % 10 === 0) {
             log(`Synced ${i + 1}/${upcomingLaunches.length} upcoming launches...`, 'info');
           }
         }
-        
-        log(`Upcoming launches: ${stats.upcoming.synced} synced, ${stats.upcoming.errors} errors`, 
-            stats.upcoming.errors === 0 ? 'success' : 'info');
+
+        log(`Upcoming launches: ${stats.upcoming.synced} synced, ${stats.upcoming.errors} errors`,
+          stats.upcoming.errors === 0 ? 'success' : 'info');
       } else {
         log('No upcoming launches found', 'info');
       }
@@ -416,29 +438,29 @@ async function main() {
 
       if (previousLaunches.length > 0) {
         log(`Syncing ${previousLaunches.length} previous launches...`, 'info');
-        
+
         for (let i = 0; i < previousLaunches.length; i++) {
           const launch = previousLaunches[i];
           const success = await syncLaunch(launch);
-          
+
           if (success) {
             stats.previous.synced++;
           } else {
             stats.previous.errors++;
           }
-          
+
           // Small delay between syncs
           if (i < previousLaunches.length - 1 && !isDryRun) {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
-          
+
           if ((i + 1) % 10 === 0) {
             log(`Synced ${i + 1}/${previousLaunches.length} previous launches...`, 'info');
           }
         }
-        
-        log(`Previous launches: ${stats.previous.synced} synced, ${stats.previous.errors} errors`, 
-            stats.previous.errors === 0 ? 'success' : 'info');
+
+        log(`Previous launches: ${stats.previous.synced} synced, ${stats.previous.errors} errors`,
+          stats.previous.errors === 0 ? 'success' : 'info');
       } else {
         log('No previous launches found', 'info');
       }
@@ -449,17 +471,17 @@ async function main() {
     const duration = Date.now() - stats.startTime;
     const durationSeconds = (duration / 1000).toFixed(1);
     const durationMinutes = (duration / 60000).toFixed(1);
-    
+
     console.log('');
     log('📊 Sync Complete', 'info');
     log(`   API Calls Made: ${stats.apiCalls}/${rateLimit} (rate limit)`, 'info');
     log(`   Upcoming: ${stats.upcoming.fetched} fetched, ${stats.upcoming.synced} synced, ${stats.upcoming.errors} errors`, 'info');
-      if (stats.upcoming.fullDetails > 0 || stats.upcoming.listData > 0) {
-        log(`   Upcoming Details: ${stats.upcoming.fullDetails} full details (next 2 days only), ${stats.upcoming.listData} list data (further out)`, 'info');
-      }
+    if (stats.upcoming.fullDetails > 0 || stats.upcoming.listData > 0) {
+      log(`   Upcoming Details: ${stats.upcoming.fullDetails} full details (next 2 days only), ${stats.upcoming.listData} list data (further out)`, 'info');
+    }
     log(`   Previous: ${stats.previous.fetched} fetched, ${stats.previous.synced} synced, ${stats.previous.errors} errors`, 'info');
     log(`   Duration: ${durationSeconds}s (${durationMinutes} min)`, 'info');
-    
+
     const totalSynced = stats.upcoming.synced + stats.previous.synced;
     if (totalSynced > 0) {
       log(`✅ Successfully synced ${totalSynced} launches`, 'success');

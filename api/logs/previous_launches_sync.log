@@ -5348,3 +5348,1041 @@ Request failed, retrying... (3 retries left)
 [2026-01-09T14:10:17.699Z] ℹ️    Previous: 29 fetched, 29 synced, 0 errors
 [2026-01-09T14:10:17.699Z] ℹ️    Duration: 12.0s (0.2 min)
 [2026-01-09T14:10:17.699Z] ✅ ✅ Successfully synced 29 launches
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[2026-01-09T14:20:01.175Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T14:20:01.182Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T14:20:01.182Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T14:20:01.209Z] ✅ Database connection established
+
+[2026-01-09T14:20:01.209Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T14:20:01.209Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T14:20:08.079Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T14:20:08.080Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T14:20:08.081Z] ℹ️ Syncing 29 previous launches...
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-88
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 48384: No updates to sync (empty array)
+[Sync] Launch 48384: No timeline to sync (empty array)
+[Sync] Launch 48384: No mission patches to sync (empty array)
+[Sync] Launch 48384: No info URLs to sync (empty array)
+[Sync] Launch 48384: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | CSG-3
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31018: No updates to sync (empty array)
+[Sync] Launch 31018: No timeline to sync (empty array)
+[Sync] Launch 31018: No mission patches to sync (empty array)
+[Sync] Launch 31018: No info URLs to sync (empty array)
+[Sync] Launch 31018: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 7A | Shijian 29 A-B
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 39343: No updates to sync (empty array)
+[Sync] Launch 39343: No timeline to sync (empty array)
+[Sync] Launch 39343: No mission patches to sync (empty array)
+[Sync] Launch 39343: No info URLs to sync (empty array)
+[Sync] Launch 39343: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 4B | Tianhui 7
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 39342: No updates to sync (empty array)
+[Sync] Launch 39342: No timeline to sync (empty array)
+[Sync] Launch 39342: No mission patches to sync (empty array)
+[Sync] Launch 39342: No info URLs to sync (empty array)
+[Sync] Launch 39342: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Soyuz 2.1b/Fregat-M | AIST-2T 01 & 02
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1768: No updates to sync (empty array)
+[Sync] Launch 1768: No timeline to sync (empty array)
+[Sync] Launch 1768: No mission patches to sync (empty array)
+[Sync] Launch 1768: No info URLs to sync (empty array)
+[Sync] Launch 1768: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 3B/E | Fengyun-4C
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1813: No updates to sync (empty array)
+[Sync] Launch 1813: No timeline to sync (empty array)
+[Sync] Launch 1813: No mission patches to sync (empty array)
+[Sync] Launch 1813: No info URLs to sync (empty array)
+[Sync] Launch 1813: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 8A | SatNet LEO Group 17
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31428: No updates to sync (empty array)
+[Sync] Launch 31428: No timeline to sync (empty array)
+[Sync] Launch 31428: No mission patches to sync (empty array)
+[Sync] Launch 31428: No info URLs to sync (empty array)
+[Sync] Launch 31428: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Soyuz 2.1a | Obzor-R No.1
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1776: No updates to sync (empty array)
+[Sync] Launch 1776: No timeline to sync (empty array)
+[Sync] Launch 1776: No mission patches to sync (empty array)
+[Sync] Launch 1776: No info URLs to sync (empty array)
+[Sync] Launch 1776: No video URLs to sync (empty array)
+[Mapper] Mapping launch: LVM-3 | BlueBird Block 2 #1
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1773: No updates to sync (empty array)
+[Sync] Launch 1773: No timeline to sync (empty array)
+[Sync] Launch 1773: No mission patches to sync (empty array)
+[Sync] Launch 1773: No info URLs to sync (empty array)
+[Sync] Launch 1773: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 12A | Demo Flight
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31425: No updates to sync (empty array)
+[Sync] Launch 31425: No timeline to sync (empty array)
+[Sync] Launch 31425: No mission patches to sync (empty array)
+[Sync] Launch 31425: No info URLs to sync (empty array)
+[Sync] Launch 31425: No video URLs to sync (empty array)
+[2026-01-09T14:20:09.393Z] ℹ️ Synced 10/29 previous launches...
+[Mapper] Mapping launch: HANBIT-Nano | Spaceward
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31424: No updates to sync (empty array)
+[Sync] Launch 31424: No timeline to sync (empty array)
+[Sync] Launch 31424: No mission patches to sync (empty array)
+[Sync] Launch 31424: No info URLs to sync (empty array)
+[Sync] Launch 31424: No video URLs to sync (empty array)
+[Mapper] Mapping launch: H3-22 | Michibiki 5 (QZS-5)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31423: No updates to sync (empty array)
+[Sync] Launch 31423: No timeline to sync (empty array)
+[Sync] Launch 31423: No mission patches to sync (empty array)
+[Sync] Launch 31423: No info URLs to sync (empty array)
+[Sync] Launch 31423: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | The Wisdom God Guides (iQPS Launch 6)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31422: No updates to sync (empty array)
+[Sync] Launch 31422: No timeline to sync (empty array)
+[Sync] Launch 31422: No mission patches to sync (empty array)
+[Sync] Launch 31422: No info URLs to sync (empty array)
+[Sync] Launch 31422: No video URLs to sync (empty array)
+[Mapper] Mapping launch: New Shepard | NS-37
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1761: No updates to sync (empty array)
+[Sync] Launch 1761: No timeline to sync (empty array)
+[Sync] Launch 1761: No mission patches to sync (empty array)
+[Sync] Launch 1761: No info URLs to sync (empty array)
+[Sync] Launch 1761: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 5 | TJSW-23
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31420: No updates to sync (empty array)
+[Sync] Launch 31420: No timeline to sync (empty array)
+[Sync] Launch 31420: No mission patches to sync (empty array)
+[Sync] Launch 31420: No info URLs to sync (empty array)
+[Sync] Launch 31420: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | Don't Be Such A Square (STP-S30)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1764: No updates to sync (empty array)
+[Sync] Launch 1764: No timeline to sync (empty array)
+[Sync] Launch 1764: No mission patches to sync (empty array)
+[Sync] Launch 1764: No info URLs to sync (empty array)
+[Sync] Launch 1764: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-13
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31418: No updates to sync (empty array)
+[Sync] Launch 31418: No timeline to sync (empty array)
+[Sync] Launch 31418: No mission patches to sync (empty array)
+[Sync] Launch 31418: No info URLs to sync (empty array)
+[Sync] Launch 31418: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-99
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31417: No updates to sync (empty array)
+[Sync] Launch 31417: No timeline to sync (empty array)
+[Sync] Launch 31417: No mission patches to sync (empty array)
+[Sync] Launch 31417: No info URLs to sync (empty array)
+[Sync] Launch 31417: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Ariane 62 | Galileo L14 (FOC FM33 & FM34)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1769: No updates to sync (empty array)
+[Sync] Launch 1769: No timeline to sync (empty array)
+[Sync] Launch 1769: No mission patches to sync (empty array)
+[Sync] Launch 1769: No info URLs to sync (empty array)
+[Sync] Launch 1769: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Atlas V 551 | Amazon Leo (LA-04)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1786: No updates to sync (empty array)
+[Sync] Launch 1786: No timeline to sync (empty array)
+[Sync] Launch 1786: No mission patches to sync (empty array)
+[Sync] Launch 1786: No info URLs to sync (empty array)
+[Sync] Launch 1786: No video URLs to sync (empty array)
+[2026-01-09T14:20:10.614Z] ℹ️ Synced 20/29 previous launches...
+[Mapper] Mapping launch: Long March 4B | Ziyuan-3-04
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31414: No updates to sync (empty array)
+[Sync] Launch 31414: No timeline to sync (empty array)
+[Sync] Launch 31414: No mission patches to sync (empty array)
+[Sync] Launch 31414: No info URLs to sync (empty array)
+[Sync] Launch 31414: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-82
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31413: No updates to sync (empty array)
+[Sync] Launch 31413: No timeline to sync (empty array)
+[Sync] Launch 31413: No mission patches to sync (empty array)
+[Sync] Launch 31413: No info URLs to sync (empty array)
+[Sync] Launch 31413: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-12
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31412: No updates to sync (empty array)
+[Sync] Launch 31412: No timeline to sync (empty array)
+[Sync] Launch 31412: No mission patches to sync (empty array)
+[Sync] Launch 31412: No info URLs to sync (empty array)
+[Sync] Launch 31412: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | Raise and Shine (RAISE-4)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1771: No updates to sync (empty array)
+[Sync] Launch 1771: No timeline to sync (empty array)
+[Sync] Launch 1771: No mission patches to sync (empty array)
+[Sync] Launch 1771: No info URLs to sync (empty array)
+[Sync] Launch 1771: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Kuaizhou 11 | DEAR-5
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31410: No updates to sync (empty array)
+[Sync] Launch 31410: No timeline to sync (empty array)
+[Sync] Launch 31410: No mission patches to sync (empty array)
+[Sync] Launch 31410: No info URLs to sync (empty array)
+[Sync] Launch 31410: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 12 | SatNet LEO Group 16
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31409: No updates to sync (empty array)
+[Sync] Launch 31409: No timeline to sync (empty array)
+[Sync] Launch 31409: No mission patches to sync (empty array)
+[Sync] Launch 31409: No info URLs to sync (empty array)
+[Sync] Launch 31409: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-90
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31408: No updates to sync (empty array)
+[Sync] Launch 31408: No timeline to sync (empty array)
+[Sync] Launch 31408: No mission patches to sync (empty array)
+[Sync] Launch 31408: No info URLs to sync (empty array)
+[Sync] Launch 31408: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-11
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31407: No updates to sync (empty array)
+[Sync] Launch 31407: No timeline to sync (empty array)
+[Sync] Launch 31407: No mission patches to sync (empty array)
+[Sync] Launch 31407: No info URLs to sync (empty array)
+[Sync] Launch 31407: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Kinetica 1 | 9 satellites
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31406: No updates to sync (empty array)
+[Sync] Launch 31406: No timeline to sync (empty array)
+[Sync] Launch 31406: No mission patches to sync (empty array)
+[Sync] Launch 31406: No info URLs to sync (empty array)
+[Sync] Launch 31406: No video URLs to sync (empty array)
+[2026-01-09T14:20:11.590Z] ✅ Previous launches: 29 synced, 0 errors
+
+
+[2026-01-09T14:20:11.590Z] ℹ️ 📊 Sync Complete
+[2026-01-09T14:20:11.590Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T14:20:11.590Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T14:20:11.590Z] ℹ️    Upcoming Details: 0 full details (next 2 days only), 29 list data (further out)
+[2026-01-09T14:20:11.590Z] ℹ️    Previous: 29 fetched, 29 synced, 0 errors
+[2026-01-09T14:20:11.591Z] ℹ️    Duration: 10.4s (0.2 min)
+[2026-01-09T14:20:11.591Z] ✅ ✅ Successfully synced 29 launches
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[2026-01-09T14:30:02.621Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T14:30:02.644Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T14:30:02.644Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T14:30:02.718Z] ✅ Database connection established
+
+[2026-01-09T14:30:02.718Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T14:30:02.719Z] ℹ️ Fetching previous launches from Space Devs API...
+Error fetching previous launches from Space Devs API: API request failed with status 429: {"detail":"Request was throttled. Expected available in 14 seconds."}
+[2026-01-09T14:30:05.855Z] ❌ Error fetching previous launches: API request failed with status 429: {"detail":"Request was throttled. Expected available in 14 seconds."}
+
+[2026-01-09T14:30:05.856Z] ℹ️ No previous launches found
+
+
+[2026-01-09T14:30:05.856Z] ℹ️ 📊 Sync Complete
+[2026-01-09T14:30:05.856Z] ℹ️    API Calls Made: 0/210 (rate limit)
+[2026-01-09T14:30:05.856Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T14:30:05.856Z] ℹ️    Previous: 0 fetched, 0 synced, 0 errors
+[2026-01-09T14:30:05.856Z] ℹ️    Duration: 3.2s (0.1 min)
+[2026-01-09T14:30:05.856Z] ✅ ✅ Database is up to date
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[2026-01-09T14:40:00.918Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T14:40:00.931Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T14:40:00.931Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T14:40:00.962Z] ✅ Database connection established
+
+[2026-01-09T14:40:00.962Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T14:40:00.963Z] ℹ️ Fetching previous launches from Space Devs API...
+Error fetching previous launches from Space Devs API: API request failed with status 429: {"detail":"Request was throttled. Expected available in 1 second."}
+[2026-01-09T14:40:02.174Z] ❌ Error fetching previous launches: API request failed with status 429: {"detail":"Request was throttled. Expected available in 1 second."}
+
+[2026-01-09T14:40:02.175Z] ℹ️ No previous launches found
+
+
+[2026-01-09T14:40:02.176Z] ℹ️ 📊 Sync Complete
+[2026-01-09T14:40:02.176Z] ℹ️    API Calls Made: 0/210 (rate limit)
+[2026-01-09T14:40:02.176Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T14:40:02.176Z] ℹ️    Previous: 0 fetched, 0 synced, 0 errors
+[2026-01-09T14:40:02.176Z] ℹ️    Duration: 1.3s (0.0 min)
+[2026-01-09T14:40:02.176Z] ✅ ✅ Database is up to date
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[2026-01-09T14:50:00.646Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T14:50:00.650Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T14:50:00.650Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T14:50:00.677Z] ✅ Database connection established
+
+[2026-01-09T14:50:00.677Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T14:50:00.678Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T14:50:06.950Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T14:50:06.951Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T14:50:06.952Z] ℹ️ Syncing 29 previous launches...
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-88
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 48384: No updates to sync (empty array)
+[Sync] Launch 48384: No timeline to sync (empty array)
+[Sync] Launch 48384: No mission patches to sync (empty array)
+[Sync] Launch 48384: No info URLs to sync (empty array)
+[Sync] Launch 48384: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | CSG-3
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31018: No updates to sync (empty array)
+[Sync] Launch 31018: No timeline to sync (empty array)
+[Sync] Launch 31018: No mission patches to sync (empty array)
+[Sync] Launch 31018: No info URLs to sync (empty array)
+[Sync] Launch 31018: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 7A | Shijian 29 A-B
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 39343: No updates to sync (empty array)
+[Sync] Launch 39343: No timeline to sync (empty array)
+[Sync] Launch 39343: No mission patches to sync (empty array)
+[Sync] Launch 39343: No info URLs to sync (empty array)
+[Sync] Launch 39343: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 4B | Tianhui 7
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 39342: No updates to sync (empty array)
+[Sync] Launch 39342: No timeline to sync (empty array)
+[Sync] Launch 39342: No mission patches to sync (empty array)
+[Sync] Launch 39342: No info URLs to sync (empty array)
+[Sync] Launch 39342: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Soyuz 2.1b/Fregat-M | AIST-2T 01 & 02
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1768: No updates to sync (empty array)
+[Sync] Launch 1768: No timeline to sync (empty array)
+[Sync] Launch 1768: No mission patches to sync (empty array)
+[Sync] Launch 1768: No info URLs to sync (empty array)
+[Sync] Launch 1768: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 3B/E | Fengyun-4C
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1813: No updates to sync (empty array)
+[Sync] Launch 1813: No timeline to sync (empty array)
+[Sync] Launch 1813: No mission patches to sync (empty array)
+[Sync] Launch 1813: No info URLs to sync (empty array)
+[Sync] Launch 1813: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 8A | SatNet LEO Group 17
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31428: No updates to sync (empty array)
+[Sync] Launch 31428: No timeline to sync (empty array)
+[Sync] Launch 31428: No mission patches to sync (empty array)
+[Sync] Launch 31428: No info URLs to sync (empty array)
+[Sync] Launch 31428: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Soyuz 2.1a | Obzor-R No.1
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1776: No updates to sync (empty array)
+[Sync] Launch 1776: No timeline to sync (empty array)
+[Sync] Launch 1776: No mission patches to sync (empty array)
+[Sync] Launch 1776: No info URLs to sync (empty array)
+[Sync] Launch 1776: No video URLs to sync (empty array)
+[Mapper] Mapping launch: LVM-3 | BlueBird Block 2 #1
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1773: No updates to sync (empty array)
+[Sync] Launch 1773: No timeline to sync (empty array)
+[Sync] Launch 1773: No mission patches to sync (empty array)
+[Sync] Launch 1773: No info URLs to sync (empty array)
+[Sync] Launch 1773: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 12A | Demo Flight
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31425: No updates to sync (empty array)
+[Sync] Launch 31425: No timeline to sync (empty array)
+[Sync] Launch 31425: No mission patches to sync (empty array)
+[Sync] Launch 31425: No info URLs to sync (empty array)
+[Sync] Launch 31425: No video URLs to sync (empty array)
+[2026-01-09T14:50:08.200Z] ℹ️ Synced 10/29 previous launches...
+[Mapper] Mapping launch: HANBIT-Nano | Spaceward
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31424: No updates to sync (empty array)
+[Sync] Launch 31424: No timeline to sync (empty array)
+[Sync] Launch 31424: No mission patches to sync (empty array)
+[Sync] Launch 31424: No info URLs to sync (empty array)
+[Sync] Launch 31424: No video URLs to sync (empty array)
+[Mapper] Mapping launch: H3-22 | Michibiki 5 (QZS-5)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31423: No updates to sync (empty array)
+[Sync] Launch 31423: No timeline to sync (empty array)
+[Sync] Launch 31423: No mission patches to sync (empty array)
+[Sync] Launch 31423: No info URLs to sync (empty array)
+[Sync] Launch 31423: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | The Wisdom God Guides (iQPS Launch 6)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31422: No updates to sync (empty array)
+[Sync] Launch 31422: No timeline to sync (empty array)
+[Sync] Launch 31422: No mission patches to sync (empty array)
+[Sync] Launch 31422: No info URLs to sync (empty array)
+[Sync] Launch 31422: No video URLs to sync (empty array)
+[Mapper] Mapping launch: New Shepard | NS-37
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1761: No updates to sync (empty array)
+[Sync] Launch 1761: No timeline to sync (empty array)
+[Sync] Launch 1761: No mission patches to sync (empty array)
+[Sync] Launch 1761: No info URLs to sync (empty array)
+[Sync] Launch 1761: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 5 | TJSW-23
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31420: No updates to sync (empty array)
+[Sync] Launch 31420: No timeline to sync (empty array)
+[Sync] Launch 31420: No mission patches to sync (empty array)
+[Sync] Launch 31420: No info URLs to sync (empty array)
+[Sync] Launch 31420: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | Don't Be Such A Square (STP-S30)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1764: No updates to sync (empty array)
+[Sync] Launch 1764: No timeline to sync (empty array)
+[Sync] Launch 1764: No mission patches to sync (empty array)
+[Sync] Launch 1764: No info URLs to sync (empty array)
+[Sync] Launch 1764: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-13
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31418: No updates to sync (empty array)
+[Sync] Launch 31418: No timeline to sync (empty array)
+[Sync] Launch 31418: No mission patches to sync (empty array)
+[Sync] Launch 31418: No info URLs to sync (empty array)
+[Sync] Launch 31418: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-99
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31417: No updates to sync (empty array)
+[Sync] Launch 31417: No timeline to sync (empty array)
+[Sync] Launch 31417: No mission patches to sync (empty array)
+[Sync] Launch 31417: No info URLs to sync (empty array)
+[Sync] Launch 31417: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Ariane 62 | Galileo L14 (FOC FM33 & FM34)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1769: No updates to sync (empty array)
+[Sync] Launch 1769: No timeline to sync (empty array)
+[Sync] Launch 1769: No mission patches to sync (empty array)
+[Sync] Launch 1769: No info URLs to sync (empty array)
+[Sync] Launch 1769: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Atlas V 551 | Amazon Leo (LA-04)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1786: No updates to sync (empty array)
+[Sync] Launch 1786: No timeline to sync (empty array)
+[Sync] Launch 1786: No mission patches to sync (empty array)
+[Sync] Launch 1786: No info URLs to sync (empty array)
+[Sync] Launch 1786: No video URLs to sync (empty array)
+[2026-01-09T14:50:09.405Z] ℹ️ Synced 20/29 previous launches...
+[Mapper] Mapping launch: Long March 4B | Ziyuan-3-04
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31414: No updates to sync (empty array)
+[Sync] Launch 31414: No timeline to sync (empty array)
+[Sync] Launch 31414: No mission patches to sync (empty array)
+[Sync] Launch 31414: No info URLs to sync (empty array)
+[Sync] Launch 31414: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-82
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31413: No updates to sync (empty array)
+[Sync] Launch 31413: No timeline to sync (empty array)
+[Sync] Launch 31413: No mission patches to sync (empty array)
+[Sync] Launch 31413: No info URLs to sync (empty array)
+[Sync] Launch 31413: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-12
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31412: No updates to sync (empty array)
+[Sync] Launch 31412: No timeline to sync (empty array)
+[Sync] Launch 31412: No mission patches to sync (empty array)
+[Sync] Launch 31412: No info URLs to sync (empty array)
+[Sync] Launch 31412: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | Raise and Shine (RAISE-4)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1771: No updates to sync (empty array)
+[Sync] Launch 1771: No timeline to sync (empty array)
+[Sync] Launch 1771: No mission patches to sync (empty array)
+[Sync] Launch 1771: No info URLs to sync (empty array)
+[Sync] Launch 1771: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Kuaizhou 11 | DEAR-5
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31410: No updates to sync (empty array)
+[Sync] Launch 31410: No timeline to sync (empty array)
+[Sync] Launch 31410: No mission patches to sync (empty array)
+[Sync] Launch 31410: No info URLs to sync (empty array)
+[Sync] Launch 31410: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 12 | SatNet LEO Group 16
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31409: No updates to sync (empty array)
+[Sync] Launch 31409: No timeline to sync (empty array)
+[Sync] Launch 31409: No mission patches to sync (empty array)
+[Sync] Launch 31409: No info URLs to sync (empty array)
+[Sync] Launch 31409: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-90
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31408: No updates to sync (empty array)
+[Sync] Launch 31408: No timeline to sync (empty array)
+[Sync] Launch 31408: No mission patches to sync (empty array)
+[Sync] Launch 31408: No info URLs to sync (empty array)
+[Sync] Launch 31408: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-11
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31407: No updates to sync (empty array)
+[Sync] Launch 31407: No timeline to sync (empty array)
+[Sync] Launch 31407: No mission patches to sync (empty array)
+[Sync] Launch 31407: No info URLs to sync (empty array)
+[Sync] Launch 31407: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Kinetica 1 | 9 satellites
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31406: No updates to sync (empty array)
+[Sync] Launch 31406: No timeline to sync (empty array)
+[Sync] Launch 31406: No mission patches to sync (empty array)
+[Sync] Launch 31406: No info URLs to sync (empty array)
+[Sync] Launch 31406: No video URLs to sync (empty array)
+[2026-01-09T14:50:10.369Z] ✅ Previous launches: 29 synced, 0 errors
+
+
+[2026-01-09T14:50:10.370Z] ℹ️ 📊 Sync Complete
+[2026-01-09T14:50:10.370Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T14:50:10.370Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T14:50:10.370Z] ℹ️    Upcoming Details: 0 full details (next 2 days only), 29 list data (further out)
+[2026-01-09T14:50:10.370Z] ℹ️    Previous: 29 fetched, 29 synced, 0 errors
+[2026-01-09T14:50:10.370Z] ℹ️    Duration: 9.7s (0.2 min)
+[2026-01-09T14:50:10.370Z] ✅ ✅ Successfully synced 29 launches
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[2026-01-09T15:00:01.343Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T15:00:01.356Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T15:00:01.356Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T15:00:01.388Z] ✅ Database connection established
+
+[2026-01-09T15:00:01.388Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T15:00:01.388Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T15:00:12.028Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T15:00:12.029Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T15:00:12.029Z] ℹ️ Syncing 29 previous launches...
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-88
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 48384: No updates to sync (empty array)
+[Sync] Launch 48384: No timeline to sync (empty array)
+[Sync] Launch 48384: No mission patches to sync (empty array)
+[Sync] Launch 48384: No info URLs to sync (empty array)
+[Sync] Launch 48384: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | CSG-3
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31018: No updates to sync (empty array)
+[Sync] Launch 31018: No timeline to sync (empty array)
+[Sync] Launch 31018: No mission patches to sync (empty array)
+[Sync] Launch 31018: No info URLs to sync (empty array)
+[Sync] Launch 31018: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 7A | Shijian 29 A-B
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 39343: No updates to sync (empty array)
+[Sync] Launch 39343: No timeline to sync (empty array)
+[Sync] Launch 39343: No mission patches to sync (empty array)
+[Sync] Launch 39343: No info URLs to sync (empty array)
+[Sync] Launch 39343: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 4B | Tianhui 7
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 39342: No updates to sync (empty array)
+[Sync] Launch 39342: No timeline to sync (empty array)
+[Sync] Launch 39342: No mission patches to sync (empty array)
+[Sync] Launch 39342: No info URLs to sync (empty array)
+[Sync] Launch 39342: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Soyuz 2.1b/Fregat-M | AIST-2T 01 & 02
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1768: No updates to sync (empty array)
+[Sync] Launch 1768: No timeline to sync (empty array)
+[Sync] Launch 1768: No mission patches to sync (empty array)
+[Sync] Launch 1768: No info URLs to sync (empty array)
+[Sync] Launch 1768: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 3B/E | Fengyun-4C
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1813: No updates to sync (empty array)
+[Sync] Launch 1813: No timeline to sync (empty array)
+[Sync] Launch 1813: No mission patches to sync (empty array)
+[Sync] Launch 1813: No info URLs to sync (empty array)
+[Sync] Launch 1813: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 8A | SatNet LEO Group 17
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31428: No updates to sync (empty array)
+[Sync] Launch 31428: No timeline to sync (empty array)
+[Sync] Launch 31428: No mission patches to sync (empty array)
+[Sync] Launch 31428: No info URLs to sync (empty array)
+[Sync] Launch 31428: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Soyuz 2.1a | Obzor-R No.1
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1776: No updates to sync (empty array)
+[Sync] Launch 1776: No timeline to sync (empty array)
+[Sync] Launch 1776: No mission patches to sync (empty array)
+[Sync] Launch 1776: No info URLs to sync (empty array)
+[Sync] Launch 1776: No video URLs to sync (empty array)
+[Mapper] Mapping launch: LVM-3 | BlueBird Block 2 #1
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1773: No updates to sync (empty array)
+[Sync] Launch 1773: No timeline to sync (empty array)
+[Sync] Launch 1773: No mission patches to sync (empty array)
+[Sync] Launch 1773: No info URLs to sync (empty array)
+[Sync] Launch 1773: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 12A | Demo Flight
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31425: No updates to sync (empty array)
+[Sync] Launch 31425: No timeline to sync (empty array)
+[Sync] Launch 31425: No mission patches to sync (empty array)
+[Sync] Launch 31425: No info URLs to sync (empty array)
+[Sync] Launch 31425: No video URLs to sync (empty array)
+[2026-01-09T15:00:13.240Z] ℹ️ Synced 10/29 previous launches...
+[Mapper] Mapping launch: HANBIT-Nano | Spaceward
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31424: No updates to sync (empty array)
+[Sync] Launch 31424: No timeline to sync (empty array)
+[Sync] Launch 31424: No mission patches to sync (empty array)
+[Sync] Launch 31424: No info URLs to sync (empty array)
+[Sync] Launch 31424: No video URLs to sync (empty array)
+[Mapper] Mapping launch: H3-22 | Michibiki 5 (QZS-5)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31423: No updates to sync (empty array)
+[Sync] Launch 31423: No timeline to sync (empty array)
+[Sync] Launch 31423: No mission patches to sync (empty array)
+[Sync] Launch 31423: No info URLs to sync (empty array)
+[Sync] Launch 31423: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | The Wisdom God Guides (iQPS Launch 6)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31422: No updates to sync (empty array)
+[Sync] Launch 31422: No timeline to sync (empty array)
+[Sync] Launch 31422: No mission patches to sync (empty array)
+[Sync] Launch 31422: No info URLs to sync (empty array)
+[Sync] Launch 31422: No video URLs to sync (empty array)
+[Mapper] Mapping launch: New Shepard | NS-37
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1761: No updates to sync (empty array)
+[Sync] Launch 1761: No timeline to sync (empty array)
+[Sync] Launch 1761: No mission patches to sync (empty array)
+[Sync] Launch 1761: No info URLs to sync (empty array)
+[Sync] Launch 1761: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 5 | TJSW-23
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31420: No updates to sync (empty array)
+[Sync] Launch 31420: No timeline to sync (empty array)
+[Sync] Launch 31420: No mission patches to sync (empty array)
+[Sync] Launch 31420: No info URLs to sync (empty array)
+[Sync] Launch 31420: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | Don't Be Such A Square (STP-S30)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1764: No updates to sync (empty array)
+[Sync] Launch 1764: No timeline to sync (empty array)
+[Sync] Launch 1764: No mission patches to sync (empty array)
+[Sync] Launch 1764: No info URLs to sync (empty array)
+[Sync] Launch 1764: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-13
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31418: No updates to sync (empty array)
+[Sync] Launch 31418: No timeline to sync (empty array)
+[Sync] Launch 31418: No mission patches to sync (empty array)
+[Sync] Launch 31418: No info URLs to sync (empty array)
+[Sync] Launch 31418: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-99
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31417: No updates to sync (empty array)
+[Sync] Launch 31417: No timeline to sync (empty array)
+[Sync] Launch 31417: No mission patches to sync (empty array)
+[Sync] Launch 31417: No info URLs to sync (empty array)
+[Sync] Launch 31417: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Ariane 62 | Galileo L14 (FOC FM33 & FM34)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1769: No updates to sync (empty array)
+[Sync] Launch 1769: No timeline to sync (empty array)
+[Sync] Launch 1769: No mission patches to sync (empty array)
+[Sync] Launch 1769: No info URLs to sync (empty array)
+[Sync] Launch 1769: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Atlas V 551 | Amazon Leo (LA-04)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1786: No updates to sync (empty array)
+[Sync] Launch 1786: No timeline to sync (empty array)
+[Sync] Launch 1786: No mission patches to sync (empty array)
+[Sync] Launch 1786: No info URLs to sync (empty array)
+[Sync] Launch 1786: No video URLs to sync (empty array)
+[2026-01-09T15:00:14.405Z] ℹ️ Synced 20/29 previous launches...
+[Mapper] Mapping launch: Long March 4B | Ziyuan-3-04
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31414: No updates to sync (empty array)
+[Sync] Launch 31414: No timeline to sync (empty array)
+[Sync] Launch 31414: No mission patches to sync (empty array)
+[Sync] Launch 31414: No info URLs to sync (empty array)
+[Sync] Launch 31414: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-82
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31413: No updates to sync (empty array)
+[Sync] Launch 31413: No timeline to sync (empty array)
+[Sync] Launch 31413: No mission patches to sync (empty array)
+[Sync] Launch 31413: No info URLs to sync (empty array)
+[Sync] Launch 31413: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-12
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31412: No updates to sync (empty array)
+[Sync] Launch 31412: No timeline to sync (empty array)
+[Sync] Launch 31412: No mission patches to sync (empty array)
+[Sync] Launch 31412: No info URLs to sync (empty array)
+[Sync] Launch 31412: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Electron | Raise and Shine (RAISE-4)
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 1771: No updates to sync (empty array)
+[Sync] Launch 1771: No timeline to sync (empty array)
+[Sync] Launch 1771: No mission patches to sync (empty array)
+[Sync] Launch 1771: No info URLs to sync (empty array)
+[Sync] Launch 1771: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Kuaizhou 11 | DEAR-5
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31410: No updates to sync (empty array)
+[Sync] Launch 31410: No timeline to sync (empty array)
+[Sync] Launch 31410: No mission patches to sync (empty array)
+[Sync] Launch 31410: No info URLs to sync (empty array)
+[Sync] Launch 31410: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Long March 12 | SatNet LEO Group 16
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31409: No updates to sync (empty array)
+[Sync] Launch 31409: No timeline to sync (empty array)
+[Sync] Launch 31409: No mission patches to sync (empty array)
+[Sync] Launch 31409: No info URLs to sync (empty array)
+[Sync] Launch 31409: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 6-90
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31408: No updates to sync (empty array)
+[Sync] Launch 31408: No timeline to sync (empty array)
+[Sync] Launch 31408: No mission patches to sync (empty array)
+[Sync] Launch 31408: No info URLs to sync (empty array)
+[Sync] Launch 31408: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Falcon 9 Block 5 | Starlink Group 15-11
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31407: No updates to sync (empty array)
+[Sync] Launch 31407: No timeline to sync (empty array)
+[Sync] Launch 31407: No mission patches to sync (empty array)
+[Sync] Launch 31407: No info URLs to sync (empty array)
+[Sync] Launch 31407: No video URLs to sync (empty array)
+[Mapper] Mapping launch: Kinetica 1 | 9 satellites
+[Mapper] Array fields - Updates: 0, Timeline: 0, Mission Patches: 0, Info URLs: 0, Vid URLs: 0
+[Sync] Launch 31406: No updates to sync (empty array)
+[Sync] Launch 31406: No timeline to sync (empty array)
+[Sync] Launch 31406: No mission patches to sync (empty array)
+[Sync] Launch 31406: No info URLs to sync (empty array)
+[Sync] Launch 31406: No video URLs to sync (empty array)
+[2026-01-09T15:00:15.357Z] ✅ Previous launches: 29 synced, 0 errors
+
+
+[2026-01-09T15:00:15.357Z] ℹ️ 📊 Sync Complete
+[2026-01-09T15:00:15.357Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T15:00:15.357Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T15:00:15.357Z] ℹ️    Upcoming Details: 0 full details (next 2 days only), 29 list data (further out)
+[2026-01-09T15:00:15.357Z] ℹ️    Previous: 29 fetched, 29 synced, 0 errors
+[2026-01-09T15:00:15.357Z] ℹ️    Duration: 14.0s (0.2 min)
+[2026-01-09T15:00:15.357Z] ✅ ✅ Successfully synced 29 launches
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[2026-01-09T15:10:03.198Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T15:10:03.201Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T15:10:03.201Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T15:10:03.253Z] ✅ Database connection established
+
+[2026-01-09T15:10:03.253Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T15:10:03.254Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T15:10:11.339Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T15:10:11.339Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T15:10:11.340Z] ℹ️ Syncing 29 previous launches...
+[2026-01-09T15:10:11.348Z] ❌ Error syncing launch ae315ab0-ecda-4c54-99c6-0a8818f55b0d: column "last_updated" does not exist
+[2026-01-09T15:10:11.457Z] ❌ Error syncing launch 63ddb2d1-8369-4681-8a50-e95819150382: column "last_updated" does not exist
+[2026-01-09T15:10:11.566Z] ❌ Error syncing launch fb6d9dd6-2087-40b7-b3ca-c807b5b2be43: column "last_updated" does not exist
+[2026-01-09T15:10:11.675Z] ❌ Error syncing launch 53aad862-af92-44b5-91ef-70e92a079ba4: column "last_updated" does not exist
+[2026-01-09T15:10:11.786Z] ❌ Error syncing launch 43cfdc96-8481-446f-ace5-ddc5ed60fb14: column "last_updated" does not exist
+[2026-01-09T15:10:11.895Z] ❌ Error syncing launch 9d69b85a-940d-4c1a-be75-6449d3b2a836: column "last_updated" does not exist
+[2026-01-09T15:10:12.004Z] ❌ Error syncing launch f4909efe-4764-43fa-9e4a-07e479af1ba7: column "last_updated" does not exist
+[2026-01-09T15:10:12.114Z] ❌ Error syncing launch 7b60de1e-7d8a-4213-a2f5-44a01ae21e28: column "last_updated" does not exist
+[2026-01-09T15:10:12.224Z] ❌ Error syncing launch 1c040590-5157-4850-86e2-f878dd7d49d4: column "last_updated" does not exist
+[2026-01-09T15:10:12.330Z] ❌ Error syncing launch c7ae20f6-347c-4039-a933-0ed9b28ad4b9: column "last_updated" does not exist
+[2026-01-09T15:10:12.432Z] ℹ️ Synced 10/29 previous launches...
+[2026-01-09T15:10:12.467Z] ❌ Error syncing launch a81fcb21-ed57-47ef-ab57-33ddd9c6ffcd: column "last_updated" does not exist
+[2026-01-09T15:10:12.575Z] ❌ Error syncing launch dc1b1aea-7a5f-4b39-9df5-1fd38dd670cf: column "last_updated" does not exist
+[2026-01-09T15:10:12.683Z] ❌ Error syncing launch 1e562a6b-f1eb-4c9c-a074-4172c831ed70: column "last_updated" does not exist
+[2026-01-09T15:10:12.791Z] ❌ Error syncing launch 9936c9c4-faff-4e67-9adb-c8c147239d57: column "last_updated" does not exist
+[2026-01-09T15:10:12.899Z] ❌ Error syncing launch 3eb3a9c4-65b8-49fa-afb3-8eee0c3ddfd2: column "last_updated" does not exist
+[2026-01-09T15:10:13.007Z] ❌ Error syncing launch 4a0681be-ed20-40b9-870b-38de1583c0ef: column "last_updated" does not exist
+[2026-01-09T15:10:13.116Z] ❌ Error syncing launch 0b5da6e2-9141-427b-ab22-bcdd3ca6520a: column "last_updated" does not exist
+[2026-01-09T15:10:13.223Z] ❌ Error syncing launch 9d12fbac-53de-4517-9191-4697fbc07dd2: column "last_updated" does not exist
+[2026-01-09T15:10:13.330Z] ❌ Error syncing launch 8e7d57b1-b5c0-4d0d-a575-fe23606bdeee: column "last_updated" does not exist
+[2026-01-09T15:10:13.438Z] ❌ Error syncing launch 0dcbd5ee-2728-4c79-8dc5-051ea11b888f: column "last_updated" does not exist
+[2026-01-09T15:10:13.539Z] ℹ️ Synced 20/29 previous launches...
+[2026-01-09T15:10:13.547Z] ❌ Error syncing launch 4be383b3-3997-4bd9-822b-33d9ca83a8fc: column "last_updated" does not exist
+[2026-01-09T15:10:13.658Z] ❌ Error syncing launch 49e52470-1dd4-45a9-b549-cfb417031823: column "last_updated" does not exist
+[2026-01-09T15:10:13.766Z] ❌ Error syncing launch faf4a0bc-7dad-4842-b74c-73a9f648b5cc: column "last_updated" does not exist
+[2026-01-09T15:10:13.873Z] ❌ Error syncing launch de6db617-3d40-414a-86d6-f365b130df30: column "last_updated" does not exist
+[2026-01-09T15:10:13.983Z] ❌ Error syncing launch 9599500a-7c85-4d58-a3cb-aaf4915ad5fb: column "last_updated" does not exist
+[2026-01-09T15:10:14.090Z] ❌ Error syncing launch 1966d347-ce76-43ee-8a1c-caf00d61453c: column "last_updated" does not exist
+[2026-01-09T15:10:14.197Z] ❌ Error syncing launch bea05b91-9cfa-48da-8fe0-c85c902f25ee: column "last_updated" does not exist
+[2026-01-09T15:10:14.304Z] ❌ Error syncing launch a5f8ab2c-6a2c-4b83-a866-e6cd5bf63545: column "last_updated" does not exist
+[2026-01-09T15:10:14.412Z] ❌ Error syncing launch c8d6f024-0a6a-4b07-8c05-97648be4d827: column "last_updated" does not exist
+[2026-01-09T15:10:14.412Z] ℹ️ Previous launches: 0 synced, 29 errors
+
+
+[2026-01-09T15:10:14.412Z] ℹ️ 📊 Sync Complete
+[2026-01-09T15:10:14.412Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T15:10:14.413Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T15:10:14.413Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
+[2026-01-09T15:10:14.413Z] ℹ️    Duration: 11.2s (0.2 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+[2026-01-09T15:20:00.675Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T15:20:00.680Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T15:20:00.681Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T15:20:00.743Z] ✅ Database connection established
+
+[2026-01-09T15:20:00.743Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T15:20:00.743Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T15:20:07.218Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T15:20:07.219Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T15:20:07.219Z] ℹ️ Syncing 29 previous launches...
+[2026-01-09T15:20:07.225Z] ❌ Error syncing launch ae315ab0-ecda-4c54-99c6-0a8818f55b0d: column "last_updated" does not exist
+[2026-01-09T15:20:07.337Z] ❌ Error syncing launch 63ddb2d1-8369-4681-8a50-e95819150382: column "last_updated" does not exist
+[2026-01-09T15:20:07.449Z] ❌ Error syncing launch fb6d9dd6-2087-40b7-b3ca-c807b5b2be43: column "last_updated" does not exist
+[2026-01-09T15:20:07.563Z] ❌ Error syncing launch 53aad862-af92-44b5-91ef-70e92a079ba4: column "last_updated" does not exist
+[2026-01-09T15:20:07.670Z] ❌ Error syncing launch 43cfdc96-8481-446f-ace5-ddc5ed60fb14: column "last_updated" does not exist
+[2026-01-09T15:20:07.783Z] ❌ Error syncing launch 9d69b85a-940d-4c1a-be75-6449d3b2a836: column "last_updated" does not exist
+[2026-01-09T15:20:07.897Z] ❌ Error syncing launch f4909efe-4764-43fa-9e4a-07e479af1ba7: column "last_updated" does not exist
+[2026-01-09T15:20:08.026Z] ❌ Error syncing launch 7b60de1e-7d8a-4213-a2f5-44a01ae21e28: column "last_updated" does not exist
+[2026-01-09T15:20:08.143Z] ❌ Error syncing launch 1c040590-5157-4850-86e2-f878dd7d49d4: column "last_updated" does not exist
+[2026-01-09T15:20:08.253Z] ❌ Error syncing launch c7ae20f6-347c-4039-a933-0ed9b28ad4b9: column "last_updated" does not exist
+[2026-01-09T15:20:08.354Z] ℹ️ Synced 10/29 previous launches...
+[2026-01-09T15:20:08.382Z] ❌ Error syncing launch a81fcb21-ed57-47ef-ab57-33ddd9c6ffcd: column "last_updated" does not exist
+[2026-01-09T15:20:08.492Z] ❌ Error syncing launch dc1b1aea-7a5f-4b39-9df5-1fd38dd670cf: column "last_updated" does not exist
+[2026-01-09T15:20:08.604Z] ❌ Error syncing launch 1e562a6b-f1eb-4c9c-a074-4172c831ed70: column "last_updated" does not exist
+[2026-01-09T15:20:08.717Z] ❌ Error syncing launch 9936c9c4-faff-4e67-9adb-c8c147239d57: column "last_updated" does not exist
+[2026-01-09T15:20:08.828Z] ❌ Error syncing launch 3eb3a9c4-65b8-49fa-afb3-8eee0c3ddfd2: column "last_updated" does not exist
+[2026-01-09T15:20:08.937Z] ❌ Error syncing launch 4a0681be-ed20-40b9-870b-38de1583c0ef: column "last_updated" does not exist
+[2026-01-09T15:20:09.046Z] ❌ Error syncing launch 0b5da6e2-9141-427b-ab22-bcdd3ca6520a: column "last_updated" does not exist
+[2026-01-09T15:20:09.155Z] ❌ Error syncing launch 9d12fbac-53de-4517-9191-4697fbc07dd2: column "last_updated" does not exist
+[2026-01-09T15:20:09.281Z] ❌ Error syncing launch 8e7d57b1-b5c0-4d0d-a575-fe23606bdeee: column "last_updated" does not exist
+[2026-01-09T15:20:09.392Z] ❌ Error syncing launch 0dcbd5ee-2728-4c79-8dc5-051ea11b888f: column "last_updated" does not exist
+[2026-01-09T15:20:09.493Z] ℹ️ Synced 20/29 previous launches...
+[2026-01-09T15:20:09.503Z] ❌ Error syncing launch 4be383b3-3997-4bd9-822b-33d9ca83a8fc: column "last_updated" does not exist
+[2026-01-09T15:20:09.612Z] ❌ Error syncing launch 49e52470-1dd4-45a9-b549-cfb417031823: column "last_updated" does not exist
+[2026-01-09T15:20:09.720Z] ❌ Error syncing launch faf4a0bc-7dad-4842-b74c-73a9f648b5cc: column "last_updated" does not exist
+[2026-01-09T15:20:09.825Z] ❌ Error syncing launch de6db617-3d40-414a-86d6-f365b130df30: column "last_updated" does not exist
+[2026-01-09T15:20:09.934Z] ❌ Error syncing launch 9599500a-7c85-4d58-a3cb-aaf4915ad5fb: column "last_updated" does not exist
+[2026-01-09T15:20:10.042Z] ❌ Error syncing launch 1966d347-ce76-43ee-8a1c-caf00d61453c: column "last_updated" does not exist
+[2026-01-09T15:20:10.149Z] ❌ Error syncing launch bea05b91-9cfa-48da-8fe0-c85c902f25ee: column "last_updated" does not exist
+[2026-01-09T15:20:10.258Z] ❌ Error syncing launch a5f8ab2c-6a2c-4b83-a866-e6cd5bf63545: column "last_updated" does not exist
+[2026-01-09T15:20:10.365Z] ❌ Error syncing launch c8d6f024-0a6a-4b07-8c05-97648be4d827: column "last_updated" does not exist
+[2026-01-09T15:20:10.365Z] ℹ️ Previous launches: 0 synced, 29 errors
+
+
+[2026-01-09T15:20:10.367Z] ℹ️ 📊 Sync Complete
+[2026-01-09T15:20:10.367Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T15:20:10.367Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T15:20:10.367Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
+[2026-01-09T15:20:10.367Z] ℹ️    Duration: 9.7s (0.2 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[2026-01-09T15:30:01.259Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T15:30:01.261Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T15:30:01.261Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T15:30:01.284Z] ✅ Database connection established
+
+[2026-01-09T15:30:01.284Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T15:30:01.284Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T15:30:21.369Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T15:30:21.371Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T15:30:21.371Z] ℹ️ Syncing 29 previous launches...
+[2026-01-09T15:30:21.380Z] ❌ Error syncing launch ae315ab0-ecda-4c54-99c6-0a8818f55b0d: column "last_updated" does not exist
+[2026-01-09T15:30:21.494Z] ❌ Error syncing launch 63ddb2d1-8369-4681-8a50-e95819150382: column "last_updated" does not exist
+[2026-01-09T15:30:21.605Z] ❌ Error syncing launch fb6d9dd6-2087-40b7-b3ca-c807b5b2be43: column "last_updated" does not exist
+[2026-01-09T15:30:21.715Z] ❌ Error syncing launch 53aad862-af92-44b5-91ef-70e92a079ba4: column "last_updated" does not exist
+[2026-01-09T15:30:21.825Z] ❌ Error syncing launch 43cfdc96-8481-446f-ace5-ddc5ed60fb14: column "last_updated" does not exist
+[2026-01-09T15:30:21.934Z] ❌ Error syncing launch 9d69b85a-940d-4c1a-be75-6449d3b2a836: column "last_updated" does not exist
+[2026-01-09T15:30:22.047Z] ❌ Error syncing launch f4909efe-4764-43fa-9e4a-07e479af1ba7: column "last_updated" does not exist
+[2026-01-09T15:30:22.163Z] ❌ Error syncing launch 7b60de1e-7d8a-4213-a2f5-44a01ae21e28: column "last_updated" does not exist
+[2026-01-09T15:30:22.276Z] ❌ Error syncing launch 1c040590-5157-4850-86e2-f878dd7d49d4: column "last_updated" does not exist
+[2026-01-09T15:30:22.387Z] ❌ Error syncing launch c7ae20f6-347c-4039-a933-0ed9b28ad4b9: column "last_updated" does not exist
+[2026-01-09T15:30:22.490Z] ℹ️ Synced 10/29 previous launches...
+[2026-01-09T15:30:22.500Z] ❌ Error syncing launch a81fcb21-ed57-47ef-ab57-33ddd9c6ffcd: column "last_updated" does not exist
+[2026-01-09T15:30:22.611Z] ❌ Error syncing launch dc1b1aea-7a5f-4b39-9df5-1fd38dd670cf: column "last_updated" does not exist
+[2026-01-09T15:30:22.723Z] ❌ Error syncing launch 1e562a6b-f1eb-4c9c-a074-4172c831ed70: column "last_updated" does not exist
+[2026-01-09T15:30:22.845Z] ❌ Error syncing launch 9936c9c4-faff-4e67-9adb-c8c147239d57: column "last_updated" does not exist
+[2026-01-09T15:30:22.955Z] ❌ Error syncing launch 3eb3a9c4-65b8-49fa-afb3-8eee0c3ddfd2: column "last_updated" does not exist
+[2026-01-09T15:30:23.066Z] ❌ Error syncing launch 4a0681be-ed20-40b9-870b-38de1583c0ef: column "last_updated" does not exist
+[2026-01-09T15:30:23.177Z] ❌ Error syncing launch 0b5da6e2-9141-427b-ab22-bcdd3ca6520a: column "last_updated" does not exist
+[2026-01-09T15:30:23.289Z] ❌ Error syncing launch 9d12fbac-53de-4517-9191-4697fbc07dd2: column "last_updated" does not exist
+[2026-01-09T15:30:23.401Z] ❌ Error syncing launch 8e7d57b1-b5c0-4d0d-a575-fe23606bdeee: column "last_updated" does not exist
+[2026-01-09T15:30:23.511Z] ❌ Error syncing launch 0dcbd5ee-2728-4c79-8dc5-051ea11b888f: column "last_updated" does not exist
+[2026-01-09T15:30:23.612Z] ℹ️ Synced 20/29 previous launches...
+[2026-01-09T15:30:23.621Z] ❌ Error syncing launch 4be383b3-3997-4bd9-822b-33d9ca83a8fc: column "last_updated" does not exist
+[2026-01-09T15:30:23.733Z] ❌ Error syncing launch 49e52470-1dd4-45a9-b549-cfb417031823: column "last_updated" does not exist
+[2026-01-09T15:30:23.844Z] ❌ Error syncing launch faf4a0bc-7dad-4842-b74c-73a9f648b5cc: column "last_updated" does not exist
+[2026-01-09T15:30:23.954Z] ❌ Error syncing launch de6db617-3d40-414a-86d6-f365b130df30: column "last_updated" does not exist
+[2026-01-09T15:30:24.064Z] ❌ Error syncing launch 9599500a-7c85-4d58-a3cb-aaf4915ad5fb: column "last_updated" does not exist
+[2026-01-09T15:30:24.176Z] ❌ Error syncing launch 1966d347-ce76-43ee-8a1c-caf00d61453c: column "last_updated" does not exist
+[2026-01-09T15:30:24.293Z] ❌ Error syncing launch bea05b91-9cfa-48da-8fe0-c85c902f25ee: column "last_updated" does not exist
+[2026-01-09T15:30:24.404Z] ❌ Error syncing launch a5f8ab2c-6a2c-4b83-a866-e6cd5bf63545: column "last_updated" does not exist
+[2026-01-09T15:30:24.513Z] ❌ Error syncing launch c8d6f024-0a6a-4b07-8c05-97648be4d827: column "last_updated" does not exist
+[2026-01-09T15:30:24.513Z] ℹ️ Previous launches: 0 synced, 29 errors
+
+
+[2026-01-09T15:30:24.513Z] ℹ️ 📊 Sync Complete
+[2026-01-09T15:30:24.513Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T15:30:24.513Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T15:30:24.513Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
+[2026-01-09T15:30:24.513Z] ℹ️    Duration: 23.3s (0.4 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[2026-01-09T15:40:00.923Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T15:40:00.925Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T15:40:00.925Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T15:40:00.947Z] ✅ Database connection established
+
+[2026-01-09T15:40:00.947Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T15:40:00.947Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T15:40:06.204Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T15:40:06.205Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T15:40:06.205Z] ℹ️ Syncing 29 previous launches...
+[2026-01-09T15:40:06.209Z] ❌ Error syncing launch ae315ab0-ecda-4c54-99c6-0a8818f55b0d: column "last_updated" does not exist
+[2026-01-09T15:40:06.318Z] ❌ Error syncing launch 63ddb2d1-8369-4681-8a50-e95819150382: column "last_updated" does not exist
+[2026-01-09T15:40:06.428Z] ❌ Error syncing launch fb6d9dd6-2087-40b7-b3ca-c807b5b2be43: column "last_updated" does not exist
+[2026-01-09T15:40:06.536Z] ❌ Error syncing launch 53aad862-af92-44b5-91ef-70e92a079ba4: column "last_updated" does not exist
+[2026-01-09T15:40:06.645Z] ❌ Error syncing launch 43cfdc96-8481-446f-ace5-ddc5ed60fb14: column "last_updated" does not exist
+[2026-01-09T15:40:06.757Z] ❌ Error syncing launch 9d69b85a-940d-4c1a-be75-6449d3b2a836: column "last_updated" does not exist
+[2026-01-09T15:40:06.879Z] ❌ Error syncing launch f4909efe-4764-43fa-9e4a-07e479af1ba7: column "last_updated" does not exist
+[2026-01-09T15:40:06.988Z] ❌ Error syncing launch 7b60de1e-7d8a-4213-a2f5-44a01ae21e28: column "last_updated" does not exist
+[2026-01-09T15:40:07.099Z] ❌ Error syncing launch 1c040590-5157-4850-86e2-f878dd7d49d4: column "last_updated" does not exist
+[2026-01-09T15:40:07.212Z] ❌ Error syncing launch c7ae20f6-347c-4039-a933-0ed9b28ad4b9: column "last_updated" does not exist
+[2026-01-09T15:40:07.314Z] ℹ️ Synced 10/29 previous launches...
+[2026-01-09T15:40:07.321Z] ❌ Error syncing launch a81fcb21-ed57-47ef-ab57-33ddd9c6ffcd: column "last_updated" does not exist
+[2026-01-09T15:40:07.433Z] ❌ Error syncing launch dc1b1aea-7a5f-4b39-9df5-1fd38dd670cf: column "last_updated" does not exist
+[2026-01-09T15:40:07.544Z] ❌ Error syncing launch 1e562a6b-f1eb-4c9c-a074-4172c831ed70: column "last_updated" does not exist
+[2026-01-09T15:40:07.655Z] ❌ Error syncing launch 9936c9c4-faff-4e67-9adb-c8c147239d57: column "last_updated" does not exist
+[2026-01-09T15:40:07.766Z] ❌ Error syncing launch 3eb3a9c4-65b8-49fa-afb3-8eee0c3ddfd2: column "last_updated" does not exist
+[2026-01-09T15:40:07.877Z] ❌ Error syncing launch 4a0681be-ed20-40b9-870b-38de1583c0ef: column "last_updated" does not exist
+[2026-01-09T15:40:07.984Z] ❌ Error syncing launch 0b5da6e2-9141-427b-ab22-bcdd3ca6520a: column "last_updated" does not exist
+[2026-01-09T15:40:08.093Z] ❌ Error syncing launch 9d12fbac-53de-4517-9191-4697fbc07dd2: column "last_updated" does not exist
+[2026-01-09T15:40:08.202Z] ❌ Error syncing launch 8e7d57b1-b5c0-4d0d-a575-fe23606bdeee: column "last_updated" does not exist
+[2026-01-09T15:40:08.311Z] ❌ Error syncing launch 0dcbd5ee-2728-4c79-8dc5-051ea11b888f: column "last_updated" does not exist
+[2026-01-09T15:40:08.411Z] ℹ️ Synced 20/29 previous launches...
+[2026-01-09T15:40:08.418Z] ❌ Error syncing launch 4be383b3-3997-4bd9-822b-33d9ca83a8fc: column "last_updated" does not exist
+[2026-01-09T15:40:08.539Z] ❌ Error syncing launch 49e52470-1dd4-45a9-b549-cfb417031823: column "last_updated" does not exist
+[2026-01-09T15:40:08.649Z] ❌ Error syncing launch faf4a0bc-7dad-4842-b74c-73a9f648b5cc: column "last_updated" does not exist
+[2026-01-09T15:40:08.763Z] ❌ Error syncing launch de6db617-3d40-414a-86d6-f365b130df30: column "last_updated" does not exist
+[2026-01-09T15:40:08.873Z] ❌ Error syncing launch 9599500a-7c85-4d58-a3cb-aaf4915ad5fb: column "last_updated" does not exist
+[2026-01-09T15:40:08.983Z] ❌ Error syncing launch 1966d347-ce76-43ee-8a1c-caf00d61453c: column "last_updated" does not exist
+[2026-01-09T15:40:09.095Z] ❌ Error syncing launch bea05b91-9cfa-48da-8fe0-c85c902f25ee: column "last_updated" does not exist
+[2026-01-09T15:40:09.205Z] ❌ Error syncing launch a5f8ab2c-6a2c-4b83-a866-e6cd5bf63545: column "last_updated" does not exist
+[2026-01-09T15:40:09.316Z] ❌ Error syncing launch c8d6f024-0a6a-4b07-8c05-97648be4d827: column "last_updated" does not exist
+[2026-01-09T15:40:09.316Z] ℹ️ Previous launches: 0 synced, 29 errors
+
+
+[2026-01-09T15:40:09.316Z] ℹ️ 📊 Sync Complete
+[2026-01-09T15:40:09.316Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T15:40:09.316Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T15:40:09.316Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
+[2026-01-09T15:40:09.316Z] ℹ️    Duration: 8.4s (0.1 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[2026-01-09T15:50:00.693Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T15:50:00.695Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T15:50:00.695Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T15:50:00.722Z] ✅ Database connection established
+
+[2026-01-09T15:50:00.722Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T15:50:00.722Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T15:50:04.113Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T15:50:04.114Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T15:50:04.114Z] ℹ️ Syncing 29 previous launches...
+[2026-01-09T15:50:04.119Z] ❌ Error syncing launch ae315ab0-ecda-4c54-99c6-0a8818f55b0d: column "last_updated" does not exist
+[2026-01-09T15:50:04.234Z] ❌ Error syncing launch 63ddb2d1-8369-4681-8a50-e95819150382: column "last_updated" does not exist
+[2026-01-09T15:50:04.348Z] ❌ Error syncing launch fb6d9dd6-2087-40b7-b3ca-c807b5b2be43: column "last_updated" does not exist
+[2026-01-09T15:50:04.460Z] ❌ Error syncing launch 53aad862-af92-44b5-91ef-70e92a079ba4: column "last_updated" does not exist
+[2026-01-09T15:50:04.572Z] ❌ Error syncing launch 43cfdc96-8481-446f-ace5-ddc5ed60fb14: column "last_updated" does not exist
+[2026-01-09T15:50:04.683Z] ❌ Error syncing launch 9d69b85a-940d-4c1a-be75-6449d3b2a836: column "last_updated" does not exist
+[2026-01-09T15:50:04.795Z] ❌ Error syncing launch f4909efe-4764-43fa-9e4a-07e479af1ba7: column "last_updated" does not exist
+[2026-01-09T15:50:04.913Z] ❌ Error syncing launch 7b60de1e-7d8a-4213-a2f5-44a01ae21e28: column "last_updated" does not exist
+[2026-01-09T15:50:05.026Z] ❌ Error syncing launch 1c040590-5157-4850-86e2-f878dd7d49d4: column "last_updated" does not exist
+[2026-01-09T15:50:05.134Z] ❌ Error syncing launch c7ae20f6-347c-4039-a933-0ed9b28ad4b9: column "last_updated" does not exist
+[2026-01-09T15:50:05.235Z] ℹ️ Synced 10/29 previous launches...
+[2026-01-09T15:50:05.244Z] ❌ Error syncing launch a81fcb21-ed57-47ef-ab57-33ddd9c6ffcd: column "last_updated" does not exist
+[2026-01-09T15:50:05.354Z] ❌ Error syncing launch dc1b1aea-7a5f-4b39-9df5-1fd38dd670cf: column "last_updated" does not exist
+[2026-01-09T15:50:05.465Z] ❌ Error syncing launch 1e562a6b-f1eb-4c9c-a074-4172c831ed70: column "last_updated" does not exist
+[2026-01-09T15:50:05.577Z] ❌ Error syncing launch 9936c9c4-faff-4e67-9adb-c8c147239d57: column "last_updated" does not exist
+[2026-01-09T15:50:05.689Z] ❌ Error syncing launch 3eb3a9c4-65b8-49fa-afb3-8eee0c3ddfd2: column "last_updated" does not exist
+[2026-01-09T15:50:05.801Z] ❌ Error syncing launch 4a0681be-ed20-40b9-870b-38de1583c0ef: column "last_updated" does not exist
+[2026-01-09T15:50:05.912Z] ❌ Error syncing launch 0b5da6e2-9141-427b-ab22-bcdd3ca6520a: column "last_updated" does not exist
+[2026-01-09T15:50:06.022Z] ❌ Error syncing launch 9d12fbac-53de-4517-9191-4697fbc07dd2: column "last_updated" does not exist
+[2026-01-09T15:50:06.130Z] ❌ Error syncing launch 8e7d57b1-b5c0-4d0d-a575-fe23606bdeee: column "last_updated" does not exist
+[2026-01-09T15:50:06.238Z] ❌ Error syncing launch 0dcbd5ee-2728-4c79-8dc5-051ea11b888f: column "last_updated" does not exist
+[2026-01-09T15:50:06.341Z] ℹ️ Synced 20/29 previous launches...
+[2026-01-09T15:50:06.348Z] ❌ Error syncing launch 4be383b3-3997-4bd9-822b-33d9ca83a8fc: column "last_updated" does not exist
+[2026-01-09T15:50:06.462Z] ❌ Error syncing launch 49e52470-1dd4-45a9-b549-cfb417031823: column "last_updated" does not exist
+[2026-01-09T15:50:06.575Z] ❌ Error syncing launch faf4a0bc-7dad-4842-b74c-73a9f648b5cc: column "last_updated" does not exist
+[2026-01-09T15:50:06.687Z] ❌ Error syncing launch de6db617-3d40-414a-86d6-f365b130df30: column "last_updated" does not exist
+[2026-01-09T15:50:06.794Z] ❌ Error syncing launch 9599500a-7c85-4d58-a3cb-aaf4915ad5fb: column "last_updated" does not exist
+[2026-01-09T15:50:06.902Z] ❌ Error syncing launch 1966d347-ce76-43ee-8a1c-caf00d61453c: column "last_updated" does not exist
+[2026-01-09T15:50:07.015Z] ❌ Error syncing launch bea05b91-9cfa-48da-8fe0-c85c902f25ee: column "last_updated" does not exist
+[2026-01-09T15:50:07.126Z] ❌ Error syncing launch a5f8ab2c-6a2c-4b83-a866-e6cd5bf63545: column "last_updated" does not exist
+[2026-01-09T15:50:07.238Z] ❌ Error syncing launch c8d6f024-0a6a-4b07-8c05-97648be4d827: column "last_updated" does not exist
+[2026-01-09T15:50:07.238Z] ℹ️ Previous launches: 0 synced, 29 errors
+
+
+[2026-01-09T15:50:07.239Z] ℹ️ 📊 Sync Complete
+[2026-01-09T15:50:07.239Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T15:50:07.239Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T15:50:07.239Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
+[2026-01-09T15:50:07.239Z] ℹ️    Duration: 6.5s (0.1 min)
+[dotenv@17.2.3] injecting env (10) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[2026-01-09T16:00:03.480Z] ℹ️ 🚀 Starting Upcoming/Previous Launches Sync
+[2026-01-09T16:00:03.489Z] ℹ️ Mode: LIVE SYNC
+[2026-01-09T16:00:03.489Z] ℹ️ Rate Limit: 210 calls/hour
+
+[2026-01-09T16:00:03.782Z] ✅ Database connection established
+
+[2026-01-09T16:00:03.783Z] ℹ️ === PREVIOUS LAUNCHES ===
+[2026-01-09T16:00:03.783Z] ℹ️ Fetching previous launches from Space Devs API...
+[2026-01-09T16:00:23.584Z] ✅ Fetched 29 previous launches (1 API call)
+[2026-01-09T16:00:23.585Z] ✅ Total previous launches fetched: 29 (1 API call)
+
+[2026-01-09T16:00:23.586Z] ℹ️ Syncing 29 previous launches...
+[2026-01-09T16:00:23.600Z] ❌ Error syncing launch ae315ab0-ecda-4c54-99c6-0a8818f55b0d: column "last_updated" does not exist
+[2026-01-09T16:00:23.715Z] ❌ Error syncing launch 63ddb2d1-8369-4681-8a50-e95819150382: column "last_updated" does not exist
+[2026-01-09T16:00:23.826Z] ❌ Error syncing launch fb6d9dd6-2087-40b7-b3ca-c807b5b2be43: column "last_updated" does not exist
+[2026-01-09T16:00:23.936Z] ❌ Error syncing launch 53aad862-af92-44b5-91ef-70e92a079ba4: column "last_updated" does not exist
+[2026-01-09T16:00:24.046Z] ❌ Error syncing launch 43cfdc96-8481-446f-ace5-ddc5ed60fb14: column "last_updated" does not exist
+[2026-01-09T16:00:24.160Z] ❌ Error syncing launch 9d69b85a-940d-4c1a-be75-6449d3b2a836: column "last_updated" does not exist
+[2026-01-09T16:00:24.273Z] ❌ Error syncing launch f4909efe-4764-43fa-9e4a-07e479af1ba7: column "last_updated" does not exist
+[2026-01-09T16:00:24.381Z] ❌ Error syncing launch 7b60de1e-7d8a-4213-a2f5-44a01ae21e28: column "last_updated" does not exist
+[2026-01-09T16:00:24.491Z] ❌ Error syncing launch 1c040590-5157-4850-86e2-f878dd7d49d4: column "last_updated" does not exist
+[2026-01-09T16:00:24.601Z] ❌ Error syncing launch c7ae20f6-347c-4039-a933-0ed9b28ad4b9: column "last_updated" does not exist
+[2026-01-09T16:00:24.703Z] ℹ️ Synced 10/29 previous launches...
+[2026-01-09T16:00:24.712Z] ❌ Error syncing launch a81fcb21-ed57-47ef-ab57-33ddd9c6ffcd: column "last_updated" does not exist
+[2026-01-09T16:00:24.849Z] ❌ Error syncing launch dc1b1aea-7a5f-4b39-9df5-1fd38dd670cf: column "last_updated" does not exist
+[2026-01-09T16:00:24.957Z] ❌ Error syncing launch 1e562a6b-f1eb-4c9c-a074-4172c831ed70: column "last_updated" does not exist
+[2026-01-09T16:00:25.067Z] ❌ Error syncing launch 9936c9c4-faff-4e67-9adb-c8c147239d57: column "last_updated" does not exist
+[2026-01-09T16:00:25.177Z] ❌ Error syncing launch 3eb3a9c4-65b8-49fa-afb3-8eee0c3ddfd2: column "last_updated" does not exist
+[2026-01-09T16:00:25.290Z] ❌ Error syncing launch 4a0681be-ed20-40b9-870b-38de1583c0ef: column "last_updated" does not exist
+[2026-01-09T16:00:25.403Z] ❌ Error syncing launch 0b5da6e2-9141-427b-ab22-bcdd3ca6520a: column "last_updated" does not exist
+[2026-01-09T16:00:25.516Z] ❌ Error syncing launch 9d12fbac-53de-4517-9191-4697fbc07dd2: column "last_updated" does not exist
+[2026-01-09T16:00:25.629Z] ❌ Error syncing launch 8e7d57b1-b5c0-4d0d-a575-fe23606bdeee: column "last_updated" does not exist
+[2026-01-09T16:00:25.743Z] ❌ Error syncing launch 0dcbd5ee-2728-4c79-8dc5-051ea11b888f: column "last_updated" does not exist
+[2026-01-09T16:00:25.844Z] ℹ️ Synced 20/29 previous launches...
+[2026-01-09T16:00:25.855Z] ❌ Error syncing launch 4be383b3-3997-4bd9-822b-33d9ca83a8fc: column "last_updated" does not exist
+[2026-01-09T16:00:25.966Z] ❌ Error syncing launch 49e52470-1dd4-45a9-b549-cfb417031823: column "last_updated" does not exist
+[2026-01-09T16:00:26.076Z] ❌ Error syncing launch faf4a0bc-7dad-4842-b74c-73a9f648b5cc: column "last_updated" does not exist
+[2026-01-09T16:00:26.186Z] ❌ Error syncing launch de6db617-3d40-414a-86d6-f365b130df30: column "last_updated" does not exist
+[2026-01-09T16:00:26.299Z] ❌ Error syncing launch 9599500a-7c85-4d58-a3cb-aaf4915ad5fb: column "last_updated" does not exist
+[2026-01-09T16:00:26.412Z] ❌ Error syncing launch 1966d347-ce76-43ee-8a1c-caf00d61453c: column "last_updated" does not exist
+[2026-01-09T16:00:26.523Z] ❌ Error syncing launch bea05b91-9cfa-48da-8fe0-c85c902f25ee: column "last_updated" does not exist
+[2026-01-09T16:00:26.631Z] ❌ Error syncing launch a5f8ab2c-6a2c-4b83-a866-e6cd5bf63545: column "last_updated" does not exist
+[2026-01-09T16:00:26.741Z] ❌ Error syncing launch c8d6f024-0a6a-4b07-8c05-97648be4d827: column "last_updated" does not exist
+[2026-01-09T16:00:26.742Z] ℹ️ Previous launches: 0 synced, 29 errors
+
+
+[2026-01-09T16:00:26.742Z] ℹ️ 📊 Sync Complete
+[2026-01-09T16:00:26.742Z] ℹ️    API Calls Made: 1/210 (rate limit)
+[2026-01-09T16:00:26.742Z] ℹ️    Upcoming: 0 fetched, 0 synced, 0 errors
+[2026-01-09T16:00:26.742Z] ℹ️    Previous: 29 fetched, 0 synced, 29 errors
+[2026-01-09T16:00:26.742Z] ℹ️    Duration: 23.3s (0.4 min)
