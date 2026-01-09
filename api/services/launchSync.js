@@ -764,7 +764,6 @@ async function syncLaunchFromApi(mappedLaunch) {
 
 
 module.exports = {
-  syncLaunchFromApi,
-  shouldSync
+  syncLaunchFromApi
 };
 
