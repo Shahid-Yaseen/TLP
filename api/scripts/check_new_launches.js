@@ -75,15 +75,12 @@ async function fetchRecentLaunches() {
   log(`Fetching launches from ${startDateISO} to future (last ${daysBack} days + upcoming)...`, 'info');
   
   try {
-    // Fetch upcoming launches (net >= today)
+    // Fetch upcoming launches using the dedicated /launches/upcoming/ endpoint
     log('Fetching upcoming launches...', 'info');
-    const upcomingParams = {
+    const upcomingResponse = await spaceDevsApi.fetchUpcomingLaunches({
       limit: 100,
-      ordering: 'net',
-      net__gte: todayISO
-    };
-    
-    const upcomingResponse = await spaceDevsApi.fetchLaunchers(upcomingParams);
+      ordering: 'net'
+    });
     if (upcomingResponse.results && Array.isArray(upcomingResponse.results)) {
       launches.push(...upcomingResponse.results);
       log(`Fetched ${upcomingResponse.results.length} upcoming launches`, 'success');
