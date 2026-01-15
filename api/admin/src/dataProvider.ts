@@ -481,15 +481,18 @@ export const dataProvider: DataProvider = {
           // Use full URL for the image - check if it's already an absolute URL
           let uploadedUrl = uploadData.url;
           
-          // Fix malformed URLs (missing colon in https://)
-          if (uploadedUrl.startsWith('https//')) {
-            uploadedUrl = uploadedUrl.replace('https//', 'https://');
-          } else if (uploadedUrl.startsWith('http//')) {
-            uploadedUrl = uploadedUrl.replace('http//', 'http://');
-          }
+          // Remove any incorrectly prepended server IP first
+          // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttp://domain or http://IP_ADDRESShttps//domain
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+          
+          // Fix malformed URLs (missing colon in https://) - replace anywhere in string
+          uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
+          uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
           
           // Only prepend API_URL if it's not already an absolute URL
-          data.profile_image_url = (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+          data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 
             ? uploadedUrl 
             : `${API_URL}${uploadedUrl}`;
         } else {
@@ -523,15 +526,17 @@ export const dataProvider: DataProvider = {
             const uploadData = await uploadResponse.json();
             let uploadedUrl = uploadData.url;
             
-            // Fix malformed URLs (missing colon in https://)
-            if (uploadedUrl.startsWith('https//')) {
-              uploadedUrl = uploadedUrl.replace('https//', 'https://');
-            } else if (uploadedUrl.startsWith('http//')) {
-              uploadedUrl = uploadedUrl.replace('http//', 'http://');
-            }
+            // Remove any incorrectly prepended server IP first
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+            
+            // Fix malformed URLs (missing colon in https://) - replace anywhere in string
+            uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
+            uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
             
             // Only prepend API_URL if it's not already an absolute URL
-            return (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+            return (uploadedUrl.match(/^https?:\/\//)) 
               ? uploadedUrl 
               : `${API_URL}${uploadedUrl}`;
           } else {
@@ -619,15 +624,17 @@ export const dataProvider: DataProvider = {
             const uploadData = await uploadResponse.json();
             let uploadedUrl = uploadData.url;
             
-            // Fix malformed URLs (missing colon in https://)
-            if (uploadedUrl.startsWith('https//')) {
-              uploadedUrl = uploadedUrl.replace('https//', 'https://');
-            } else if (uploadedUrl.startsWith('http//')) {
-              uploadedUrl = uploadedUrl.replace('http//', 'http://');
-            }
+            // Remove any incorrectly prepended server IP first
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+            
+            // Fix malformed URLs (missing colon in https://) - replace anywhere in string
+            uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
+            uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
             
             // Only prepend API_URL if it's not already an absolute URL
-            return (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+            return (uploadedUrl.match(/^https?:\/\//)) 
               ? uploadedUrl 
               : `${API_URL}${uploadedUrl}`;
           } else {
@@ -779,15 +786,18 @@ export const dataProvider: DataProvider = {
           // Use full URL for the image - check if it's already an absolute URL
           let uploadedUrl = uploadData.url;
           
-          // Fix malformed URLs (missing colon in https://)
-          if (uploadedUrl.startsWith('https//')) {
-            uploadedUrl = uploadedUrl.replace('https//', 'https://');
-          } else if (uploadedUrl.startsWith('http//')) {
-            uploadedUrl = uploadedUrl.replace('http//', 'http://');
-          }
+          // Remove any incorrectly prepended server IP first
+          // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttp://domain or http://IP_ADDRESShttps//domain
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+          
+          // Fix malformed URLs (missing colon in https://) - replace anywhere in string
+          uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
+          uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
           
           // Only prepend API_URL if it's not already an absolute URL
-          data.profile_image_url = (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+          data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 
             ? uploadedUrl 
             : `${API_URL}${uploadedUrl}`;
         } else {

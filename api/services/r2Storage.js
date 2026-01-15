@@ -98,23 +98,36 @@ async function uploadFile(file, folder = 'uploads') {
 
         // Ensure PUBLIC_URL is properly formatted (fix missing colon in https://)
         let baseUrl = PUBLIC_URL.trim();
-        if (baseUrl.startsWith('https//')) {
-          baseUrl = baseUrl.replace('https//', 'https://');
-        } else if (baseUrl.startsWith('http//')) {
-          baseUrl = baseUrl.replace('http//', 'http://');
+        
+        // Fix malformed URLs - replace https// or http// anywhere in the string
+        baseUrl = baseUrl.replace(/https\/\//g, 'https://');
+        baseUrl = baseUrl.replace(/http\/\//g, 'http://');
+        
+        // If URL doesn't start with http:// or https://, add https://
+        if (!baseUrl.match(/^https?:\/\//)) {
+          // If it starts with a domain, prepend https://
+          if (baseUrl.match(/^[a-zA-Z0-9]/)) {
+            baseUrl = 'https://' + baseUrl;
+          }
         }
         
-        // Ensure baseUrl ends with / for proper concatenation
-        if (!baseUrl.endsWith('/')) {
-          baseUrl += '/';
-        }
+        // Remove any trailing slashes and add exactly one
+        baseUrl = baseUrl.replace(/\/+$/, '') + '/';
         
         const fileUrl = `${baseUrl}${filename}`;
 
-        console.log(`✓ Upload successful: ${fileUrl}`);
+        // Final validation - ensure the URL is properly formatted
+        // Fix any malformed protocol strings (https// -> https://)
+        let finalUrl = fileUrl.replace(/https\/\//g, 'https://').replace(/http\/\//g, 'http://');
+        
+        // Remove any server IP that might have been incorrectly prepended
+        // Pattern: http://IP_ADDRESShttps:// or http://IP_ADDRESShttp://
+        finalUrl = finalUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+        
+        console.log(`✓ Upload successful: ${finalUrl}`);
 
         return {
-            url: fileUrl,
+            url: finalUrl,
             key: filename,
             mimetype: file.mimetype,
             size: file.size
