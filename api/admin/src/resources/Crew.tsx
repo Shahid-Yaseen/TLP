@@ -53,7 +53,6 @@ export const CrewCreate = (props: any) => (
             label="Latitude" 
             helperText="Between -90 and 90 (e.g., 34.0522 for Los Angeles)"
             type="number"
-            step="any"
           />
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -62,7 +61,6 @@ export const CrewCreate = (props: any) => (
             label="Longitude" 
             helperText="Between -180 and 180 (e.g., -118.2437 for Los Angeles)"
             type="number"
-            step="any"
           />
         </Grid>
       </Grid>
@@ -95,7 +93,6 @@ export const CrewEdit = (props: any) => (
             label="Latitude" 
             helperText="Between -90 and 90 (e.g., 34.0522 for Los Angeles)"
             type="number"
-            step="any"
           />
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -104,7 +101,6 @@ export const CrewEdit = (props: any) => (
             label="Longitude" 
             helperText="Between -180 and 180 (e.g., -118.2437 for Los Angeles)"
             type="number"
-            step="any"
           />
         </Grid>
       </Grid>
