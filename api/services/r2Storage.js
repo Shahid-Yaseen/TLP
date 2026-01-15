@@ -43,7 +43,30 @@ const r2Client = new S3Client({
 });
 
 const BUCKET_NAME = process.env.R2_BUCKET_NAME;
-const PUBLIC_URL = process.env.R2_PUBLIC_URL;
+
+// Normalize PUBLIC_URL - fix any malformed URLs
+function normalizePublicUrl(url) {
+  if (!url) return url;
+  let normalized = url.trim();
+  
+  // Fix malformed protocols (https// -> https://)
+  normalized = normalized.replace(/https\/\//g, 'https://');
+  normalized = normalized.replace(/http\/\//g, 'http://');
+  
+  // If URL doesn't start with http:// or https://, add https://
+  if (!normalized.match(/^https?:\/\//)) {
+    if (normalized.match(/^[a-zA-Z0-9]/)) {
+      normalized = 'https://' + normalized;
+    }
+  }
+  
+  // Ensure it ends with /
+  normalized = normalized.replace(/\/+$/, '') + '/';
+  
+  return normalized;
+}
+
+const PUBLIC_URL = normalizePublicUrl(process.env.R2_PUBLIC_URL);
 
 /**
  * Test R2 connection
