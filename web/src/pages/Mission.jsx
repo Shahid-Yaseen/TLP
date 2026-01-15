@@ -118,25 +118,25 @@ const Mission = () => {
 
       {/* Main Navigation Bar */}
       <div className="bg-[#595959] border-t-2 border-white">
-        <div className="max-w-full mx-auto px-4 md:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4 md:gap-8">
-            {/* Logo Section */}
-            <div className="flex items-center gap-2 md:gap-3">
+        <div className="max-w-full mx-4 sm:mx-6 md:mx-8 px-3 sm:px-6 py-2 sm:py-0 bg-[#595959]">
+          <div className="flex items-center justify-between bg-[#595959]">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative" style={{ overflow: 'visible' }}>
-                <div className="w-10 h-10 md:w-14 md:h-14 bg-black flex items-center justify-center overflow-hidden">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black flex items-center justify-center overflow-hidden">
                   <img 
                     src="/TLP Helmet.png" 
                     alt="TLP Logo" 
-                    className="w-7 h-7 md:w-10 md:h-10 object-contain"
+                    className="w-7 h-7 sm:w-10 sm:h-10 object-contain"
                   />
                 </div>
-                <div className="absolute top-full left-0 bg-[#8B1A1A] px-1.5 md:px-2 py-0.5 text-[8px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
+                <div className="absolute top-full left-0 w-10 sm:w-14 bg-[#8B1A1A] px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50 flex items-center justify-center">
                   {currentTime || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s/g, '')}
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-baseline gap-1 sm:gap-3">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>MISSIONS</h1>
-                <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>{missionData?.hero_title || 'LunEx-1'}</h2>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>MISSIONS</h1>
+                <h2 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>{missionData?.hero_title || 'LunEx-1'}</h2>
               </div>
             </div>
           </div>

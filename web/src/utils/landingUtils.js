@@ -109,11 +109,11 @@ export const getBadgeColor = (landingData) => {
   }
 
   if (landingData.success === true) {
-    return 'bg-green-500'; // Successful landing
+    return 'bg-green-500'; // Successful landing - Green
   } else if (landingData.success === false) {
-    return 'bg-red-500'; // Failed landing
-  } else if (landingData.success === null) {
-    return 'bg-blue-500'; // Planned/pending
+    return 'bg-red-500'; // Failed landing - Red
+  } else if (landingData.success === null || landingData.success === undefined) {
+    return 'bg-gray-500'; // Unknown/Planned - Grey
   }
 
   return null;

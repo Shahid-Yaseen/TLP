@@ -370,7 +370,7 @@ function PreviousLaunches() {
                     className="w-7 h-7 sm:w-10 sm:h-10 object-contain"
                   />
                 </div>
-                <div className="absolute top-full left-0 bg-[#8B1A1A] px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
+                <div className="absolute top-full left-0 w-10 sm:w-14 bg-[#8B1A1A] px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50 flex items-center justify-center">
                   {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s/g, '')}
                 </div>
               </div>
@@ -694,9 +694,9 @@ function PreviousLaunches() {
           </div>
 
           {/* Desktop Grid */}
-          <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3">
+          <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7 gap-2 sm:gap-3">
             {historicalLaunches && historicalLaunches.length > 0 ? (
-              historicalLaunches.slice(0, 5).map((launch, idx) => {
+              historicalLaunches.slice(0, 7).map((launch, idx) => {
                 const launchImageUrl = getLaunchImageUrl(launch);
                 const barColor = getStatusBarColor(launch);
                 return (
@@ -756,7 +756,7 @@ function PreviousLaunches() {
         </div>
 
       {/* Filter Bar */}
-      <div className="bg-[#8B1A1A] border-b border-[#7A1515]">
+      <div className="bg-[#8B1A1A] border-b border-[#7A1515] px-6 sm:px-8 md:px-12 lg:px-16">
         <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
             <div className="flex flex-wrap gap-1 w-full sm:w-auto">
@@ -803,7 +803,7 @@ function PreviousLaunches() {
       {/* Filters Section */}
       <div className="bg-white">
         {/* Desktop View */}
-        <div className="hidden md:block py-1">
+        <div className="hidden md:block py-1 px-6 sm:px-8 md:px-12 lg:px-16">
           <div className="max-w-full mx-auto px-4 md:px-6">
             <div className="flex items-center gap-4 md:gap-8">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -874,8 +874,8 @@ function PreviousLaunches() {
       </div>
 
       {/* Launch Grid by Month */}
-      <div className="max-w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 relative">
-        <div className="absolute top-4 sm:top-8 right-4 sm:right-6 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 z-10">
+      <div className="max-w-full mx-auto px-6 sm:px-8 md:px-12 lg:px-16 py-6 sm:py-8 relative">
+        <div className="absolute top-4 sm:top-8 right-6 sm:right-8 md:right-12 lg:right-16 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 z-10">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-sky-400"></div>
             <span className="text-xs text-sky-400 uppercase font-sans">MISSION SUCCESS</span>

@@ -270,26 +270,22 @@ async function fetchPreviousLaunches() {
 }
 
 /**
- * Check if launch date is within the next 2 days (today and tomorrow only)
+ * Check if launch date is within the next 2 days (48 hours) from now
  * @param {string} launchDate - ISO date string
- * @returns {boolean} True if launch is within today or tomorrow
+ * @returns {boolean} True if launch is within 2 days from current time
  */
 function isLaunchInNextDays(launchDate) {
   if (!launchDate) return false;
 
   try {
     const launch = new Date(launchDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(23, 59, 59, 999); // End of tomorrow
-
-    const launchDateOnly = new Date(launch);
-    launchDateOnly.setHours(0, 0, 0, 0);
-
-    return launchDateOnly >= today && launchDateOnly <= tomorrow;
+    const now = new Date();
+    
+    // Calculate 2 days (48 hours) from now
+    const twoDaysFromNow = new Date(now.getTime() + (2 * 24 * 60 * 60 * 1000));
+    
+    // Check if launch is in the future and within 2 days from now
+    return launch >= now && launch <= twoDaysFromNow;
   } catch (error) {
     return false;
   }
@@ -297,7 +293,7 @@ function isLaunchInNextDays(launchDate) {
 
 /**
  * Sync a launch to the database
- * Only fetches full launch details for launches in the next 2-3 days to optimize API calls
+ * Only fetches full launch details for launches within the next 2 days (48 hours) to optimize API calls
  * The list endpoint often returns empty vid_urls arrays, so we fetch details for recent launches only
  */
 async function syncLaunch(launchData) {
@@ -331,11 +327,11 @@ async function syncLaunch(launchData) {
       }
     }
 
-    // Only fetch full launch details for launches in the next 2 days (today and tomorrow)
+    // Only fetch full launch details for launches within the next 2 days (48 hours) from now
     // This optimizes API calls - we only need complete data with video URLs for immediate launches
     // For launches further out, list data is sufficient
     const launchDate = launchData.net || launchData.launch_date;
-    const shouldFetchDetails = isLaunchInNextDays(launchDate); // Only today and tomorrow
+    const shouldFetchDetails = isLaunchInNextDays(launchDate); // Within 2 days from now
 
     let fullLaunchData = launchData;
 
@@ -477,7 +473,7 @@ async function main() {
     log(`   API Calls Made: ${stats.apiCalls}/${rateLimit} (rate limit)`, 'info');
     log(`   Upcoming: ${stats.upcoming.fetched} fetched, ${stats.upcoming.synced} synced, ${stats.upcoming.errors} errors`, 'info');
     if (stats.upcoming.fullDetails > 0 || stats.upcoming.listData > 0) {
-      log(`   Upcoming Details: ${stats.upcoming.fullDetails} full details (next 2 days only), ${stats.upcoming.listData} list data (further out)`, 'info');
+      log(`   Upcoming Details: ${stats.upcoming.fullDetails} full details (within 2 days), ${stats.upcoming.listData} list data (further out)`, 'info');
     }
     log(`   Previous: ${stats.previous.fetched} fetched, ${stats.previous.synced} synced, ${stats.previous.errors} errors`, 'info');
     log(`   Duration: ${durationSeconds}s (${durationMinutes} min)`, 'info');

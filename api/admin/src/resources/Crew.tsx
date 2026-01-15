@@ -1,7 +1,8 @@
-import { List, Create, Edit, Show, SimpleForm, TextInput, SelectInput, Datagrid, TextField, BooleanField, ShowButton, EditButton, DeleteButton, useRecordContext, ImageInput, ImageField } from 'react-admin';
+import { List, Create, Edit, Show, SimpleForm, TextInput, SelectInput, Datagrid, TextField, BooleanField, ShowButton, EditButton, DeleteButton, useRecordContext, ImageInput, ImageField, FunctionField, FormDataConsumer } from 'react-admin';
 import { Box, Card, CardContent, Typography, Avatar, Chip, Grid, Divider, Stack } from '@mui/material';
 import { Person, Work, LocationOn, Description, CheckCircle, Cancel, CalendarToday, Image as ImageIcon } from '@mui/icons-material';
 import { BackButtonActions } from '../components/BackButtonActions';
+import LocationMapPreview from '../components/LocationMapPreview';
 
 const categoryChoices = [
   { id: 'ADVISOR', name: 'Advisor' },
@@ -12,10 +13,18 @@ const categoryChoices = [
   { id: 'MODERATOR', name: 'Moderator' },
 ];
 
+const AvatarField = ({ source, label }: { source?: string, label?: string }) => {
+  const record = useRecordContext();
+  if (!record) return null;
+  const imageUrl = record.profile_image_url?.src || record.profile_image_url;
+  return <Avatar src={imageUrl} sx={{ width: 40, height: 40 }} />;
+};
+
 export const CrewList = (props: any) => (
   <List {...props}>
     <Datagrid rowClick="show">
       <TextField source="id" />
+      <AvatarField label="Avatar" />
       <TextField source="full_name" />
       <TextField source="category" />
       <TextField source="title" />
@@ -36,7 +45,30 @@ export const CrewCreate = (props: any) => (
       <TextInput source="full_name" required />
       <SelectInput source="category" choices={categoryChoices} />
       <TextInput source="title" />
-      <TextInput source="location" />
+      <TextInput source="location" label="Location (City, State/Country)" helperText="Enter the location name (e.g., 'Los Angeles, California' or 'London, UK')" />
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <TextInput 
+            source="coordinates.lat" 
+            label="Latitude" 
+            helperText="Between -90 and 90 (e.g., 34.0522 for Los Angeles)"
+            type="number"
+            step="any"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextInput 
+            source="coordinates.lng" 
+            label="Longitude" 
+            helperText="Between -180 and 180 (e.g., -118.2437 for Los Angeles)"
+            type="number"
+            step="any"
+          />
+        </Grid>
+      </Grid>
+      <FormDataConsumer>
+        {({ formData }) => formData && <LocationMapPreview />}
+      </FormDataConsumer>
       <TextInput source="bio" multiline />
       <ImageInput source="profile_image_url" label="Profile Image">
         <ImageField source="src" />
@@ -55,7 +87,30 @@ export const CrewEdit = (props: any) => (
       <TextInput source="full_name" required />
       <SelectInput source="category" choices={categoryChoices} />
       <TextInput source="title" />
-      <TextInput source="location" />
+      <TextInput source="location" label="Location (City, State/Country)" helperText="Enter the location name (e.g., 'Los Angeles, California' or 'London, UK')" />
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <TextInput 
+            source="coordinates.lat" 
+            label="Latitude" 
+            helperText="Between -90 and 90 (e.g., 34.0522 for Los Angeles)"
+            type="number"
+            step="any"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextInput 
+            source="coordinates.lng" 
+            label="Longitude" 
+            helperText="Between -180 and 180 (e.g., -118.2437 for Los Angeles)"
+            type="number"
+            step="any"
+          />
+        </Grid>
+      </Grid>
+      <FormDataConsumer>
+        {({ formData }) => formData && <LocationMapPreview />}
+      </FormDataConsumer>
       <TextInput source="bio" multiline />
       <ImageInput source="profile_image_url" label="Profile Image">
         <ImageField source="src" />
@@ -67,7 +122,7 @@ export const CrewEdit = (props: any) => (
 
 const CrewShowContent = () => {
   const record = useRecordContext();
-  
+
   if (!record) return null;
 
   // Handle profile_image_url - could be string or object (from dataProvider transformation)
@@ -97,9 +152,9 @@ const CrewShowContent = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Hero Section */}
-      <Card 
+      <Card
         elevation={3}
-        sx={{ 
+        sx={{
           mb: 3,
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
@@ -169,9 +224,9 @@ const CrewShowContent = () => {
                 Biography
               </Typography>
               {record.bio ? (
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
+                <Typography
+                  variant="body1"
+                  sx={{
                     lineHeight: 1.8,
                     color: 'text.secondary',
                     whiteSpace: 'pre-wrap'
@@ -196,7 +251,7 @@ const CrewShowContent = () => {
                 Details
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              
+
               <Stack spacing={2}>
                 {record.location && (
                   <Box>
@@ -244,13 +299,13 @@ const CrewShowContent = () => {
                       <ImageIcon sx={{ fontSize: 16, mr: 0.5 }} />
                       Profile Image
                     </Typography>
-                    <Typography 
-                      variant="body2" 
-                      component="a" 
-                      href={record.profile_image_url} 
-                      target="_blank" 
+                    <Typography
+                      variant="body2"
+                      component="a"
+                      href={record.profile_image_url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ 
+                      sx={{
                         color: 'primary.main',
                         textDecoration: 'none',
                         wordBreak: 'break-all',

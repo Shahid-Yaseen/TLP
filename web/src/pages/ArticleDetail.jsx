@@ -637,7 +637,7 @@ const ArticleDetail = () => {
     <Layout sectionNav={sectionNav}>
       {/* Trending Sub-Navigation */}
       <div className="bg-white border-b border-gray-300">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-[2px] pb-[2px]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-0">
           <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
             {trending.map((topic, idx) => (
               <div key={idx} className="flex items-center shrink-0">
@@ -654,7 +654,7 @@ const ArticleDetail = () => {
                     const route = categorySlugMap[topic.label] || '/news';
                     navigate(route);
                   }}
-                  className="text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1 hover:text-newstheme" style={{ '--hover-color': '#fa9a00' }}
+                  className="text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-0.5 hover:text-newstheme" style={{ '--hover-color': '#fa9a00' }}
                 >
                   {topic.label}
                 </button>

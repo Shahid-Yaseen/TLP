@@ -24,7 +24,10 @@ import {
   useDataProvider,
   useGetOne,
   Loading,
-  Error
+  Error,
+  ImageInput,
+  ImageField,
+  SimpleShowLayout
 } from 'react-admin';
 import { Box, Typography, Paper, Divider, Grid, Card, CardContent, Button } from '@mui/material';
 import { useState, useEffect } from 'react';
@@ -37,266 +40,152 @@ export const MissionContentList = () => {
 };
 
 export const MissionContentEdit = () => {
-  const notify = useNotify();
-  const refresh = useRefresh();
-  const [content, setContent] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { data, isLoading, error } = useGetOne('mission_content', { id: 1 });
 
-  useEffect(() => {
-    fetchContent();
-  }, []);
-
-  const fetchContent = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/api/mission/content`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setContent(data);
-      } else {
-        notify('Error loading mission content', { type: 'error' });
-      }
-    } catch (error) {
-      notify('Error loading mission content', { type: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async (formData: any) => {
-    setSaving(true);
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/api/mission/content`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        notify('Mission content saved successfully!', { type: 'success' });
-        await fetchContent();
-        refresh();
-      } else {
-        const error = await response.json();
-        notify(error.error || 'Failed to save', { type: 'error' });
-      }
-    } catch (error: any) {
-      notify('Error saving: ' + error.message, { type: 'error' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return <Box sx={{ p: 3 }}><Loading /></Box>;
   }
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>Edit Mission Page Content</Typography>
-      <MissionContentForm initialValues={content} onSave={handleSave} saving={saving} />
-    </Box>
-  );
-};
-
-// Mission Content Form
-const MissionContentForm = ({ initialValues, onSave, saving }: any) => {
-  const [formData, setFormData] = useState(initialValues || {});
-
-  useEffect(() => {
-    if (initialValues) {
-      setFormData(initialValues);
-    }
-  }, [initialValues]);
-
-  const handleSubmit = (data: any) => {
-    onSave(data);
-  };
+  if (error) {
+    return <Box sx={{ p: 3 }}><Error error={error} /></Box>;
+  }
 
   return (
-    <Paper sx={{ p: 3, mt: 2 }}>
-      <TabbedForm onSubmit={handleSubmit} defaultValues={formData}>
+    <Edit resource="mission_content" id={1} title="Edit Mission Page Content">
+      <TabbedForm>
         <FormTab label="Hero Section">
           <TextInput 
             source="hero_title" 
             label="Hero Title" 
             fullWidth 
           />
-            <TextInput 
-              source="hero_subtitle" 
-              label="Hero Subtitle" 
-              fullWidth 
-            />
-            <TextInput 
-              source="hero_mission_statement" 
-              label="Mission Statement" 
-              fullWidth 
-              multiline 
-              rows={3}
-            />
-            <TextInput 
-              source="hero_background_image_url" 
-              label="Background Image URL" 
-              fullWidth 
-            />
-          </FormTab>
+          <TextInput 
+            source="hero_subtitle" 
+            label="Hero Subtitle" 
+            fullWidth 
+          />
+          <TextInput 
+            source="hero_mission_statement" 
+            label="Mission Statement" 
+            fullWidth 
+            multiline 
+            rows={3}
+          />
+          <ImageInput source="hero_background_image_url" label="Background Image">
+            <ImageField source="src" />
+          </ImageInput>
+        </FormTab>
 
-          <FormTab label="CTA Buttons">
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
-                <Typography variant="h6" gutterBottom>Button 1</Typography>
-                <TextInput 
-                  source="button1_text" 
-                  label="Button Text" 
-                  fullWidth 
-                />
-                <TextInput 
-                  source="button1_status_text" 
-                  label="Status Text" 
-                  fullWidth 
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="h6" gutterBottom>Button 2</Typography>
-                <TextInput 
-                  source="button2_text" 
-                  label="Button Text" 
-                  fullWidth 
-                />
-                <TextInput 
-                  source="button2_status_text" 
-                  label="Status Text" 
-                  fullWidth 
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="h6" gutterBottom>Button 3</Typography>
-                <TextInput 
-                  source="button3_text" 
-                  label="Button Text" 
-                  fullWidth 
-                />
-                <TextInput 
-                  source="button3_status_text" 
-                  label="Status Text" 
-                  fullWidth 
-                />
-              </Grid>
+        <FormTab label="CTA Buttons">
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" gutterBottom>Button 1</Typography>
+              <TextInput 
+                source="button1_text" 
+                label="Button Text" 
+                fullWidth 
+              />
+              <TextInput 
+                source="button1_status_text" 
+                label="Status Text" 
+                fullWidth 
+              />
             </Grid>
-          </FormTab>
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" gutterBottom>Button 2</Typography>
+              <TextInput 
+                source="button2_text" 
+                label="Button Text" 
+                fullWidth 
+              />
+              <TextInput 
+                source="button2_status_text" 
+                label="Status Text" 
+                fullWidth 
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" gutterBottom>Button 3</Typography>
+              <TextInput 
+                source="button3_text" 
+                label="Button Text" 
+                fullWidth 
+              />
+              <TextInput 
+                source="button3_status_text" 
+                label="Status Text" 
+                fullWidth 
+              />
+            </Grid>
+          </Grid>
+        </FormTab>
 
-          <FormTab label="Mission Overview">
-            <TextInput 
-              source="lift_off_time" 
-              label="Lift Off Time" 
-              fullWidth 
-            />
-            <TextInput 
-              source="launch_facility" 
-              label="Launch Facility" 
-              fullWidth 
-            />
-            <TextInput 
-              source="launch_pad" 
-              label="Launch Pad" 
-              fullWidth 
-            />
-            <TextInput 
-              source="launch_provider" 
-              label="Launch Provider" 
-              fullWidth 
-            />
-            <TextInput 
-              source="rocket" 
-              label="Rocket" 
-              fullWidth 
-            />
-          </FormTab>
+        <FormTab label="Mission Overview">
+          <TextInput 
+            source="lift_off_time" 
+            label="Lift Off Time" 
+            fullWidth 
+          />
+          <TextInput 
+            source="launch_facility" 
+            label="Launch Facility" 
+            fullWidth 
+          />
+          <TextInput 
+            source="launch_pad" 
+            label="Launch Pad" 
+            fullWidth 
+          />
+          <TextInput 
+            source="launch_provider" 
+            label="Launch Provider" 
+            fullWidth 
+          />
+          <TextInput 
+            source="rocket" 
+            label="Rocket" 
+            fullWidth 
+          />
+        </FormTab>
 
-          <FormTab label="Lander Overview">
-            <TextInput 
-              source="lander_provider" 
-              label="Lander Provider" 
-              fullWidth 
-            />
-            <TextInput 
-              source="lunar_lander" 
-              label="Lunar Lander" 
-              fullWidth 
-            />
-            <TextInput 
-              source="lander_image_url" 
-              label="Lander Image URL" 
-              fullWidth 
-            />
-          </FormTab>
-        </TabbedForm>
-        <Toolbar>
-          <SaveButton label="Save Changes" disabled={saving} />
-        </Toolbar>
-      </Paper>
+        <FormTab label="Lander Overview">
+          <TextInput 
+            source="lander_provider" 
+            label="Lander Provider" 
+            fullWidth 
+          />
+          <TextInput 
+            source="lunar_lander" 
+            label="Lunar Lander" 
+            fullWidth 
+          />
+          <ImageInput source="lander_image_url" label="Lander Image">
+            <ImageField source="src" />
+          </ImageInput>
+        </FormTab>
+      </TabbedForm>
+    </Edit>
   );
 };
 
 // Mission Updates List
 export const MissionUpdateList = () => {
-  const notify = useNotify();
-  const refresh = useRefresh();
-  const [updates, setUpdates] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchUpdates();
-  }, []);
-
-  const fetchUpdates = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/api/mission/updates`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUpdates(data);
-      }
-    } catch (error) {
-      notify('Error loading updates', { type: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const ListActions = () => (
     <TopToolbar>
       <CreateButton label="Add Update" />
     </TopToolbar>
   );
 
-  if (loading) {
-    return <Box sx={{ p: 3 }}><Loading /></Box>;
-  }
-
   return (
-    <List actions={<ListActions />} title="Mission Updates">
+    <List resource="mission_updates" actions={<ListActions />} title="Mission Updates">
       <Datagrid rowClick="edit">
         <TextField source="id" />
         <TextField source="title" />
         <DateField source="date" />
         <TextField source="description" />
-        <NumberInput source="display_order" />
+        <TextField source="display_order" />
         <EditButton />
-        <DeleteButton mutationOptions={{ onSuccess: () => fetchUpdates() }} />
+        <DeleteButton />
       </Datagrid>
     </List>
   );
@@ -304,35 +193,9 @@ export const MissionUpdateList = () => {
 
 // Mission Update Create
 export const MissionUpdateCreate = () => {
-  const notify = useNotify();
-  const refresh = useRefresh();
-
-  const handleSave = async (data: any) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/api/mission/updates`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (response.ok) {
-        notify('Update created!', { type: 'success' });
-        refresh();
-      } else {
-        notify('Failed to create', { type: 'error' });
-      }
-    } catch (error: any) {
-      notify('Error: ' + error.message, { type: 'error' });
-    }
-  };
-
   return (
-    <Create title="Create Mission Update">
-      <SimpleForm onSubmit={handleSave}>
+    <Create resource="mission_updates" title="Create Mission Update">
+      <SimpleForm>
         <TextInput source="title" fullWidth required />
         <TextInput source="date" label="Date (YYYY-MM-DD)" fullWidth />
         <TextInput source="description" fullWidth multiline rows={4} />
@@ -344,45 +207,10 @@ export const MissionUpdateCreate = () => {
 
 // Mission Update Edit
 export const MissionUpdateEdit = () => {
-  const record = useRecordContext();
-  const notify = useNotify();
-  const refresh = useRefresh();
-
-  const handleSave = async (data: any) => {
-    if (!record || !record.id) {
-      notify('Error: Record not found', { type: 'error' });
-      return;
-    }
-    
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/api/mission/updates/${record.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (response.ok) {
-        notify('Update saved!', { type: 'success' });
-        refresh();
-      } else {
-        notify('Failed to save', { type: 'error' });
-      }
-    } catch (error: any) {
-      notify('Error: ' + error.message, { type: 'error' });
-    }
-  };
-
-  if (!record) {
-    return <Loading />;
-  }
-
   return (
-    <Edit title="Edit Mission Update">
-      <SimpleForm onSubmit={handleSave} defaultValues={record}>
+    <Edit resource="mission_updates" title="Edit Mission Update">
+      <SimpleForm>
+        <TextInput source="id" disabled />
         <TextInput source="title" fullWidth required />
         <TextInput source="date" label="Date (YYYY-MM-DD)" fullWidth />
         <TextInput source="description" fullWidth multiline rows={4} />
@@ -392,4 +220,51 @@ export const MissionUpdateEdit = () => {
   );
 };
 
-export const MissionContentShow = MissionContentEdit;
+// Mission Content Show
+export const MissionContentShow = () => {
+  return (
+    <Show resource="mission_content" id={1} title="Mission Page Content">
+      <SimpleShowLayout>
+        <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>Hero Section</Typography>
+        <TextField source="hero_title" label="Hero Title" />
+        <TextField source="hero_subtitle" label="Hero Subtitle" />
+        <TextField source="hero_mission_statement" label="Mission Statement" />
+        <ImageField source="hero_background_image_url" label="Background Image" />
+
+        <Divider sx={{ my: 2 }} />
+        <Typography variant="h5" gutterBottom>CTA Buttons</Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={4}>
+            <Typography variant="h6" gutterBottom>Button 1</Typography>
+            <TextField source="button1_text" label="Button Text" />
+            <TextField source="button1_status_text" label="Status Text" />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography variant="h6" gutterBottom>Button 2</Typography>
+            <TextField source="button2_text" label="Button Text" />
+            <TextField source="button2_status_text" label="Status Text" />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Typography variant="h6" gutterBottom>Button 3</Typography>
+            <TextField source="button3_text" label="Button Text" />
+            <TextField source="button3_status_text" label="Status Text" />
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ my: 2 }} />
+        <Typography variant="h5" gutterBottom>Mission Overview</Typography>
+        <TextField source="lift_off_time" label="Lift Off Time" />
+        <TextField source="launch_facility" label="Launch Facility" />
+        <TextField source="launch_pad" label="Launch Pad" />
+        <TextField source="launch_provider" label="Launch Provider" />
+        <TextField source="rocket" label="Rocket" />
+
+        <Divider sx={{ my: 2 }} />
+        <Typography variant="h5" gutterBottom>Lander Overview</Typography>
+        <TextField source="lander_provider" label="Lander Provider" />
+        <TextField source="lunar_lander" label="Lunar Lander" />
+        <ImageField source="lander_image_url" label="Lander Image" />
+      </SimpleShowLayout>
+    </Show>
+  );
+};

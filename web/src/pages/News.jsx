@@ -605,27 +605,27 @@ const News = () => {
 
   const sectionNav = (
     <div className="border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>
-      <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between py-0">
-        <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-wrap">
-          {/* Logo Section */}
+      <div className="max-w-full mx-4 sm:mx-6 md:mx-8 px-3 sm:px-6 py-2 sm:py-0" style={{ backgroundColor: '#fa9a00' }}>
+        <div className="flex items-center gap-4 md:gap-8 flex-wrap" style={{ backgroundColor: '#fa9a00' }}>
+          {/* Logo and Title */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-black flex items-center justify-center overflow-hidden">
+            <div className="relative" style={{ overflow: 'visible' }}>
+              <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black flex items-center justify-center overflow-hidden">
                 <img 
                   src="/TLP Helmet.png" 
                   alt="TLP Logo" 
-                  className="w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 object-contain"
+                  className="w-7 h-7 sm:w-10 sm:h-10 object-contain"
                 />
               </div>
-              <div className="absolute top-full left-0 bg-red-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
+              <div className="absolute top-full left-0 w-10 sm:w-14 bg-[#8B1A1A] px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50 flex items-center justify-center">
                 {currentTime}
               </div>
             </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-0 text-[10px] sm:text-xs uppercase flex-wrap">
+          <div className="flex items-center gap-0 text-xs uppercase">
             {categories.slice(1).map((cat, idx) => (
               <div key={cat} className="flex items-center">
                 {idx > 0 && <span className="mx-0.5 sm:mx-1 font-bold text-white">|</span>}
@@ -935,7 +935,7 @@ const News = () => {
     <Layout sectionNav={sectionNav}>
       {/* Trending Sub-Navigation */}
       <div className="bg-white border-b border-gray-300">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-[2px] pb-[2px]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-0">
           <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
             {trending.map((topic, idx) => {
               const trendingSlug = topic.search || topic.label.toLowerCase().replace(/\s+/g, '-');
@@ -946,7 +946,7 @@ const News = () => {
                   {idx > 0 && <span className="text-black mx-2 sm:mx-3">|</span>}
                   <button
                     onClick={() => handleTrendingClick(topic)}
-                    className={`text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-1 hover:text-newstheme ${
+                    className={`text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-0.5 hover:text-newstheme ${
                       isActive
                         ? 'font-bold text-newstheme border-b-2 border-newstheme' 
                         : topic.label === 'SPACEX' && !trendingParam && !selectedTrending

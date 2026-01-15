@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // Sample locations - these should ideally come from crew member data
 // Coordinates are in [latitude, longitude] format for Leaflet
@@ -226,10 +226,52 @@ const WorldMap = ({ crewMembers = [] }) => {
     );
   }
 
-  const { MapContainer, TileLayer, Marker, Popup } = LeafletComponents;
+  const { MapContainer, TileLayer, Marker, Popup, useMap } = LeafletComponents;
+
+  // Component to handle map resize and ensure proper marker alignment
+  function MapResizeHandler() {
+    const map = useMap();
+    const hasInvalidated = useRef(false);
+    
+    useEffect(() => {
+      // Store map instance globally for access in event handlers
+      window.mapInstance = map;
+      
+      // Invalidate size when component mounts to ensure proper rendering
+      const invalidateSize = () => {
+        if (!hasInvalidated.current) {
+          map.invalidateSize();
+          hasInvalidated.current = true;
+        }
+      };
+      
+      setTimeout(invalidateSize, 100);
+      
+      // Also invalidate after tiles load to fix marker alignment
+      const timeoutId = setTimeout(() => {
+        map.invalidateSize();
+      }, 500);
+      
+      // Invalidate on window resize
+      const handleResize = () => {
+        map.invalidateSize();
+      };
+      window.addEventListener('resize', handleResize);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('resize', handleResize);
+        if (window.mapInstance === map) {
+          delete window.mapInstance;
+        }
+      };
+    }, [map]);
+    
+    return null;
+  }
 
   return (
-    <div className="w-full h-full bg-black relative">
+    <div className="w-full h-full bg-black relative" style={{ minHeight: '300px' }}>
       <style>{`
         .leaflet-container {
           background-color: #000000 !important;
@@ -299,24 +341,53 @@ const WorldMap = ({ crewMembers = [] }) => {
       <MapContainer
         center={[30, 0]}
         zoom={2}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={true}
-        scrollWheelZoom={true}
-        doubleClickZoom={true}
-        dragging={true}
-        touchZoom={true}
-        minZoom={1}
-        maxZoom={10}
+        style={{ height: '100%', width: '100%', minHeight: '300px' }}
+        zoomControl={false}
+        scrollWheelZoom={false}
+        doubleClickZoom={false}
+        dragging={false}
+        touchZoom={false}
+        boxZoom={false}
+        keyboard={false}
+        minZoom={2}
+        maxZoom={2}
         maxBounds={[[-85, -180], [85, 180]]}
-        maxBoundsViscosity={0.5}
+        maxBoundsViscosity={1.0}
         worldCopyJump={true}
         className="world-map-container"
+        whenReady={() => {
+          // Ensure map size is correct when ready
+          setTimeout(() => {
+            if (window.mapInstance) {
+              window.mapInstance.invalidateSize();
+            }
+          }, 100);
+        }}
       >
+        <MapResizeHandler />
         {/* Grey/dark tile layer - crisp and clear */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           opacity={0.45}
+          eventHandlers={{
+            loading: () => {
+              // Invalidate size when tiles start loading
+              setTimeout(() => {
+                if (window.mapInstance) {
+                  window.mapInstance.invalidateSize();
+                }
+              }, 50);
+            },
+            load: () => {
+              // Invalidate size when tiles finish loading to fix marker alignment
+              setTimeout(() => {
+                if (window.mapInstance) {
+                  window.mapInstance.invalidateSize();
+                }
+              }, 100);
+            }
+          }}
         />
         
         {/* GeoJSON overlay to highlight North America and Europe in white - Disabled for now */}
