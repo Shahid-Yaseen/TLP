@@ -277,15 +277,29 @@ const CrewShowContent = () => {
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
                       {(() => {
-                        const coords = typeof record.coordinates === 'string' 
-                          ? JSON.parse(record.coordinates) 
-                          : record.coordinates;
-                        if (coords && (coords.lat !== undefined || coords.latitude !== undefined)) {
-                          const lat = coords.lat || coords.latitude;
-                          const lng = coords.lng || coords.longitude;
-                          return `${lat?.toFixed(6) || 'N/A'}, ${lng?.toFixed(6) || 'N/A'}`;
+                        let coords: any = record.coordinates;
+                        if (typeof coords === 'string') {
+                          try {
+                            coords = JSON.parse(coords);
+                          } catch {
+                            coords = null;
+                          }
                         }
-                        return 'Not set';
+
+                        if (!coords || typeof coords !== 'object') return 'Not set';
+
+                        const latValue = coords.lat ?? coords.latitude;
+                        const lngValue = coords.lng ?? coords.longitude;
+
+                        const latNum = typeof latValue === 'number' ? latValue : parseFloat(String(latValue));
+                        const lngNum = typeof lngValue === 'number' ? lngValue : parseFloat(String(lngValue));
+
+                        const latText = Number.isFinite(latNum) ? latNum.toFixed(6) : 'N/A';
+                        const lngText = Number.isFinite(lngNum) ? lngNum.toFixed(6) : 'N/A';
+
+                        if (latText === 'N/A' && lngText === 'N/A') return 'Not set';
+
+                        return `${latText}, ${lngText}`;
                       })()}
                     </Typography>
                   </Box>
@@ -328,7 +342,7 @@ const CrewShowContent = () => {
                     <Typography
                       variant="body2"
                       component="a"
-                      href={record.profile_image_url}
+                      href={imageUrl || undefined}
                       target="_blank"
                       rel="noopener noreferrer"
                       sx={{

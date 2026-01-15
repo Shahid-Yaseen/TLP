@@ -11,6 +11,25 @@ const { getPool } = require('../config/database');
 
 const pool = getPool();
 
+function cleanPublicImageUrl(url) {
+  if (!url || typeof url !== 'string') return url;
+
+  let cleaned = url.trim();
+
+  // Remove any incorrectly prepended server IP first
+  // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttp://domain or http://IP_ADDRESShttps//domain
+  cleaned = cleaned.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+  cleaned = cleaned.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+  cleaned = cleaned.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+
+  // Fix malformed protocols (https// -> https://) anywhere in the string
+  cleaned = cleaned.replace(/https\/\//g, 'https://');
+  cleaned = cleaned.replace(/http\/\//g, 'http://');
+
+  // If still not an absolute URL, return as-is (it might be a relative URL)
+  return cleaned;
+}
+
 /**
  * GET /api/crew
  * Get all crew members
@@ -42,8 +61,14 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   args.push(limit, offset);
 
   const { rows } = await pool.query(sql, args);
+
+  const sanitizedRows = rows.map((row) => ({
+    ...row,
+    profile_image_url: cleanPublicImageUrl(row.profile_image_url),
+  }));
+
   res.json({
-    data: rows,
+    data: sanitizedRows,
     pagination: {
       limit,
       offset,
@@ -64,7 +89,9 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     return res.status(404).json({ error: 'Crew member not found', code: 'NOT_FOUND' });
   }
 
-  res.json(rows[0]);
+  const crewMember = rows[0];
+  crewMember.profile_image_url = cleanPublicImageUrl(crewMember.profile_image_url);
+  res.json(crewMember);
 }));
 
 /**
