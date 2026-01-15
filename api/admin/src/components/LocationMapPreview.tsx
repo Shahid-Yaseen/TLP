@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useFormContext } from 'react-hook-form';
 import { Box, Paper, Typography, Alert } from '@mui/material';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -44,13 +43,14 @@ const createRedMarker = () => {
   });
 };
 
-const LocationMapPreview: React.FC = () => {
-  const { watch } = useFormContext();
+interface LocationMapPreviewProps {
+  coordinates?: any;
+  location?: string;
+}
+
+const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({ coordinates, location }) => {
   const [isClient, setIsClient] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-
-  const coordinates = watch('coordinates');
-  const location = watch('location');
 
   useEffect(() => {
     setIsClient(true);

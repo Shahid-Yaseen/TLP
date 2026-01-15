@@ -69,7 +69,7 @@ export const CrewCreate = (props: any) => (
         </Grid>
       </Grid>
       <FormDataConsumer>
-        {() => <LocationMapPreview />}
+        {({ formData }) => <LocationMapPreview coordinates={formData?.coordinates} location={formData?.location} />}
       </FormDataConsumer>
       <TextInput source="bio" multiline />
       <ImageInput source="profile_image_url" label="Profile Image">
@@ -113,7 +113,7 @@ export const CrewEdit = (props: any) => (
         </Grid>
       </Grid>
       <FormDataConsumer>
-        {() => <LocationMapPreview />}
+        {({ formData }) => <LocationMapPreview coordinates={formData?.coordinates} location={formData?.location} />}
       </FormDataConsumer>
       <TextInput source="bio" multiline />
       <ImageInput source="profile_image_url" label="Profile Image">
