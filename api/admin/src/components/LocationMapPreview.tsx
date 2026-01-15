@@ -50,7 +50,6 @@ interface LocationMapPreviewProps {
 
 const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({ coordinates, location }) => {
   const [isClient, setIsClient] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -59,23 +58,25 @@ const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({ coordinates, lo
   // Parse coordinates
   let lat: number | null = null;
   let lng: number | null = null;
+  let mapError: string | null = null;
 
   if (coordinates) {
     if (typeof coordinates === 'object') {
-      const latStr = coordinates.lat;
-      const lngStr = coordinates.lng;
+      const latRaw = coordinates.lat ?? coordinates.latitude;
+      const lngRaw = coordinates.lng ?? coordinates.longitude;
       
-      if (latStr && lngStr) {
-        lat = parseFloat(latStr);
-        lng = parseFloat(lngStr);
+      const hasLat = latRaw !== undefined && latRaw !== null && latRaw !== '';
+      const hasLng = lngRaw !== undefined && lngRaw !== null && lngRaw !== '';
+
+      if (hasLat && hasLng) {
+        lat = typeof latRaw === 'number' ? latRaw : parseFloat(String(latRaw));
+        lng = typeof lngRaw === 'number' ? lngRaw : parseFloat(String(lngRaw));
         
         // Validate coordinates
         if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
           lat = null;
           lng = null;
-          setMapError('Invalid coordinates. Latitude must be between -90 and 90, Longitude between -180 and 180.');
-        } else {
-          setMapError(null);
+          mapError = 'Invalid coordinates. Latitude must be between -90 and 90, Longitude between -180 and 180.';
         }
       }
     }
