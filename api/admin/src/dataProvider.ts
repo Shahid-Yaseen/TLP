@@ -181,8 +181,29 @@ export const dataProvider: DataProvider = {
 
     // Transform image URLs to objects for ImageInput/ImageField
     if (resource === 'crew' && json.profile_image_url && typeof json.profile_image_url === 'string') {
+      // Clean malformed URLs when reading from API
+      let cleanedUrl = json.profile_image_url;
+      
+      // Remove any server IP addresses that might be prepended
+      cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+      cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+      cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+      
+      // Also handle cases where IP might be in the middle
+      cleanedUrl = cleanedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+      cleanedUrl = cleanedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+      cleanedUrl = cleanedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+      
+      // Fix malformed protocols
+      cleanedUrl = cleanedUrl.replace(/https\/\//g, 'https://');
+      cleanedUrl = cleanedUrl.replace(/http\/\//g, 'http://');
+      
+      // Remove any remaining IP addresses
+      cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+      cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
+      
       json.profile_image_url = {
-        src: json.profile_image_url,
+        src: cleanedUrl,
         title: json.full_name || 'Profile Image'
       };
     }
@@ -481,15 +502,24 @@ export const dataProvider: DataProvider = {
           // Use full URL for the image - check if it's already an absolute URL
           let uploadedUrl = uploadData.url;
           
-          // Remove any incorrectly prepended server IP first
-          // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttp://domain or http://IP_ADDRESShttps//domain
+          // Aggressively clean the URL - remove any server IP addresses
+          // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttps//domain
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
           
+          // Also handle cases where IP might be in the middle: http://IPhttps://domain
+          uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+          uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+          uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+          
           // Fix malformed URLs (missing colon in https://) - replace anywhere in string
           uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
           uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
+          
+          // Remove any remaining IP addresses that might be prepended
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
           
           // Only prepend API_URL if it's not already an absolute URL
           data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 
@@ -526,14 +556,24 @@ export const dataProvider: DataProvider = {
             const uploadData = await uploadResponse.json();
             let uploadedUrl = uploadData.url;
             
-            // Remove any incorrectly prepended server IP first
+            // Aggressively clean the URL - remove any server IP addresses
+            // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttps//domain
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
             
+            // Also handle cases where IP might be in the middle: http://IPhttps://domain
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+            
             // Fix malformed URLs (missing colon in https://) - replace anywhere in string
             uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
             uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
+            
+            // Remove any remaining IP addresses that might be prepended
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
             
             // Only prepend API_URL if it's not already an absolute URL
             return (uploadedUrl.match(/^https?:\/\//)) 
@@ -786,15 +826,24 @@ export const dataProvider: DataProvider = {
           // Use full URL for the image - check if it's already an absolute URL
           let uploadedUrl = uploadData.url;
           
-          // Remove any incorrectly prepended server IP first
-          // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttp://domain or http://IP_ADDRESShttps//domain
+          // Aggressively clean the URL - remove any server IP addresses
+          // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttps//domain
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
           
+          // Also handle cases where IP might be in the middle: http://IPhttps://domain
+          uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+          uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+          uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+          
           // Fix malformed URLs (missing colon in https://) - replace anywhere in string
           uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
           uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
+          
+          // Remove any remaining IP addresses that might be prepended
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+          uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
           
           // Only prepend API_URL if it's not already an absolute URL
           data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 

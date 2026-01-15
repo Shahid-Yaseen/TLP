@@ -49,6 +49,12 @@ function normalizePublicUrl(url) {
   if (!url) return url;
   let normalized = url.trim();
   
+  // Remove any server IP addresses that might be prepended
+  // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttps//domain
+  normalized = normalized.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+  normalized = normalized.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+  normalized = normalized.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+  
   // Fix malformed protocols (https// -> https://)
   normalized = normalized.replace(/https\/\//g, 'https://');
   normalized = normalized.replace(/http\/\//g, 'http://');
@@ -144,8 +150,19 @@ async function uploadFile(file, folder = 'uploads') {
         let finalUrl = fileUrl.replace(/https\/\//g, 'https://').replace(/http\/\//g, 'http://');
         
         // Remove any server IP that might have been incorrectly prepended
-        // Pattern: http://IP_ADDRESShttps:// or http://IP_ADDRESShttp://
+        // Pattern: http://IP_ADDRESShttps:// or http://IP_ADDRESShttp:// or http://IP_ADDRESShttps// or http://IP_ADDRESShttp//
+        // More aggressive: remove any IP address pattern followed by http/https
         finalUrl = finalUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+        finalUrl = finalUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+        finalUrl = finalUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+        
+        // Also handle cases where IP might be in the middle: http://IPhttps://domain
+        finalUrl = finalUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+        finalUrl = finalUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+        finalUrl = finalUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+        
+        // Fix any remaining malformed protocols
+        finalUrl = finalUrl.replace(/https\/\//g, 'https://').replace(/http\/\//g, 'http://');
         
         console.log(`✓ Upload successful: ${finalUrl}`);
 

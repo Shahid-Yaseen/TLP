@@ -1,4 +1,4 @@
-import { List, Create, Edit, Show, SimpleForm, TextInput, SelectInput, Datagrid, TextField, BooleanField, ShowButton, EditButton, DeleteButton, useRecordContext, ImageInput, ImageField, FormDataConsumer } from 'react-admin';
+import { List, Create, Edit, Show, SimpleForm, TextInput, NumberInput, SelectInput, Datagrid, TextField, BooleanField, ShowButton, EditButton, DeleteButton, useRecordContext, ImageInput, ImageField, FormDataConsumer } from 'react-admin';
 import { Box, Card, CardContent, Typography, Avatar, Chip, Grid, Divider, Stack } from '@mui/material';
 import { Person, Work, LocationOn, Description, CheckCircle, Cancel, CalendarToday, Image as ImageIcon } from '@mui/icons-material';
 import { BackButtonActions } from '../components/BackButtonActions';
@@ -48,19 +48,23 @@ export const CrewCreate = (props: any) => (
       <TextInput source="location" label="Location (City, State/Country)" helperText="Enter the location name (e.g., 'Los Angeles, California' or 'London, UK')" />
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
-          <TextInput 
+          <NumberInput 
             source="coordinates.lat" 
             label="Latitude" 
             helperText="Between -90 and 90 (e.g., 34.0522 for Los Angeles)"
-            type="number"
+            min={-90}
+            max={90}
+            step="any"
           />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextInput 
+          <NumberInput 
             source="coordinates.lng" 
             label="Longitude" 
             helperText="Between -180 and 180 (e.g., -118.2437 for Los Angeles)"
-            type="number"
+            min={-180}
+            max={180}
+            step="any"
           />
         </Grid>
       </Grid>
@@ -88,19 +92,23 @@ export const CrewEdit = (props: any) => (
       <TextInput source="location" label="Location (City, State/Country)" helperText="Enter the location name (e.g., 'Los Angeles, California' or 'London, UK')" />
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
-          <TextInput 
+          <NumberInput 
             source="coordinates.lat" 
             label="Latitude" 
             helperText="Between -90 and 90 (e.g., 34.0522 for Los Angeles)"
-            type="number"
+            min={-90}
+            max={90}
+            step="any"
           />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextInput 
+          <NumberInput 
             source="coordinates.lng" 
             label="Longitude" 
             helperText="Between -180 and 180 (e.g., -118.2437 for Los Angeles)"
-            type="number"
+            min={-180}
+            max={180}
+            step="any"
           />
         </Grid>
       </Grid>
@@ -257,6 +265,28 @@ const CrewShowContent = () => {
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {record.location}
+                    </Typography>
+                  </Box>
+                )}
+
+                {record.coordinates && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                      <LocationOn sx={{ fontSize: 16, mr: 0.5 }} />
+                      Coordinates
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
+                      {(() => {
+                        const coords = typeof record.coordinates === 'string' 
+                          ? JSON.parse(record.coordinates) 
+                          : record.coordinates;
+                        if (coords && (coords.lat !== undefined || coords.latitude !== undefined)) {
+                          const lat = coords.lat || coords.latitude;
+                          const lng = coords.lng || coords.longitude;
+                          return `${lat?.toFixed(6) || 'N/A'}, ${lng?.toFixed(6) || 'N/A'}`;
+                        }
+                        return 'Not set';
+                      })()}
                     </Typography>
                   </Box>
                 )}
