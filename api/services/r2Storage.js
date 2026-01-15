@@ -96,7 +96,20 @@ async function uploadFile(file, folder = 'uploads') {
 
         await upload.done();
 
-        const fileUrl = `${PUBLIC_URL.endsWith('/') ? PUBLIC_URL : PUBLIC_URL + '/'}${filename}`;
+        // Ensure PUBLIC_URL is properly formatted (fix missing colon in https://)
+        let baseUrl = PUBLIC_URL.trim();
+        if (baseUrl.startsWith('https//')) {
+          baseUrl = baseUrl.replace('https//', 'https://');
+        } else if (baseUrl.startsWith('http//')) {
+          baseUrl = baseUrl.replace('http//', 'http://');
+        }
+        
+        // Ensure baseUrl ends with / for proper concatenation
+        if (!baseUrl.endsWith('/')) {
+          baseUrl += '/';
+        }
+        
+        const fileUrl = `${baseUrl}${filename}`;
 
         console.log(`✓ Upload successful: ${fileUrl}`);
 

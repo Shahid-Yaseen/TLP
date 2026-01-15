@@ -479,8 +479,19 @@ export const dataProvider: DataProvider = {
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
           // Use full URL for the image - check if it's already an absolute URL
-          const uploadedUrl = uploadData.url;
-          data.profile_image_url = uploadedUrl.startsWith('http') ? uploadedUrl : `${API_URL}${uploadedUrl}`;
+          let uploadedUrl = uploadData.url;
+          
+          // Fix malformed URLs (missing colon in https://)
+          if (uploadedUrl.startsWith('https//')) {
+            uploadedUrl = uploadedUrl.replace('https//', 'https://');
+          } else if (uploadedUrl.startsWith('http//')) {
+            uploadedUrl = uploadedUrl.replace('http//', 'http://');
+          }
+          
+          // Only prepend API_URL if it's not already an absolute URL
+          data.profile_image_url = (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+            ? uploadedUrl 
+            : `${API_URL}${uploadedUrl}`;
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -510,8 +521,19 @@ export const dataProvider: DataProvider = {
 
           if (uploadResponse.ok) {
             const uploadData = await uploadResponse.json();
-            const uploadedUrl = uploadData.url;
-            return uploadedUrl.startsWith('http') ? uploadedUrl : `${API_URL}${uploadedUrl}`;
+            let uploadedUrl = uploadData.url;
+            
+            // Fix malformed URLs (missing colon in https://)
+            if (uploadedUrl.startsWith('https//')) {
+              uploadedUrl = uploadedUrl.replace('https//', 'https://');
+            } else if (uploadedUrl.startsWith('http//')) {
+              uploadedUrl = uploadedUrl.replace('http//', 'http://');
+            }
+            
+            // Only prepend API_URL if it's not already an absolute URL
+            return (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+              ? uploadedUrl 
+              : `${API_URL}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -595,8 +617,19 @@ export const dataProvider: DataProvider = {
 
           if (uploadResponse.ok) {
             const uploadData = await uploadResponse.json();
-            const uploadedUrl = uploadData.url;
-            return uploadedUrl.startsWith('http') ? uploadedUrl : `${API_URL}${uploadedUrl}`;
+            let uploadedUrl = uploadData.url;
+            
+            // Fix malformed URLs (missing colon in https://)
+            if (uploadedUrl.startsWith('https//')) {
+              uploadedUrl = uploadedUrl.replace('https//', 'https://');
+            } else if (uploadedUrl.startsWith('http//')) {
+              uploadedUrl = uploadedUrl.replace('http//', 'http://');
+            }
+            
+            // Only prepend API_URL if it's not already an absolute URL
+            return (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+              ? uploadedUrl 
+              : `${API_URL}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -744,8 +777,19 @@ export const dataProvider: DataProvider = {
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
           // Use full URL for the image - check if it's already an absolute URL
-          const uploadedUrl = uploadData.url;
-          data.profile_image_url = uploadedUrl.startsWith('http') ? uploadedUrl : `${API_URL}${uploadedUrl}`;
+          let uploadedUrl = uploadData.url;
+          
+          // Fix malformed URLs (missing colon in https://)
+          if (uploadedUrl.startsWith('https//')) {
+            uploadedUrl = uploadedUrl.replace('https//', 'https://');
+          } else if (uploadedUrl.startsWith('http//')) {
+            uploadedUrl = uploadedUrl.replace('http//', 'http://');
+          }
+          
+          // Only prepend API_URL if it's not already an absolute URL
+          data.profile_image_url = (uploadedUrl.startsWith('http://') || uploadedUrl.startsWith('https://')) 
+            ? uploadedUrl 
+            : `${API_URL}${uploadedUrl}`;
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
