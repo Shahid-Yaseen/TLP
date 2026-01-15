@@ -277,29 +277,50 @@ const CrewShowContent = () => {
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace' }}>
                       {(() => {
-                        let coords: any = record.coordinates;
-                        if (typeof coords === 'string') {
-                          try {
-                            coords = JSON.parse(coords);
-                          } catch {
-                            coords = null;
+                        try {
+                          let coords: any = record.coordinates;
+                          if (typeof coords === 'string') {
+                            try {
+                              coords = JSON.parse(coords);
+                            } catch {
+                              coords = null;
+                            }
                           }
+
+                          if (!coords || typeof coords !== 'object') return 'Not set';
+
+                          const latValue = coords.lat ?? coords.latitude;
+                          const lngValue = coords.lng ?? coords.longitude;
+
+                          // Safely convert to numbers
+                          let latNum: number;
+                          let lngNum: number;
+                          
+                          if (typeof latValue === 'number' && Number.isFinite(latValue)) {
+                            latNum = latValue;
+                          } else {
+                            const parsed = parseFloat(String(latValue || ''));
+                            latNum = Number.isFinite(parsed) ? parsed : NaN;
+                          }
+                          
+                          if (typeof lngValue === 'number' && Number.isFinite(lngValue)) {
+                            lngNum = lngValue;
+                          } else {
+                            const parsed = parseFloat(String(lngValue || ''));
+                            lngNum = Number.isFinite(parsed) ? parsed : NaN;
+                          }
+
+                          // Only call toFixed on valid numbers
+                          const latText = Number.isFinite(latNum) && typeof latNum === 'number' ? latNum.toFixed(6) : 'N/A';
+                          const lngText = Number.isFinite(lngNum) && typeof lngNum === 'number' ? lngNum.toFixed(6) : 'N/A';
+
+                          if (latText === 'N/A' && lngText === 'N/A') return 'Not set';
+
+                          return `${latText}, ${lngText}`;
+                        } catch (error) {
+                          console.error('Error formatting coordinates:', error);
+                          return 'Not set';
                         }
-
-                        if (!coords || typeof coords !== 'object') return 'Not set';
-
-                        const latValue = coords.lat ?? coords.latitude;
-                        const lngValue = coords.lng ?? coords.longitude;
-
-                        const latNum = typeof latValue === 'number' ? latValue : parseFloat(String(latValue));
-                        const lngNum = typeof lngValue === 'number' ? lngValue : parseFloat(String(lngValue));
-
-                        const latText = Number.isFinite(latNum) ? latNum.toFixed(6) : 'N/A';
-                        const lngText = Number.isFinite(lngNum) ? lngNum.toFixed(6) : 'N/A';
-
-                        if (latText === 'N/A' && lngText === 'N/A') return 'Not set';
-
-                        return `${latText}, ${lngText}`;
                       })()}
                     </Typography>
                   </Box>
