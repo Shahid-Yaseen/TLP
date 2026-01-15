@@ -1,4 +1,4 @@
-import { List, Create, Edit, Show, SimpleForm, TextInput, SelectInput, Datagrid, TextField, BooleanField, ShowButton, EditButton, DeleteButton, useRecordContext, ImageInput, ImageField, FunctionField, FormDataConsumer } from 'react-admin';
+import { List, Create, Edit, Show, SimpleForm, TextInput, SelectInput, Datagrid, TextField, BooleanField, ShowButton, EditButton, DeleteButton, useRecordContext, ImageInput, ImageField, FormDataConsumer } from 'react-admin';
 import { Box, Card, CardContent, Typography, Avatar, Chip, Grid, Divider, Stack } from '@mui/material';
 import { Person, Work, LocationOn, Description, CheckCircle, Cancel, CalendarToday, Image as ImageIcon } from '@mui/icons-material';
 import { BackButtonActions } from '../components/BackButtonActions';

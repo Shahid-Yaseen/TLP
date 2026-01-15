@@ -4,7 +4,6 @@ import {
   Container,
   Typography,
   Grid,
-  Paper,
   CircularProgress,
   Alert,
   Accordion,
@@ -23,8 +22,7 @@ import {
   RocketLaunch,
   CheckCircle,
   Cancel,
-  Schedule,
-  TrendingUp
+  Schedule
 } from '@mui/icons-material';
 import { fetchLaunchStatistics } from '../dataProvider';
 import StatCard from '../components/LaunchStats/StatCard';

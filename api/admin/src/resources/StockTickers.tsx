@@ -1,7 +1,7 @@
 import { 
   List, Create, Edit, Show, SimpleForm, 
   TextInput, NumberInput, BooleanInput, 
-  Datagrid, TextField, NumberField, BooleanField, 
+  Datagrid, TextField, NumberField, 
   ShowButton, EditButton, DeleteButton,
   useRecordContext, FunctionField
 } from 'react-admin';

@@ -11,7 +11,7 @@ import {
   BooleanInput,
 } from 'react-admin';
 import { useFormContext } from 'react-hook-form';
-import { Box, Grid, Typography, Switch, FormControlLabel, Button, Paper } from '@mui/material';
+import { Box, Grid, Typography, Switch, FormControlLabel, Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
 const CustomToolbar = (props: any) => (
@@ -39,9 +39,6 @@ const ArticleFormContent = () => {
   const heroImageUrl = watch('hero_image_url');
   const featuredImageUrl = watch('featured_image_url');
   const youtubeUrl = watch('video_youtube_url');
-  const videoTitle = watch('video_title');
-  const videoThumbnail = watch('video_thumbnail');
-  const videoCountdownText = watch('video_countdown_text');
   const isBreaking = watch('is_breaking') || false;
   const isDeveloping = watch('is_developing') || false;
   const isFeatured = watch('is_featured') || false;
@@ -640,6 +637,7 @@ const ArticleFormContent = () => {
                     }}
                   >
                     <iframe
+                      title="YouTube video player"
                       width="100%"
                       height="100%"
                       src={`https://www.youtube.com/embed/${youtubeVideoId}`}

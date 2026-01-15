@@ -11,28 +11,17 @@ import {
   NumberInput,
   EditButton,
   DeleteButton,
-  ShowButton,
   CreateButton,
   TopToolbar,
-  useNotify,
-  useRefresh,
-  useRecordContext,
   TabbedForm,
   FormTab,
-  SaveButton,
-  Toolbar,
-  useDataProvider,
   useGetOne,
   Loading,
-  Error,
   ImageInput,
   ImageField,
   SimpleShowLayout
 } from 'react-admin';
-import { Box, Typography, Paper, Divider, Grid, Card, CardContent, Button } from '@mui/material';
-import { useState, useEffect } from 'react';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3007';
+import { Box, Typography, Divider, Grid, Alert } from '@mui/material';
 
 // Mission Content List/Edit (singleton - always edit id=1)
 export const MissionContentList = () => {
@@ -40,14 +29,20 @@ export const MissionContentList = () => {
 };
 
 export const MissionContentEdit = () => {
-  const { data, isLoading, error } = useGetOne('mission_content', { id: 1 });
+  const { isLoading, error } = useGetOne('mission_content', { id: 1 });
 
   if (isLoading) {
     return <Box sx={{ p: 3 }}><Loading /></Box>;
   }
 
   if (error) {
-    return <Box sx={{ p: 3 }}><Error error={error} /></Box>;
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">
+          {error.message || 'Failed to load mission content'}
+        </Alert>
+      </Box>
+    );
   }
 
   return (

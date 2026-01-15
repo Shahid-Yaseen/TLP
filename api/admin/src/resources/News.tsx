@@ -1,8 +1,7 @@
-import { List, Create, Edit, Show, SimpleForm, TextInput, ReferenceInput, SelectInput, Datagrid, TextField, DateField, ShowButton, EditButton, DeleteButton, ReferenceArrayInput, SelectArrayInput, BooleanInput, FunctionField, BooleanField, useCreate, TabbedShowLayout, ImageField, ShowActions, TopToolbar, useRedirect, useListContext, CreateButton } from 'react-admin';
+import { List, Create, Edit, Show, Datagrid, TextField, DateField, ShowButton, EditButton, DeleteButton, FunctionField, TabbedShowLayout, TopToolbar, useRedirect, useListContext, CreateButton } from 'react-admin';
 import { ArticleForm } from '../components/ArticleForm';
-import { Box, Typography, Divider, Paper, Grid, Chip, IconButton, Card, CardContent, CardMedia, CardActions, ButtonGroup, Button } from '@mui/material';
+import { Box, Typography, Grid, Chip, Card, CardContent, CardMedia, CardActions, ButtonGroup, Button, Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import { useState, useEffect } from 'react';

@@ -2,15 +2,14 @@ import {
   List, Create, Edit, Show, TabbedForm, FormTab, TabbedShowLayout,
   TextInput, DateTimeInput, NumberInput, ReferenceInput, SelectInput, 
   Datagrid, TextField, DateField, ShowButton, EditButton, DeleteButton, 
-  BooleanInput, FunctionField, BooleanField, ImageField, RichTextField,
-  useRecordContext, ArrayInput, SimpleFormIterator, ArrayField, UrlField,
-  NumberField, ChipField, TopToolbar, ShowActions, useListContext,
-  useDataProvider, useNotify, useRefresh, ReferenceField
+  BooleanInput, FunctionField, BooleanField,
+  useRecordContext, ArrayInput, SimpleFormIterator, ArrayField,
+  TopToolbar, useListContext,
+  useNotify, useRefresh, ReferenceField
 } from 'react-admin';
 import { useTheme } from '@mui/material/styles';
 import { useState, useEffect } from 'react';
 import { Box, Typography, Divider, Paper, Grid, Chip, IconButton, Card, CardContent, CardMedia, CardActions, ButtonGroup, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField as MuiTextField } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import EditIcon from '@mui/icons-material/Edit';
@@ -289,7 +288,8 @@ const JsonbInput = ({ source, label, helperText }: any) => {
   );
 };
 
-// Array Field Component for editing arrays
+// Array Field Component for editing arrays (unused - kept for future use)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ArrayJsonbInput = ({ source, label, helperText }: any) => {
   return (
     <TextInput 
@@ -1268,12 +1268,13 @@ export const LaunchEdit = (props: any) => {
 // Helper function to extract YouTube video ID from URL
 const getYouTubeVideoId = (url: string): string | null => {
   if (!url) return null;
-  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const regex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
   const match = url.match(regex);
   return match ? match[1] : null;
 };
 
-// Helper function to format date/time with timezone
+// Helper function to format date/time with timezone (unused - kept for future use)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const formatDateTimeLine = (dateStr: string | null, pad: any): string => {
   if (!dateStr) return 'TBD';
   const date = new Date(dateStr);
@@ -1542,7 +1543,8 @@ export const LaunchShow = (props: any) => {
   const isDark = theme?.palette?.mode === 'dark' || false;
   const record = useRecordContext();
   
-  // State for countdown timer
+  // State for countdown timer (unused - kept for future use)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   
