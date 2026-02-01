@@ -17,7 +17,7 @@
 }
 
 .red-dot-loader-dot {
-  background-color: #8B1A1A;
+  /* background-color set via inline style for color prop */
   border-radius: 50%;
   animation: red-dot-bounce 1.4s infinite ease-in-out;
 }

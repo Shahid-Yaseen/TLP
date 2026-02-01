@@ -334,13 +334,7 @@ const LaunchNewsDetail = () => {
   );
 
   if (loading) {
-    return (
-      <Layout sectionNav={sectionNav}>
-        <div className="max-w-7xl mx-auto px-6 py-12 text-center text-gray-400">
-          Loading...
-        </div>
-      </Layout>
-    );
+    return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
   }
 
   if (!article) {
@@ -730,7 +724,7 @@ const LaunchNewsDetail = () => {
               {/* Comments List */}
               {commentsLoading ? (
                 <div className="text-center py-8">
-                  <RedDotLoader size="medium" />
+                  <RedDotLoader size="medium" color="#fa9a00" />
                 </div>
               ) : comments.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">No comments yet. Be the first to comment!</div>

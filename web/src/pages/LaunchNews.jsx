@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import API_URL from '../config/api';
+import RedDotLoader from '../components/common/RedDotLoader';
 
 const LaunchNews = () => {
   const navigate = useNavigate();
@@ -247,13 +248,7 @@ const LaunchNews = () => {
   );
 
   if (loading) {
-    return (
-      <Layout sectionNav={sectionNav}>
-        <div className="max-w-7xl mx-auto px-6 py-12 text-center text-gray-400">
-          Loading...
-        </div>
-      </Layout>
-    );
+    return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
   }
 
   return (

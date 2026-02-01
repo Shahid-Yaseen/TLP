@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import API_URL from '../config/api';
+import RedDotLoader from '../components/common/RedDotLoader';
 
 const News = () => {
   const navigate = useNavigate();
@@ -637,6 +638,10 @@ const News = () => {
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  if (loading) {
+    return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
+  }
 
   const sectionNav = (
     <div className="border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>

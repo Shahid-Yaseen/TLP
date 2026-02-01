@@ -4,7 +4,8 @@ import './RedDotLoader.css';
 const RedDotLoader = ({ 
   size = 'medium', 
   fullScreen = false,
-  className = '' 
+  className = '',
+  color = '#8B1A1A'  // Default launch red; news uses #fa9a00
 }) => {
   // Size configurations
   const sizeConfig = {
@@ -23,6 +24,7 @@ const RedDotLoader = ({
   };
 
   const config = sizeConfig[size] || sizeConfig.medium;
+  const dotStyle = { backgroundColor: color };
 
   const containerClasses = fullScreen
     ? 'red-dot-loader-container red-dot-loader-fullscreen'
@@ -31,9 +33,9 @@ const RedDotLoader = ({
   return (
     <div className={`${containerClasses} ${className}`} role="status" aria-label="Loading">
       <div className={`red-dot-loader-dots ${config.gap}`}>
-        <div className={`red-dot-loader-dot ${config.dot} bg-[#8B1A1A] rounded-full`} />
-        <div className={`red-dot-loader-dot ${config.dot} bg-[#8B1A1A] rounded-full`} style={{ animationDelay: '0.2s' }} />
-        <div className={`red-dot-loader-dot ${config.dot} bg-[#8B1A1A] rounded-full`} style={{ animationDelay: '0.4s' }} />
+        <div className={`red-dot-loader-dot ${config.dot} rounded-full`} style={dotStyle} />
+        <div className={`red-dot-loader-dot ${config.dot} rounded-full`} style={{ ...dotStyle, animationDelay: '0.2s' }} />
+        <div className={`red-dot-loader-dot ${config.dot} rounded-full`} style={{ ...dotStyle, animationDelay: '0.4s' }} />
       </div>
       <span className="sr-only">Loading...</span>
     </div>
