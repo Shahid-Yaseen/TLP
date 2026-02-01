@@ -96,6 +96,8 @@ const MIGRATIONS = [
   '026_add_zachary_aubert_author.sql',
   '027_create_mission_content.sql',
   '028_create_launch_related_articles.sql',
+  '029_seed_news_categories.sql',
+  '030_seed_trending_topics.sql',
 ];
 
 // Track completed migrations

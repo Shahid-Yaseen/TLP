@@ -42,10 +42,12 @@ const Header = ({ sectionNav = null }) => {
   return (
     <>
       {/* Top Header Bar */}
-      <div className="bg-black border-b border-gray-800">
+      <div className="bg-black border-b-2 border-white">
         <div className="max-w-full mx-auto px-6 py-2 flex justify-between items-center text-xs text-white">
           <div className="flex items-center gap-2">
-            <span>TLP Network Inc.</span>
+            <Link to="/" className="hover:text-gray-300 transition-colors">
+              TLP Network Inc.
+            </Link>
             <span className="text-gray-500">|</span>
             <Link to="/launches" className="hover:text-gray-300 transition-colors">LAUNCH CENTER</Link>
             <span className="text-gray-500">|</span>

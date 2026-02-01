@@ -11,17 +11,14 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
 
-  const categories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
-  
-  // Category slug mapping
-  const categorySlugMap = {
-    'LAUNCH': 'launch',
-    'IN SPACE': 'in-space',
-    'TECHNOLOGY': 'technology',
-    'MILITARY': 'military',
-    'FINANCE': 'finance',
-    'NEWS': 'news'
-  };
+  // Categories from backend (fallback to default if API fails or empty)
+  const defaultCategories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
+  const [categoriesFromApi, setCategoriesFromApi] = useState([]);
+  const categories = categoriesFromApi.length > 0 ? categoriesFromApi.map((c) => c.name) : defaultCategories;
+  // Slug map from API (name -> slug) for routes
+  const categorySlugByName = categoriesFromApi.length > 0
+    ? Object.fromEntries(categoriesFromApi.map((c) => [c.name, c.slug || c.name?.toLowerCase().replace(/\s+/g, '-')]))
+    : { 'NEWS': 'news', 'LAUNCH': 'launch', 'IN SPACE': 'in-space', 'TECHNOLOGY': 'technology', 'MILITARY': 'military', 'FINANCE': 'finance' };
 
   // Demo images for articles
   const getDemoImage = (index = 0, categorySeed = '') => {
@@ -63,6 +60,18 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
     category_name: categoryName,
     published_at: new Date(Date.now() - i * 86400000).toISOString(),
   }));
+
+  // Fetch categories from backend for section nav
+  useEffect(() => {
+    axios.get(`${API_URL}/api/news/categories`)
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (data.length > 0) {
+          setCategoriesFromApi(data);
+        }
+      })
+      .catch(() => { /* keep default categories */ });
+  }, []);
 
   useEffect(() => {
     fetchArticles();
@@ -109,23 +118,25 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
         }
       }
 
-      if (articlesData.length > 0) {
-        setArticles(articlesData);
-      } else {
-        setArticles(dummyArticles);
-      }
+      // Use real data from API - don't fallback to dummy data if API returns empty
+      // Empty array means no articles in this category (real state, not an error)
+      setArticles(articlesData);
 
+      // Set featured article from API data
       if (featuredData.length > 0) {
         setFeaturedArticle(featuredData[0]);
       } else if (articlesData.length > 0) {
         setFeaturedArticle(articlesData[0]);
       } else {
-        setFeaturedArticle(dummyFeaturedArticle);
+        // No featured article - set to null so we can show empty state
+        setFeaturedArticle(null);
       }
     } catch (error) {
       console.error('Error fetching articles:', error);
-      setArticles(dummyArticles);
-      setFeaturedArticle(dummyFeaturedArticle);
+      // Only use dummy data on actual API errors (network/server errors)
+      // If API returns empty array, that's valid - no articles in category
+      setArticles([]);
+      setFeaturedArticle(null);
     } finally {
       setLoading(false);
     }
@@ -137,7 +148,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
     } else if (cat === 'NEWS') {
       return '/news';
     } else {
-      const slug = categorySlugMap[cat] || cat.toLowerCase().replace(/\s+/g, '-');
+      const slug = categorySlugByName[cat] || cat.toLowerCase().replace(/\s+/g, '-');
       return `${routePrefix}/${slug}`;
     }
   };
@@ -218,48 +229,13 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
         </div>
 
         {/* Hero Section - Large Featured Article */}
-        <div className="mb-6">
-          <Link to={`${routePrefix}/${featuredArticle?.slug || featuredArticle?.id}`}>
-            <div 
-              className="relative h-[600px] overflow-hidden"
-              style={{
-                backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || getDemoImage(0, categorySlug)})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            >
+        {featuredArticle ? (
+          <div className="mb-6">
+            <Link to={`${routePrefix}/${featuredArticle.slug || featuredArticle.id}`}>
               <div 
-                className="absolute inset-0"
+                className="relative h-[600px] overflow-hidden"
                 style={{
-                  background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
-                }}
-              ></div>
-              <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
-                <h1 
-                  className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
-                  style={{ fontFamily: 'Nasalization, sans-serif' }}
-                >
-                  {featuredArticle?.title || `Featured ${categoryName} Article`}
-                </h1>
-                <p className="text-lg text-white mb-6 max-w-3xl">
-                  {featuredArticle?.excerpt || `This is a featured article in the ${categoryName} category.`}
-                </p>
-                <button className="px-5 py-2 bg-newstheme text-white rounded-full font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
-                  {featuredArticle?.category_name || categoryName}
-                </button>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Secondary Hero Section - Two Smaller Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {articles.slice(0, 2).map((article, idx) => (
-            <Link key={article.id || idx} to={`${routePrefix}/${article.slug || article.id}`}>
-              <div 
-                className="relative h-[300px] overflow-hidden"
-                style={{
-                  backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1, categorySlug)})`,
+                  backgroundImage: `url(${featuredArticle.featured_image_url || featuredArticle.hero_image_url || getDemoImage(0, categorySlug)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                 }}
@@ -270,58 +246,108 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
                     background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
                   }}
                 ></div>
-                <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
-                  <h3 
-                    className="text-lg font-bold mb-2 text-white uppercase leading-tight"
+                <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
+                  <h1 
+                    className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
                     style={{ fontFamily: 'Nasalization, sans-serif' }}
                   >
-                    {article.title}
-                  </h3>
-                  <button className="px-4 py-1.5 bg-newstheme text-white rounded-full text-sm font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
-                    {article.category_name || categoryName}
+                    {featuredArticle.title}
+                  </h1>
+                  <p className="text-lg text-white mb-6 max-w-3xl">
+                    {featuredArticle.excerpt}
+                  </p>
+                  <button className="px-5 py-2 bg-newstheme text-white rounded-full font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                    {featuredArticle.category_name || categoryName}
                   </button>
                 </div>
               </div>
             </Link>
-          ))}
-        </div>
+          </div>
+        ) : articles.length === 0 ? (
+          <div className="mb-6 text-center py-20">
+            <p className="text-gray-400 text-xl">No articles found in {categoryName} category.</p>
+            <p className="text-gray-500 text-sm mt-2">Check back later for new content.</p>
+          </div>
+        ) : null}
+
+        {/* Secondary Hero Section - Two Smaller Cards */}
+        {articles.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {articles.slice(0, 2).map((article, idx) => (
+              <Link key={article.id} to={`${routePrefix}/${article.slug || article.id}`}>
+                <div 
+                  className="relative h-[300px] overflow-hidden"
+                  style={{
+                    backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1, categorySlug)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                >
+                  <div 
+                    className="absolute inset-0"
+                    style={{
+                      background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
+                    }}
+                  ></div>
+                  <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
+                    <h3 
+                      className="text-lg font-bold mb-2 text-white uppercase leading-tight"
+                      style={{ fontFamily: 'Nasalization, sans-serif' }}
+                    >
+                      {article.title}
+                    </h3>
+                    <button className="px-4 py-1.5 bg-newstheme text-white rounded-full text-sm font-semibold hover:bg-newstheme/90 transition-colors uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                      {article.category_name || categoryName}
+                    </button>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Article List Section - 6 Cards */}
-        <div className="space-y-4">
-          {articles.slice(0, 6).map((article, idx) => (
-            <Link key={article.id} to={`${routePrefix}/${article.slug || article.id}`}>
-              <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors mb-6">
-                {/* Left Side - Image */}
-                <div className="col-span-1">
-                  <img
-                    src={article.featured_image_url || getDemoImage(idx, categorySlug)}
-                    alt={article.title}
-                    className="w-full h-48 object-cover"
-                  />
-                </div>
-                
-                {/* Right Side - Text Content */}
-                <div className="col-span-2 p-6 flex flex-col justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-white mb-3">
-                      {article.title}
-                    </h2>
-                    <p className="text-sm text-white leading-relaxed line-clamp-3">
-                      {article.excerpt}
-                    </p>
+        {articles.length > 0 ? (
+          <div className="space-y-4">
+            {articles.slice(0, 6).map((article, idx) => (
+              <Link key={article.id} to={`${routePrefix}/${article.slug || article.id}`}>
+                <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors mb-6">
+                  {/* Left Side - Image */}
+                  <div className="col-span-1">
+                    <img
+                      src={article.featured_image_url || article.hero_image_url || getDemoImage(idx, categorySlug)}
+                      alt={article.title}
+                      className="w-full h-48 object-cover"
+                    />
                   </div>
                   
-                  {/* Category Tag */}
-                  <div className="flex gap-2 mt-4 flex-wrap">
-                    <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
-                      {article.category_name || categoryName}
-                    </span>
+                  {/* Right Side - Text Content */}
+                  <div className="col-span-2 p-6 flex flex-col justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-3">
+                        {article.title}
+                      </h2>
+                      <p className="text-sm text-white leading-relaxed line-clamp-3">
+                        {article.excerpt}
+                      </p>
+                    </div>
+                    
+                    {/* Category Tag */}
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
+                        {article.category_name || categoryName}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-400 text-lg">No articles available in this category yet.</p>
+          </div>
+        )}
       </div>
     </Layout>
   );

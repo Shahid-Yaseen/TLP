@@ -14,10 +14,45 @@ const pool = getPool();
 
 /**
  * GET /api/news/categories
- * Get all news categories
+ * Get all news categories (supports ids, limit, offset for admin dataProvider)
  */
 router.get('/', optionalAuth, asyncHandler(async (req, res) => {
-  const { rows } = await pool.query('SELECT * FROM news_categories ORDER BY name ASC');
+  const { ids, limit, offset } = req.query;
+  let sql = 'SELECT * FROM news_categories';
+  const params = [];
+  let paramCount = 1;
+
+  if (ids) {
+    const idList = ids.split(',').map((id) => parseInt(id.trim(), 10)).filter((id) => !isNaN(id));
+    if (idList.length > 0) {
+      sql += ` WHERE id = ANY($${paramCount++}::int[])`;
+      params.push(idList);
+    }
+  }
+
+  sql += ' ORDER BY name ASC';
+
+  if (limit !== undefined && offset !== undefined) {
+    const lim = Math.min(parseInt(limit, 10) || 100, 100);
+    const off = Math.max(parseInt(offset, 10) || 0, 0);
+    sql += ` LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+    params.push(lim, off);
+  }
+
+  const { rows } = await pool.query(sql, params);
+
+  if (limit !== undefined && offset !== undefined) {
+    let countSql = 'SELECT COUNT(*) FROM news_categories';
+    const countParams = [];
+    if (ids && params.length > 0) {
+      countSql = 'SELECT COUNT(*) FROM news_categories WHERE id = ANY($1::int[])';
+      countParams.push(params[0]);
+    }
+    const countResult = await pool.query(countSql, countParams);
+    const total = parseInt(countResult.rows[0].count, 10);
+    return res.json({ data: rows, total });
+  }
+
   res.json(rows);
 }));
 

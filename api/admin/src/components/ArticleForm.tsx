@@ -9,6 +9,8 @@ import {
   SaveButton,
   Toolbar,
   BooleanInput,
+  ImageInput,
+  ImageField,
 } from 'react-admin';
 import { useFormContext } from 'react-hook-form';
 import { Box, Grid, Typography, Switch, FormControlLabel, Paper } from '@mui/material';
@@ -34,7 +36,6 @@ const ArticleFormContent = () => {
   const linkColor = theme?.palette?.primary?.main || '#1976d2';
   const textDisabled = isDark ? '#808080' : '#999';
   
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const heroImageUrl = watch('hero_image_url');
   const featuredImageUrl = watch('featured_image_url');
@@ -47,20 +48,6 @@ const ArticleFormContent = () => {
   const isTopStory = watch('is_top_story') || false;
   const status = watch('status');
   const isPublished = status === 'published';
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        // In a real implementation, you'd upload this to a server
-        // For now, we'll just set a placeholder URL
-        setValue('hero_image_url', URL.createObjectURL(file));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,66 +78,39 @@ const ArticleFormContent = () => {
   };
 
   const youtubeVideoId = getYouTubeVideoId(youtubeUrl);
-  const displayImage = imagePreview || heroImageUrl || featuredImageUrl;
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Image Upload Area */}
-      <Paper
-        elevation={0}
-        onClick={() => document.getElementById('image-upload')?.click()}
-        sx={{
-          width: '100%',
-          height: '300px',
-          border: `1px solid ${borderColor}`,
-          backgroundColor: bgPaper,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          mb: 3,
-          position: 'relative',
-          borderRadius: 2,
-          '&:hover': {
-            backgroundColor: isDark ? '#252525' : '#f0f0f0',
-          },
-        }}
-      >
-        <input
-          id="image-upload"
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={handleImageChange}
-        />
-        {displayImage ? (
-          <img
-            src={displayImage}
-            alt="Article"
-            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }}
-          />
-        ) : (
-          <Typography sx={{ color: textSecondary, textTransform: 'uppercase', fontSize: '0.875rem', fontWeight: 600 }}>
-            ADD IMAGE
-          </Typography>
-        )}
-      </Paper>
-      {/* Image URLs */}
+      {/* Image Upload Areas */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
-        <TextInput
-          source="hero_image_url"
-            label="Hero Image URL"
+          <ImageInput source="hero_image_url" label="Hero Image">
+            <ImageField source="src" title="title" />
+          </ImageInput>
+          <Typography variant="caption" sx={{ color: textSecondary, mt: 1, display: 'block' }}>
+            Main image displayed at the top of the article. Upload an image or enter a URL below.
+          </Typography>
+          <TextInput
+            source="hero_image_url"
+            label="Hero Image URL (optional)"
             fullWidth
-            helperText="Main image displayed at the top of the article"
+            sx={{ mt: 1 }}
+            helperText="Or enter a direct image URL instead of uploading"
           />
         </Grid>
         <Grid item xs={12} md={6}>
+          <ImageInput source="featured_image_url" label="Featured Image">
+            <ImageField source="src" title="title" />
+          </ImageInput>
+          <Typography variant="caption" sx={{ color: textSecondary, mt: 1, display: 'block' }}>
+            Thumbnail image for article listings. Upload an image or enter a URL below.
+          </Typography>
           <TextInput
             source="featured_image_url"
-            label="Featured Image URL"
-          fullWidth
-            helperText="Thumbnail image for article listings"
+            label="Featured Image URL (optional)"
+            fullWidth
+            sx={{ mt: 1 }}
+            helperText="Or enter a direct image URL instead of uploading"
           />
         </Grid>
       </Grid>
@@ -384,7 +344,10 @@ const ArticleFormContent = () => {
             control={
               <Switch
                 checked={isPublished}
-                onChange={(e) => setValue('status', e.target.checked ? 'published' : 'draft')}
+                onChange={(e) => {
+                  const newStatus = e.target.checked ? 'published' : 'draft';
+                  setValue('status', newStatus, { shouldDirty: true, shouldTouch: true });
+                }}
               />
             }
             label={
@@ -769,9 +732,13 @@ const ArticleFormContent = () => {
 
 export const ArticleForm = (props: any) => {
   return (
-    <SimpleForm toolbar={<CustomToolbar />} {...props}>
-        <ArticleFormContent />
-      </SimpleForm>
+    <SimpleForm
+      toolbar={<CustomToolbar />}
+      defaultValues={{ status: 'draft' }}
+      {...props}
+    >
+      <ArticleFormContent />
+    </SimpleForm>
   );
 };
 

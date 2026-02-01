@@ -118,6 +118,42 @@ router.post('/mission', authenticate, role('admin'), upload.single('image'), asy
 }));
 
 /**
+ * POST /api/upload/article
+ * Upload article images (hero_image_url, featured_image_url) (Admin only)
+ * Integrated with Cloudflare R2
+ */
+router.post('/article', authenticate, role('admin'), upload.single('image'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      error: 'No file uploaded',
+      code: 'VALIDATION_ERROR'
+    });
+  }
+
+  try {
+    // Always upload to Cloudflare R2
+    const result = await r2Storage.uploadFile(req.file, 'articles');
+
+    return res.json({
+      url: result.url,
+      key: result.key,
+      filename: path.basename(result.key),
+      originalName: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      provider: 'r2'
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      error: 'Failed to upload image to R2',
+      message: error.message,
+      details: 'Please check R2 configuration and credentials'
+    });
+  }
+}));
+
+/**
  * POST /api/upload
  * Generic upload endpoint (Admin only)
  */

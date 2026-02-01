@@ -581,7 +581,7 @@ router.patch('/:id', authenticate, role('admin', 'writer'), asyncHandler(async (
     });
   }
 
-  const setClause = updates.map((field, index) => {
+  let setClause = updates.map((field, index) => {
     if (field === 'metadata') {
       return `${field} = $${index + 2}::jsonb`;
     }
@@ -593,20 +593,19 @@ router.patch('/:id', authenticate, role('admin', 'writer'), asyncHandler(async (
       return JSON.stringify(req.body[field]);
     }
     if (field === 'status' && req.body[field] === 'published') {
-      // Set published_at if publishing
       return req.body[field];
     }
     return req.body[field];
   });
   values.unshift(id);
 
-  // Add published_at if status is being changed to published
+  // Add published_at when status is being set to published (no extra placeholder; NOW() is SQL)
   if (req.body.status === 'published') {
     const { rows: checkRows } = await pool.query(
       'SELECT published_at FROM news_articles WHERE id = $1',
       [id]
     );
-    if (!checkRows[0].published_at) {
+    if (checkRows[0] && !checkRows[0].published_at) {
       setClause += ', published_at = NOW()';
     }
   }

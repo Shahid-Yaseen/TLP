@@ -2,7 +2,7 @@ import { DataProvider, fetchUtils } from 'react-admin';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3007';
 
-// Centralized resource endpoint mapping
+// Centralized resource endpoint mapping (categories/tags used by Articles ReferenceInput/ReferenceArrayInput)
 const getResourceEndpoint = (resource: string): string => {
   const resourceMap: Record<string, string> = {
     launches: 'launches',
@@ -206,6 +206,39 @@ export const dataProvider: DataProvider = {
         src: cleanedUrl,
         title: json.full_name || 'Profile Image'
       };
+    }
+
+    // Transform article image URLs to objects for ImageInput/ImageField
+    if (resource === 'articles') {
+      const cleanImageUrl = (url: string): string => {
+        if (!url || typeof url !== 'string') return url;
+        let cleaned = url;
+        // Remove any server IP addresses that might be prepended
+        cleaned = cleaned.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+        cleaned = cleaned.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+        cleaned = cleaned.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+        cleaned = cleaned.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+        cleaned = cleaned.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+        cleaned = cleaned.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+        cleaned = cleaned.replace(/https\/\//g, 'https://');
+        cleaned = cleaned.replace(/http\/\//g, 'http://');
+        cleaned = cleaned.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+        cleaned = cleaned.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
+        return cleaned;
+      };
+
+      if (json.hero_image_url && typeof json.hero_image_url === 'string') {
+        json.hero_image_url = {
+          src: cleanImageUrl(json.hero_image_url),
+          title: json.title || 'Hero Image'
+        };
+      }
+      if (json.featured_image_url && typeof json.featured_image_url === 'string') {
+        json.featured_image_url = {
+          src: cleanImageUrl(json.featured_image_url),
+          title: json.title || 'Featured Image'
+        };
+      }
     }
 
     // Transform coordinates for form fields (coordinates.lat/lng)
@@ -422,7 +455,8 @@ export const dataProvider: DataProvider = {
         : undefined;
 
       // Keep is_featured, is_trending, and country_id as they need to be saved to database columns
-      const { featured_image_url, author_id, category_id, country_id, ...cleanRest } = rest;
+      // Note: hero_image_url and featured_image_url are extracted here but will be handled separately for uploads
+      const { hero_image_url, featured_image_url, author_id, category_id, country_id, ...cleanRest } = rest;
 
       // Only include author_id and category_id if they have valid values
       const finalData: any = {
@@ -444,6 +478,9 @@ export const dataProvider: DataProvider = {
       if (data.is_top_story !== undefined) {
         finalData.is_top_story = Boolean(data.is_top_story);
       }
+
+      // Ensure status is always sent so admin "Published" checkbox is respected
+      finalData.status = (data.status === 'published' || data.status === 'archived') ? data.status : 'draft';
 
       // Explicitly remove author_id and category_id from the data object
       // Only add them back if they have valid, non-empty values
@@ -478,6 +515,71 @@ export const dataProvider: DataProvider = {
       }
       if (data.category_id === null || data.category_id === undefined || data.category_id === '' || data.category_id === 0) {
         delete data.category_id;
+      }
+
+      // Handle article image uploads (hero_image_url and featured_image_url)
+      const handleArticleImageUpload = async (imageField: any) => {
+        // If it's already a string URL (from TextInput), use it directly
+        if (typeof imageField === 'string' && imageField.trim() !== '') {
+          return imageField.trim();
+        }
+        
+        // If it's a file upload (from ImageInput file picker)
+        if (imageField && imageField.rawFile) {
+          const formData = new FormData();
+          formData.append('image', imageField.rawFile);
+
+          const token = localStorage.getItem('access_token');
+          const uploadResponse = await fetch(`${API_URL}/api/upload/article`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            let uploadedUrl = uploadData.url;
+            
+            // Clean the URL - remove any server IP addresses
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+            uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
+            uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
+            
+            return (uploadedUrl.match(/^https?:\/\//)) 
+              ? uploadedUrl 
+              : `${API_URL}${uploadedUrl}`;
+          } else {
+            const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
+          }
+        }
+        
+        // If it's an object with src property (from ImageInput displaying existing image)
+        if (typeof imageField === 'object' && imageField !== null && imageField.src) {
+          return imageField.src;
+        }
+        
+        // Return undefined for empty/null values
+        return undefined;
+      };
+
+      // Handle hero_image_url upload
+      if (data.hero_image_url) {
+        data.hero_image_url = await handleArticleImageUpload(data.hero_image_url);
+      }
+
+      // Handle featured_image_url upload
+      if (data.featured_image_url) {
+        data.featured_image_url = await handleArticleImageUpload(data.featured_image_url);
       }
 
       console.log('Article data being sent:', JSON.stringify(data, null, 2));
@@ -761,19 +863,31 @@ export const dataProvider: DataProvider = {
         : undefined;
 
       // Keep is_featured, is_trending, and country_id as they need to be saved to database columns
-      const { country_id, ...cleanRest } = rest;
+      // Note: hero_image_url and featured_image_url are extracted here but will be handled separately for uploads
+      const { hero_image_url, featured_image_url, country_id, ...cleanRest } = rest;
       const finalData: any = {
         ...cleanRest,
         tag_ids: tagIds,
         metadata: Object.keys(metadata).length > 0 ? metadata : {},
       };
 
-      // Include is_featured and is_trending if they exist
+      // Include is_featured, is_trending, is_interview, and is_top_story if they exist
       if (data.is_featured !== undefined) {
         finalData.is_featured = Boolean(data.is_featured);
       }
       if (data.is_trending !== undefined) {
         finalData.is_trending = Boolean(data.is_trending);
+      }
+      if (data.is_interview !== undefined) {
+        finalData.is_interview = Boolean(data.is_interview);
+      }
+      if (data.is_top_story !== undefined) {
+        finalData.is_top_story = Boolean(data.is_top_story);
+      }
+
+      // Ensure status is sent so admin "Published" checkbox is respected on update
+      if (data.status !== undefined) {
+        finalData.status = (data.status === 'published' || data.status === 'archived') ? data.status : 'draft';
       }
 
       // Handle author_id and category_id
@@ -802,6 +916,89 @@ export const dataProvider: DataProvider = {
         } else {
           finalData.country_id = null;
         }
+      }
+
+      // Handle article image uploads (hero_image_url and featured_image_url)
+      const handleArticleImageUpload = async (imageField: any) => {
+        // If it's already a string URL (from TextInput), use it directly
+        if (typeof imageField === 'string' && imageField.trim() !== '') {
+          return imageField.trim();
+        }
+        
+        // If it's a file upload (from ImageInput file picker)
+        if (imageField && imageField.rawFile) {
+          const formData = new FormData();
+          formData.append('image', imageField.rawFile);
+
+          const token = localStorage.getItem('access_token');
+          const uploadResponse = await fetch(`${API_URL}/api/upload/article`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            let uploadedUrl = uploadData.url;
+            
+            // Clean the URL - remove any server IP addresses
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
+            uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
+            uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
+            
+            return (uploadedUrl.match(/^https?:\/\//)) 
+              ? uploadedUrl 
+              : `${API_URL}${uploadedUrl}`;
+          } else {
+            const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
+          }
+        }
+        
+        // If it's an object with src property (from ImageInput displaying existing image)
+        if (typeof imageField === 'object' && imageField !== null && imageField.src) {
+          return imageField.src;
+        }
+        
+        // Return undefined for empty/null values
+        return undefined;
+      };
+
+      // Handle hero_image_url upload
+      if (hero_image_url !== undefined && hero_image_url !== null && hero_image_url !== '') {
+        const processedHeroImage = await handleArticleImageUpload(hero_image_url);
+        if (processedHeroImage) {
+          finalData.hero_image_url = processedHeroImage;
+        } else {
+          // Explicitly set to null if processing returns undefined (image was cleared)
+          finalData.hero_image_url = null;
+        }
+      } else {
+        // Explicitly set to null if field is empty
+        finalData.hero_image_url = null;
+      }
+
+      // Handle featured_image_url upload
+      if (featured_image_url !== undefined && featured_image_url !== null && featured_image_url !== '') {
+        const processedFeaturedImage = await handleArticleImageUpload(featured_image_url);
+        if (processedFeaturedImage) {
+          finalData.featured_image_url = processedFeaturedImage;
+        } else {
+          // Explicitly set to null if processing returns undefined (image was cleared)
+          finalData.featured_image_url = null;
+        }
+      } else {
+        // Explicitly set to null if field is empty
+        finalData.featured_image_url = null;
       }
 
       data = finalData;

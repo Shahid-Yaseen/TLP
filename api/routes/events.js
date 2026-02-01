@@ -61,6 +61,37 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /api/events/upcoming
+ * Get upcoming events (event_date >= now), ordered soonest first
+ */
+router.get('/upcoming', optionalAuth, asyncHandler(async (req, res) => {
+  const filters = ['events.event_date IS NOT NULL', 'events.event_date >= NOW()'];
+  const args = [];
+  let paramCount = 1;
+
+  if (req.query.event_type) {
+    filters.push(`events.event_type = $${paramCount++}`);
+    args.push(req.query.event_type);
+  }
+
+  if (req.query.status) {
+    filters.push(`events.status = $${paramCount++}`);
+    args.push(req.query.status);
+  }
+
+  let sql = 'SELECT * FROM events WHERE ' + filters.join(' AND ');
+  sql += ' ORDER BY events.event_date ASC';
+
+  const limit = parseInt(req.query.limit) || 50;
+  const offset = parseInt(req.query.offset) || 0;
+  sql += ` LIMIT $${paramCount++} OFFSET $${paramCount++}`;
+  args.push(limit, offset);
+
+  const { rows } = await pool.query(sql, args);
+  res.json(rows);
+}));
+
+/**
  * GET /api/events/:id
  * Get a single event by ID
  */

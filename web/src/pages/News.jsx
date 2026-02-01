@@ -32,13 +32,38 @@ const News = () => {
       }
     }
   }, [authorParam, navigate]);
+
+  // Fetch categories from backend for section nav and filtering
+  useEffect(() => {
+    axios.get(`${API_URL}/api/news/categories`)
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (data.length > 0) {
+          setCategoriesFromApi(data);
+        }
+      })
+      .catch(() => { /* keep default categories */ });
+  }, []);
+
+  // Fetch trending topics from backend for TRENDING | SPACEX | ... bar
+  useEffect(() => {
+    axios.get(`${API_URL}/api/news/trending-topics`)
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (data.length > 0) {
+          setTrendingTopicsFromApi(data);
+        }
+      })
+      .catch(() => { /* keep default trending */ });
+  }, []);
+
   const [articles, setArticles] = useState([]);
   const [featuredArticle, setFeaturedArticle] = useState(null);
   const [topStories, setTopStories] = useState([]);
   const [interviews, setInterviews] = useState([]);
   const [americaArticles, setAmericaArticles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [timeFilter, setTimeFilter] = useState('TODAY');
+  const [timeFilter, setTimeFilter] = useState(null); // No date filter by default - show all articles
   const [currentTime, setCurrentTime] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('NEWS');
   const [interviewScrollPosition, setInterviewScrollPosition] = useState(0);
@@ -46,15 +71,31 @@ const News = () => {
   const [canScrollRight, setCanScrollRight] = useState(true);
   const interviewCarouselRef = useRef(null);
   const [stockTickers, setStockTickers] = useState([]);
+  // Categories from backend (fallback to default if API fails or empty)
+  const defaultCategories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
+  const [categoriesFromApi, setCategoriesFromApi] = useState([]);
+  const categories = categoriesFromApi.length > 0 ? categoriesFromApi.map((c) => c.name) : defaultCategories;
+  // Slug map from API (name -> slug) for filtering and routes
+  const categorySlugByName = categoriesFromApi.length > 0
+    ? Object.fromEntries(categoriesFromApi.map((c) => [c.name, c.slug || c.name?.toLowerCase().replace(/\s+/g, '-')]))
+    : { 'NEWS': 'news', 'LAUNCH': 'launch', 'IN SPACE': 'in-space', 'TECHNOLOGY': 'technology', 'MILITARY': 'military', 'FINANCE': 'finance' };
 
-  const categories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
-  const trending = [
+  // Trending topics from backend (GET /api/news/trending-topics); fallback to default if API fails or empty
+  const defaultTrending = [
     { label: 'TRENDING', search: 'trending', route: null },
     { label: 'SPACEX', search: 'spacex', route: null },
     { label: 'ARTEMIS 2', search: 'artemis', route: null },
-    { label: 'MARS SAMPLE RETURN', search: 'mars sample return', route: null },
-    { label: 'DARPA LUNAR ORBITER', search: 'darpa lunar', route: null }
+    { label: 'MARS SAMPLE RETURN', search: 'mars-sample-return', route: null },
+    { label: 'DARPA LUNAR ORBITER', search: 'darpa-lunar-orbiter', route: null }
   ];
+  const [trendingTopicsFromApi, setTrendingTopicsFromApi] = useState([]);
+  const trending = trendingTopicsFromApi.length > 0
+    ? trendingTopicsFromApi.map((t) => ({
+        label: t.name,
+        search: t.slug || t.name?.toLowerCase().replace(/\s+/g, '-'),
+        route: null
+      }))
+    : defaultTrending;
   const [selectedTrending, setSelectedTrending] = useState(null);
   
   // Fallback stock ticker data
@@ -441,6 +482,8 @@ const News = () => {
       const now = new Date();
       let dateFrom = null;
       
+      // Only apply date filter if explicitly selected
+      // This ensures we show articles even if none were published in the selected time period
       if (timeFilter === 'TODAY') {
         dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       } else if (timeFilter === 'THIS WEEK') {
@@ -452,6 +495,7 @@ const News = () => {
         monthAgo.setMonth(monthAgo.getMonth() - 1);
         dateFrom = monthAgo.toISOString();
       }
+      // If timeFilter is null/undefined, don't apply date filter - show all articles
 
       const params = {
         status: 'published',
@@ -465,16 +509,7 @@ const News = () => {
 
       // Add category filter if not 'NEWS' (which shows all)
       if (selectedCategory && selectedCategory !== 'NEWS') {
-        // Convert category name to slug for API
-        // Map category names to their API slugs
-        const categorySlugMap = {
-          'LAUNCH': 'launch',
-          'IN SPACE': 'in-space',
-          'TECHNOLOGY': 'technology',
-          'MILITARY': 'military',
-          'FINANCE': 'finance'
-        };
-        const categorySlug = categorySlugMap[selectedCategory] || selectedCategory.toLowerCase().replace(/\s+/g, '-');
+        const categorySlug = categorySlugByName[selectedCategory] || selectedCategory.toLowerCase().replace(/\s+/g, '-');
         params.category = categorySlug;
       }
 
@@ -624,7 +659,7 @@ const News = () => {
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
           </div>
 
-          {/* Navigation Tabs */}
+          {/* Navigation Tabs - categories from backend (GET /api/news/categories) */}
           <div className="flex items-center gap-0 text-xs uppercase">
             {categories.slice(1).map((cat, idx) => (
               <div key={cat} className="flex items-center">
@@ -639,16 +674,9 @@ const News = () => {
                 ) : (
                   <button
                     onClick={() => {
-                      // Navigate to category-specific page
-                      const categorySlugMap = {
-                        'IN SPACE': '/news/in-space',
-                        'TECHNOLOGY': '/news/technology',
-                        'MILITARY': '/news/military',
-                        'FINANCE': '/news/finance'
-                      };
-                      const route = categorySlugMap[cat];
-                      if (route) {
-                        navigate(route);
+                      const slug = categorySlugByName[cat];
+                      if (slug) {
+                        navigate(`/news/${slug}`);
                       } else {
                         handleCategoryChange(cat);
                       }
@@ -1243,7 +1271,7 @@ const News = () => {
               {selectedTrending ? `${selectedTrending} STORIES` : 'TOP STORIES'}
             </h2>
             <div className="flex gap-2 sm:gap-4 flex-wrap">
-              {['TODAY', 'THIS WEEK', 'THIS MONTH'].map((filter) => (
+              {['THIS MONTH', 'THIS WEEK', 'TODAY'].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setTimeFilter(filter)}
@@ -1256,6 +1284,14 @@ const News = () => {
                   {filter}
                 </button>
               ))}
+              {timeFilter && (
+                <button
+                  onClick={() => setTimeFilter(null)}
+                  className="px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                >
+                  ALL
+                </button>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">

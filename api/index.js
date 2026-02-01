@@ -56,6 +56,7 @@ const launchSitesRoutes = require('./routes/launch_sites');
 const authorsRoutes = require('./routes/authors');
 const categoriesRoutes = require('./routes/categories');
 const tagsRoutes = require('./routes/tags');
+const trendingTopicsRoutes = require('./routes/trendingTopics');
 const eventsRoutes = require('./routes/events');
 const rolesRoutes = require('./routes/roles');
 const permissionsRoutes = require('./routes/permissions');
@@ -116,6 +117,7 @@ app.use('/api/auth', authRoutes);
 // Register more specific routes BEFORE general /api/news to avoid route conflicts
 app.use('/api/news/categories', categoriesRoutes);
 app.use('/api/news/tags', tagsRoutes);
+app.use('/api/news/trending-topics', trendingTopicsRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/spacebase', spacebaseRoutes);
 app.use('/api/statistics', statisticsRoutes);

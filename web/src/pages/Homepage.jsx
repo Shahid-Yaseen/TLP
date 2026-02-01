@@ -15,13 +15,28 @@ const Homepage = () => {
   const [articles, setArticles] = useState([]);
   const [rockets, setRockets] = useState([]);
   const [totalRockets, setTotalRockets] = useState(0);
+  const [heroImage, setHeroImage] = useState('https://thespacedevs-prod.nyc3.digitaloceanspaces.com/media/images/spectrum_on_the_image_20250321072643.jpeg');
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Preload hero image to ensure it's ready
+  useEffect(() => {
+    if (heroImage) {
+      const img = new Image();
+      img.onload = () => setHeroImageLoaded(true);
+      img.onerror = () => {
+        console.warn('Failed to load hero image:', heroImage);
+        setHeroImageLoaded(false);
+      };
+      img.src = heroImage;
+    }
+  }, [heroImage]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Format date as "Sept 2 @ 11:45" style
+  // Format date as "Sept 2 @ 11:45" style, displayed on 2 rows
   const formatLaunchDateTime = (dateString) => {
     if (!dateString) return 'TBD';
     try {
@@ -33,7 +48,13 @@ const Homepage = () => {
       const minutes = String(date.getMinutes()).padStart(2, '0');
       const ampm = hours >= 12 ? 'pm' : 'am';
       const displayHours = hours % 12 || 12;
-      return `${month} ${day} @ ${displayHours}:${minutes}${ampm}`;
+      return (
+        <>
+          {month} {day}
+          <br />
+          @ {displayHours}:{minutes}{ampm}
+        </>
+      );
     } catch (error) {
       return 'TBD';
     }
@@ -50,8 +71,12 @@ const Homepage = () => {
       });
 
       // Fetch data with error handling for each endpoint
-      const [launchesRes, statsRes, articlesRes, rocketsRes, totalRocketsRes] = await Promise.allSettled([
-        apiClient.get('/api/launches?limit=3&offset=0&after=' + new Date().toISOString()),
+      const [launchesRes, featuredLaunchRes, eventsRes, statsRes, articlesRes, rocketsRes, totalRocketsRes] = await Promise.allSettled([
+        // Use the dedicated upcoming endpoint so results are ordered soonest-first
+        apiClient.get('/api/launches/upcoming?limit=3'),
+        // Fetch a featured launch for hero image
+        apiClient.get('/api/launches/featured?limit=1'),
+        apiClient.get('/api/events/upcoming?limit=3&offset=0'),
         apiClient.get('/api/statistics/launches'),
         apiClient.get('/api/news?limit=6&offset=0&status=published'),
         apiClient.get('/api/spacebase/rockets?limit=5'),
@@ -67,12 +92,36 @@ const Homepage = () => {
         setLaunches([]);
       }
 
-      // Events endpoint doesn't exist, set placeholder data
-      setEvents([
-        { id: 1, name: 'Crew 12 Launch', status: 'TBD' },
-        { id: 2, name: 'Artemis III Return', status: 'Return' },
-        { id: 3, name: 'Mars Sample Return', status: 'Never' },
-      ]);
+      // Helper function to extract image URL from launch object
+      const getLaunchImageUrl = (launch) => {
+        if (!launch) return null;
+        // Try image_json.image_url first (most common)
+        if (launch.image_json?.image_url) {
+          return launch.image_json.image_url;
+        }
+        // Fallback to mission_image_url
+        if (launch.mission_image_url) {
+          return launch.mission_image_url;
+        }
+        // Fallback to infographic_url
+        if (launch.infographic_url) {
+          return launch.infographic_url;
+        }
+        return null;
+      };
+
+      // Hero image is set to use the fixed default image specified
+      // Disabled automatic image fetching to always use the specified hero image
+      // The heroImage state is initialized with the desired image URL
+
+      // Handle events response (real DB-backed upcoming events)
+      if (eventsRes.status === 'fulfilled') {
+        const eventsData = eventsRes.value.data?.data || eventsRes.value.data || [];
+        setEvents(Array.isArray(eventsData) ? eventsData : []);
+      } else {
+        console.warn('Failed to fetch events:', eventsRes.reason?.message || eventsRes.reason);
+        setEvents([]);
+      }
 
       // Statistics are returned directly
       if (statsRes.status === 'fulfilled') {
@@ -118,18 +167,164 @@ const Homepage = () => {
     }
   };
 
-  const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
+  const panelClassName =
+    'relative overflow-hidden bg-[#1b1b1b] shadow-[0_0_35px_rgba(0,0,0,0.65)] ring-1 ring-white/5';
+
+  const PanelTopAccent = () => (
+    <div className="absolute left-0 top-0 h-1 w-full bg-[#8B1A1A]" aria-hidden="true" />
+  );
+
+  const PanelTopAccentOrange = () => (
+    <div className="absolute left-0 top-0 h-1 w-full bg-[#fa9a00]" aria-hidden="true" />
+  );
+
+  const PanelTopAccentBlue = () => (
+    <div className="absolute left-0 top-0 h-1 w-full bg-[#1f4fbf]" aria-hidden="true" />
+  );
+
+  const cleanMissionName = (name, rocketName) => {
+    if (!name || !rocketName) return name;
+    const withSpaces = `${rocketName} | `;
+    const noSpaces = `${rocketName}|`;
+    if (name.startsWith(withSpaces)) return name.slice(withSpaces.length);
+    if (name.startsWith(noSpaces)) return name.slice(noSpaces.length).trimStart();
+    return name;
+  };
+
+  const TwoLine = ({ children, className = '' }) => (
+    <div
+      className={`min-w-0 whitespace-normal leading-snug ${className}`}
+      style={{
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  const formatDaysAgo = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1d';
+    return `${diffDays}d`;
+  };
+
+  const NewsCard = ({ article }) => {
+    const img = article?.featured_image_url;
+    const title = article?.title || 'Untitled';
+    const age = formatDaysAgo(article?.published_at || article?.created_at);
+    const tag = article?.category?.name || 'NEWS';
+
+    return (
+      <Link
+        to={`/news/${article.slug || article.id}`}
+        className="group bg-[#1b1b1b] shadow-[0_0_18px_rgba(0,0,0,0.55)] ring-1 ring-white/10 hover:ring-white/20 transition-colors overflow-hidden"
+      >
+        <div className="aspect-video w-full bg-black">
+          {img ? (
+            <img
+              src={img}
+              alt={title}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : null}
+        </div>
+
+        <div className="p-4">
+          <div className="text-white font-semibold uppercase leading-snug mb-2" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+            <TwoLine className="text-base">{title}</TwoLine>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-gray-300">
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-white/20">
+                <span className="block w-[6px] h-[6px] rounded-full bg-white/70" />
+              </span>
+              <span>{age}</span>
+            </div>
+
+            <span className="text-white/30">|</span>
+
+            <div className="flex items-center gap-2">
+              {[tag, 'SPACE', 'TLP'].slice(0, 3).map((t) => (
+                <span
+                  key={t}
+                  className="px-2 py-0.5 bg-[#fa9a00] text-black font-bold uppercase tracking-wide"
+                  style={{ fontSize: '10px' }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  };
+
+  const DigitGroup = ({ value, size = 'lg' }) => {
+    // Convert to string and split into individual digits, showing all digits
+    const digits = String(value ?? 0).split('');
+
+    const boxClassName =
+      size === 'lg'
+        ? 'h-16 w-14 text-4xl'
+        : 'h-14 w-12 text-3xl';
+
+    return (
+      <div className="flex items-center justify-center gap-2 mx-auto">
+        {digits.map((digit, idx) => (
+          <div
+            // eslint-disable-next-line react/no-array-index-key
+            key={`${digit}-${idx}`}
+            className={[
+              'flex items-center justify-center',
+              boxClassName,
+              'bg-[#232323]',
+              'border border-white/20',
+              'shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]',
+              'font-mono font-bold leading-none text-white',
+            ].join(' ')}
+          >
+            {digit}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Layout>
       {/* Hero Section */}
-      <div
-        className="relative h-[70vh] min-h-[500px] bg-cover bg-center flex items-center justify-center"
-        style={{ backgroundImage: `url(${HERO_BG_IMAGE})` }}
-      >
-        <div className="absolute inset-0 bg-black bg-opacity-70"></div>
+      <div className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <img
+          src={heroImage}
+          alt="Launch background"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ zIndex: 0 }}
+          onError={(e) => {
+            console.error('Failed to load hero image:', heroImage);
+            e.target.style.display = 'none';
+          }}
+        />
+        {/* Dark Overlay - balanced opacity for text readability and image visibility */}
+        <div className="absolute inset-0 z-10" style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}></div>
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-white uppercase tracking-tight">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-white uppercase tracking-tight" style={{ fontFamily: 'Nasalization, sans-serif' }}>
             THE LAUNCH PAD
           </h1>
           <p className="text-lg md:text-xl lg:text-2xl mb-2 text-gray-200 font-light">
@@ -142,214 +337,281 @@ const Homepage = () => {
       </div>
 
       {/* Content Sections */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 space-y-12">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-12 space-y-12">
         {/* Three-Column Section: Upcoming Departures, Events, Statistics */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Left Column - Upcoming Earth Departures */}
-          <div className="bg-gray-900 p-6">
-            <h2 className="text-2xl font-bold mb-4 uppercase">Upcoming Earth Departures</h2>
-            <div className="space-y-4 mb-6">
-              {loading ? (
-                <div className="py-4">
-                  <RedDotLoader size="small" />
-                </div>
-              ) : launches.length > 0 ? (
-                launches.map((launch) => (
-                  <div key={launch.id} className="border-b border-gray-800 pb-3 last:border-b-0 last:pb-0">
-                    <div className="text-sm text-gray-400 mb-1">
-                      {formatLaunchDateTime(launch.launch_date)}
-                    </div>
-                    <div className="font-semibold text-white mb-1">{launch.name}</div>
-                    <div className="text-sm text-gray-400 mb-1">
-                      {launch.rocket || launch.rocket_id || 'TBD'}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {launch.site || launch.launch_site?.name || 'Location TBD'}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-gray-400 text-sm">No upcoming launches</div>
-              )}
-            </div>
-            <Link
-              to="/launches/upcoming"
-              className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 transition-colors uppercase text-sm"
-            >
-              Enter Launch Center
-            </Link>
-          </div>
+        <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(280px,max-content)] gap-4">
+          {/* Wide Panel - Upcoming Earth Departures + Events */}
+          <div className={`${panelClassName} md:col-span-2 p-6 pt-10`}>
+            <PanelTopAccent />
+            <div className="grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,0.65fr)] gap-10 min-w-0">
+              {/* Left Half - Upcoming Earth Departures */}
+              <div className="min-w-0">
+                <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide text-white/90 mb-6">
+                  UPCOMING EARTH DEPARTURES
+                </h2>
 
-          {/* Middle Column - Upcoming Events */}
-          <div className="bg-gray-900 p-6">
-            <h2 className="text-2xl font-bold mb-4 uppercase">Upcoming Events</h2>
-            <div className="space-y-4">
-              {loading ? (
-                <div className="py-4">
-                  <RedDotLoader size="small" />
-                </div>
-              ) : events.length > 0 ? (
-                events.map((event) => (
-                  <div key={event.id} className="border-b border-gray-800 pb-3 last:border-b-0 last:pb-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="font-semibold text-white flex-1">{event.name}</div>
-                      <span className={`text-xs px-2 py-1 ml-2 ${
-                        event.status === 'TBD' ? 'bg-gray-700 text-gray-300' :
-                        event.status === 'Return' ? 'bg-blue-900 text-blue-300' :
-                        event.status === 'Never' ? 'bg-red-900 text-red-300' :
-                        'bg-gray-700 text-gray-300'
-                      }`}>
-                        {event.status}
-                      </span>
+                <div className="mb-6">
+                  {loading ? (
+                    <div className="py-6">
+                      <RedDotLoader size="small" />
                     </div>
+                  ) : launches.length > 0 ? (
+                    <div>
+                      {launches.slice(0, 3).map((launch, index) => {
+                        const rocketName = launch.rocket || launch.rocket_id || 'TBD';
+                        const siteName = launch.site || launch.launch_site?.name || 'Location TBD';
+                        const missionName = cleanMissionName(launch.name, rocketName);
+                        return (
+                          <div key={launch.id} className="py-3">
+                            <div className="hidden md:grid md:grid-cols-[105px_minmax(0,360px)_minmax(0,220px)_minmax(180px,1fr)] md:gap-2 md:items-start">
+                              <TwoLine className="text-white/90 text-lg font-semibold">
+                                {formatLaunchDateTime(launch.launch_date)}
+                              </TwoLine>
+                              <TwoLine className="text-white/90 text-lg font-semibold">
+                                {missionName}
+                              </TwoLine>
+                              <TwoLine className="text-white/90 text-lg font-semibold">
+                                {rocketName}
+                              </TwoLine>
+                              <TwoLine className="text-white/90 text-lg font-semibold">
+                                {siteName}
+                              </TwoLine>
+                            </div>
+
+                            <div className="md:hidden space-y-1 text-white/90">
+                              <div className="text-base font-semibold">
+                                {formatLaunchDateTime(launch.launch_date)}
+                              </div>
+                              <div className="text-base font-semibold">{missionName}</div>
+                              <div className="text-sm">{rocketName}</div>
+                              <div className="text-sm">{siteName}</div>
+                            </div>
+
+                            {index < Math.min(launches.length, 3) - 1 ? (
+                              <div className="mt-3 border-b-2 border-white/25" />
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-gray-400 text-sm py-6">No upcoming launches</div>
+                  )}
+                </div>
+
+                <Link
+                  to="/launches/upcoming"
+                  className="inline-block bg-[#8B1A1A] hover:bg-[#a01f1f] text-white font-semibold px-5 py-2 transition-colors uppercase text-sm"
+                >
+                  Enter Launch Center
+                </Link>
+              </div>
+
+              {/* Right Half - Upcoming Events */}
+              <div className="min-w-0 w-full md:max-w-[380px] md:justify-self-end">
+                <h2 className="text-lg md:text-xl font-bold uppercase tracking-wide text-white/90 mb-6">
+                  UPCOMING EVENTS
+                </h2>
+
+                {loading ? (
+                  <div className="py-6">
+                    <RedDotLoader size="small" />
                   </div>
-                ))
-              ) : (
-                <div className="text-gray-400 text-sm">No upcoming events</div>
-              )}
+                ) : events.length > 0 ? (
+                  <div>
+                    {events.slice(0, 3).map((event, index) => (
+                      <div key={event.id} className="py-4">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6">
+                          <TwoLine className="text-white/90 text-lg font-semibold">{event.name}</TwoLine>
+                          <div className="text-white/80 text-lg font-semibold whitespace-nowrap">{event.status}</div>
+                        </div>
+
+                        {index < Math.min(events.length, 3) - 1 ? (
+                          <div className="mt-4 border-b-2 border-white/25" />
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-sm py-6">No upcoming events</div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Right Column - Launch Statistics */}
-          <div className="bg-gray-900 p-6">
-            <h2 className="text-2xl font-bold mb-4 uppercase">Launch Statistics</h2>
-            <div className="space-y-6 mb-6">
-              <div>
-                <div className="text-5xl font-bold mb-2 text-white">
-                  {stats?.total_launches || stats?.total || 0}
-                </div>
-                <div className="text-gray-400 text-sm uppercase">Total Launches</div>
+          <div className={`${panelClassName} p-6 pt-10 w-full md:w-fit md:max-w-md md:justify-self-end text-center`}>
+            <PanelTopAccent />
+            <div className="mb-6 flex flex-col items-center">
+              <div className="flex justify-center mb-3">
+                <DigitGroup value={stats?.total_launches || stats?.total || 0} size="lg" />
               </div>
-              <div>
-                <div className="text-4xl font-bold mb-2 text-green-500">
-                  {stats?.total_successes || stats?.successes || 0}
-                </div>
-                <div className="text-gray-400 text-sm uppercase">Total Successes</div>
+              <div className="text-gray-300 text-xs uppercase tracking-widest mb-8">
+                TOTAL LAUNCHES
               </div>
-              <div>
-                <div className="text-4xl font-bold mb-2 text-red-500">
-                  {stats?.total_failures || stats?.failures || 0}
+
+              <div className="grid grid-cols-2 gap-8 mb-8 w-fit mx-auto justify-items-center">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex justify-center items-center mb-3">
+                    <DigitGroup value={stats?.total_successes || stats?.successes || 0} size="sm" />
+                  </div>
+                  <div className="text-gray-300 text-xs uppercase tracking-widest text-center">
+                    TOTAL SUCCESSES
+                  </div>
                 </div>
-                <div className="text-gray-400 text-sm uppercase">Total Failures</div>
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex justify-center items-center mb-3">
+                    <DigitGroup value={stats?.total_failures || stats?.failures || 0} size="sm" />
+                  </div>
+                  <div className="text-gray-300 text-xs uppercase tracking-widest text-center">
+                    TOTAL FAILURES
+                  </div>
+                </div>
               </div>
             </div>
-            <Link
-              to="/launches/statistics"
-              className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 transition-colors uppercase text-sm"
-            >
-              Full Launch Statistics
-            </Link>
+
+            <div className="flex justify-center">
+              <Link
+                to="/launches/statistics"
+                className="inline-block bg-[#8B1A1A] hover:bg-[#a01f1f] text-white font-semibold px-5 py-2 transition-colors uppercase text-sm"
+              >
+                Full Launch Statistics
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Latest Space News Section */}
-        <div className="bg-gray-900 p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h2 className="text-2xl font-bold uppercase">Latest Space News</h2>
-            <Link
-              to="/news"
-              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 transition-colors uppercase text-sm whitespace-nowrap"
-            >
-              Go To The NewsRoom
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Latest Space News + 24/7 Streams (side-by-side like design) */}
+        <div className="grid lg:grid-cols-[1fr_420px] gap-4">
+          {/* Latest Space News */}
+          <div className={`${panelClassName} p-6 pt-10`}>
+            <PanelTopAccentOrange />
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold uppercase tracking-wide text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                LATEST SPACE NEWS
+              </h2>
+              <Link
+                to="/news"
+                className="bg-[#fa9a00] hover:bg-[#ffad2a] text-black font-bold px-4 py-2 uppercase text-sm"
+                style={{ fontFamily: 'Nasalization, sans-serif' }}
+              >
+                Go To The NewsRoom
+              </Link>
+            </div>
+
             {loading ? (
-              <div className="col-span-3 py-8">
+              <div className="py-10">
                 <RedDotLoader size="medium" />
               </div>
             ) : articles.length > 0 ? (
-              articles.slice(0, 6).map((article) => (
-                <ArticleCard key={article.id} article={article} />
-              ))
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {articles.slice(0, 6).map((article) => (
+                  <NewsCard key={article.id} article={article} />
+                ))}
+              </div>
             ) : (
-              <div className="col-span-3 text-gray-400 text-center py-8">No articles available</div>
+              <div className="text-gray-400 text-center py-10">No articles available</div>
             )}
           </div>
-        </div>
 
-        {/* 24/7 Streams Section */}
-        <div className="bg-gray-900 p-6">
-          <h2 className="text-2xl font-bold mb-6 uppercase">24/7 Streams</h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer">
-              <span className="text-red-500 font-bold text-lg">•</span>
-              <span className="text-red-500 font-bold uppercase">Live</span>
-              <span className="font-semibold text-white ml-2">Starbase Now</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer">
-              <span className="text-red-500 font-bold text-lg">•</span>
-              <span className="text-red-500 font-bold uppercase">Live</span>
-              <span className="font-semibold text-white ml-2">ISS Now</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 hover:bg-gray-800 transition-colors cursor-pointer">
-              <span className="text-gray-500 font-bold text-lg">•</span>
-              <span className="text-gray-500 font-semibold">Coming Soon</span>
-              <span className="font-semibold text-white ml-2">Space Coast East</span>
+          {/* 24/7 Streams */}
+          <div className={`${panelClassName} p-6 pt-10`}>
+            <PanelTopAccentOrange />
+            <h2 className="text-2xl font-bold uppercase tracking-wide text-white mb-6" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+              24/7 STREAMS
+            </h2>
+
+            <div className="space-y-6">
+              {/* Starbase Now */}
+              <div className="bg-[#232323] ring-1 ring-white/10 shadow-[0_0_18px_rgba(0,0,0,0.55)] p-6 min-h-[120px] flex flex-col justify-between">
+                <div className="text-white text-2xl font-semibold" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                  Starbase Now
+                </div>
+                <div className="inline-flex items-center gap-2 bg-black/70 ring-1 ring-white/10 px-3 py-2 w-fit">
+                  <span className="inline-block w-2 h-2 rounded-full bg-red-600" />
+                  <span className="text-red-500 font-bold uppercase text-sm">LIVE</span>
+                </div>
+              </div>
+
+              {/* ISS Now */}
+              <div className="bg-[#232323] ring-1 ring-white/10 shadow-[0_0_18px_rgba(0,0,0,0.55)] p-6 min-h-[120px] flex flex-col justify-between">
+                <div className="text-white text-2xl font-semibold" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                  ISS Now
+                </div>
+                <div className="inline-flex items-center gap-2 bg-black/70 ring-1 ring-white/10 px-3 py-2 w-fit">
+                  <span className="inline-block w-2 h-2 rounded-full bg-red-600" />
+                  <span className="text-red-500 font-bold uppercase text-sm">LIVE</span>
+                </div>
+              </div>
+
+              {/* Space Coast East */}
+              <div className="bg-[#232323] ring-1 ring-white/10 shadow-[0_0_18px_rgba(0,0,0,0.55)] p-6 min-h-[120px] flex flex-col justify-between">
+                <div className="text-white text-2xl font-semibold" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                  Space Coast East
+                </div>
+                <div className="inline-flex items-center gap-2 bg-black/70 ring-1 ring-white/10 px-3 py-2 w-fit">
+                  <span className="inline-block w-2 h-2 rounded-full bg-gray-300" />
+                  <span className="text-gray-300 font-semibold text-sm">Coming Soon</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Spacebase Section */}
-        <div className="bg-gray-900 p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div>
-              <h2 className="text-2xl font-bold mb-2 uppercase">Spacebase</h2>
-              <p className="text-gray-400">A Complete Space History Database</p>
+        <div className={`${panelClassName} p-6 pt-10`}>
+          <PanelTopAccentBlue />
+          <div className="flex items-center justify-between gap-6 mb-6">
+            <div className="flex items-baseline gap-6">
+              <h2
+                className="text-3xl md:text-4xl font-bold uppercase tracking-wide text-white"
+                style={{ fontFamily: 'Nasalization, sans-serif' }}
+              >
+                SPACEBASE
+              </h2>
+              <p className="text-gray-300 text-sm md:text-base">
+                A Complete Space History Database
+              </p>
             </div>
             <Link
               to="/spacebase"
-              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2 transition-colors uppercase text-sm whitespace-nowrap"
+              className="bg-[#1f4fbf] hover:bg-[#2b64e0] text-white font-semibold px-6 py-2 transition-colors uppercase text-sm whitespace-nowrap shadow-[0_0_0_1px_rgba(255,255,255,0.12)]"
+              style={{ fontFamily: 'Nasalization, sans-serif' }}
             >
               Enter The Database
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {loading ? (
-              <div className="col-span-5 py-8">
-                <RedDotLoader size="medium" />
-              </div>
-            ) : rockets.length > 0 ? (
-              rockets.map((rocket) => (
-                <Link
-                  key={rocket.id}
-                  to={`/spacebase/rockets/${rocket.id}`}
-                  className="bg-gray-800 hover:bg-gray-700 transition-colors p-4 group"
-                >
-                  <div className="h-32 bg-gray-700 mb-3 flex items-center justify-center group-hover:bg-gray-600 transition-colors">
-                    {rocket.image_url ? (
-                      <img
-                        src={rocket.image_url}
-                        alt={rocket.name}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div className="hidden h-full w-full items-center justify-center text-gray-500 text-4xl">
-                      🚀
-                    </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Link
+                key={i}
+                to="/spacebase/rockets"
+                className="group bg-[#232323] shadow-[0_0_18px_rgba(0,0,0,0.55)] ring-1 ring-white/10 hover:ring-white/20 transition-colors"
+              >
+                <div className="p-3">
+                  <div className="aspect-video w-full overflow-hidden bg-black ring-1 ring-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+                    <img
+                      src="/electron_image_20190705175640.jpeg"
+                      alt="Launch vehicle"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
-                  <div className="font-semibold text-white text-sm uppercase mb-1">Launch Vehicles</div>
-                  <div className="text-xs text-gray-400">
-                    {totalRockets || rockets.length || 623} Profiles
-                  </div>
-                </Link>
-              ))
-            ) : (
-              // Fallback to placeholder cards if no rockets
-              [1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="bg-gray-800 p-4">
-                  <div className="h-32 bg-gray-700 mb-3 flex items-center justify-center">
-                    <span className="text-gray-500 text-4xl">🚀</span>
-                  </div>
-                  <div className="font-semibold text-white text-sm uppercase mb-1">Launch Vehicles</div>
-                  <div className="text-xs text-gray-400">{totalRockets || 623} Profiles</div>
                 </div>
-              ))
-            )}
+                <div className="px-4 pb-4 text-center">
+                  <div
+                    className="text-white text-lg font-bold uppercase"
+                    style={{ fontFamily: 'Nasalization, sans-serif' }}
+                  >
+                    LAUNCH VEHICLES
+                  </div>
+                  <div className="text-gray-300 text-sm">
+                    {Math.max(totalRockets || 0, 623)} Profiles
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
