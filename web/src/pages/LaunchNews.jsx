@@ -12,14 +12,11 @@ const LaunchNews = () => {
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
 
-  // Categories from backend (fallback to default if API fails or empty)
-  const defaultCategories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
   const [categoriesFromApi, setCategoriesFromApi] = useState([]);
-  const categories = categoriesFromApi.length > 0 ? categoriesFromApi.map((c) => c.name) : defaultCategories;
-  // Slug map from API (name -> slug) for routes
+  const categories = categoriesFromApi.length > 0 ? categoriesFromApi.map((c) => c.name) : [];
   const categorySlugByName = categoriesFromApi.length > 0
     ? Object.fromEntries(categoriesFromApi.map((c) => [c.name, c.slug || c.name?.toLowerCase().replace(/\s+/g, '-')]))
-    : { 'NEWS': 'news', 'LAUNCH': 'launch', 'IN SPACE': 'in-space', 'TECHNOLOGY': 'technology', 'MILITARY': 'military', 'FINANCE': 'finance' };
+    : {};
 
   // Demo images for articles
   const getDemoImage = (index = 0, categorySeed = 'launch') => {
@@ -35,81 +32,11 @@ const LaunchNews = () => {
       'https://images.unsplash.com/photo-1521185496955-15021babc2d4?w=1200&h=800&fit=crop&q=80',
       'https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=1200&h=800&fit=crop&q=80',
     ];
-    // Create a seed from category slug to ensure different images per category
     const categoryHash = categorySeed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const imageIndex = (index + categoryHash) % images.length;
     return images[imageIndex];
   };
 
-  // Dummy data matching the image design
-  const dummyFeaturedArticle = {
-    id: 1,
-    slug: 'live-coverage-china-shenzhou-20-crew-launch',
-    title: 'LIVE COVERAGE! China Shenzhou 20 Crew Launch',
-    excerpt: 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).',
-    featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop',
-    category: { name: 'China' },
-    published_at: new Date().toISOString(),
-  };
-
-  const dummyArticles = [
-    {
-      id: 1,
-      slug: 'leocloud-space-edge-datacenter-iss',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
-      category: { name: 'China' },
-      published_at: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      slug: 'leocloud-space-edge-datacenter-iss-2',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
-      category: { name: 'China' },
-      published_at: new Date().toISOString(),
-    },
-    {
-      id: 3,
-      slug: 'leocloud-space-edge-datacenter-iss-3',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
-      category: { name: 'China' },
-      published_at: new Date().toISOString(),
-    },
-    {
-      id: 4,
-      slug: 'leocloud-space-edge-datacenter-iss-4',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
-      category: { name: 'China' },
-      published_at: new Date().toISOString(),
-    },
-    {
-      id: 5,
-      slug: 'leocloud-space-edge-datacenter-iss-5',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
-      category: { name: 'China' },
-      published_at: new Date().toISOString(),
-    },
-    {
-      id: 6,
-      slug: 'leocloud-space-edge-datacenter-iss-6',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      excerpt: 'The Center for the Advancement of Science in Space (CASIS), the organization managing the International Space Station (ISS) National Laboratory, has extended an opportunity to LEOcloud to showcase its Space Edge Infrastructure as a Service. LEOcloud plans to install its first-generation Space Edge virtualized datacenter infrastructure on the ISS, enabling cloud computing capabilities in space.',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
-      category: { name: 'China' },
-      published_at: new Date().toISOString(),
-    },
-  ];
-
-  // Fetch categories from backend for section nav
   useEffect(() => {
     axios.get(`${API_URL}/api/news/categories`)
       .then((res) => {
@@ -118,7 +45,7 @@ const LaunchNews = () => {
           setCategoriesFromApi(data);
         }
       })
-      .catch(() => { /* keep default categories */ });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -166,23 +93,16 @@ const LaunchNews = () => {
         }
       }
 
-      // Use real data from API - don't fallback to dummy data if API returns empty
-      // Empty array means no articles in this category (real state, not an error)
       setArticles(articlesData);
-
-      // Set featured article from API data
       if (featuredData.length > 0) {
         setFeaturedArticle(featuredData[0]);
       } else if (articlesData.length > 0) {
         setFeaturedArticle(articlesData[0]);
       } else {
-        // No featured article - set to null so we can show empty state
         setFeaturedArticle(null);
       }
     } catch (error) {
       console.error('Error fetching articles:', error);
-      // Only use dummy data on actual API errors (network/server errors)
-      // If API returns empty array, that's valid - no articles in category
       setArticles([]);
       setFeaturedArticle(null);
     } finally {

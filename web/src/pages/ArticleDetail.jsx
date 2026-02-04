@@ -53,268 +53,7 @@ const ArticleDetail = () => {
 
   const categories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
 
-  // Dummy article data with full content
-  const dummyArticles = {
-    'live-coverage-china-shenzhou-20-crew-launch': {
-      id: 1,
-      slug: 'live-coverage-china-shenzhou-20-crew-launch',
-      title: 'LIVE COVERAGE! China Shenzhou 20 Crew Launch',
-      subtitle: 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).',
-      content: `<p>WASHINGTON — The Space Development Agency (SDA) wants to give commercial space companies a chance to prove their mettle for future military satellite contracts. The agency on May 31 released a solicitation for its "Hybrid Acquisition for Proliferated LEO" (HALO) program, which aims to establish a pool of pre-approved vendors eligible to compete for upcoming demonstration projects.</p>
-        <p>The Space Development Agency (SDA), a U.S. Space Force organization tasked with deploying a military low-Earth orbit (LEO) satellite constellation, is looking to bring in new blood from the commercial space industry.</p>
-        <p>Through HALO, selected vendors will be eligible to compete for future demonstration prototype projects. According to a solicitation, SDA plans to award multiple contracts annually.</p>
-        <h3>Seeking new players</h3>
-        <p>While established defense contractors have scooped up the lion's share of SDA's contracts for its planned LEO constellation, the HALO program is designed specifically to attract newer commercial players to try their hand at rapid prototyping and spaceflight demonstrations.</p>
-        <p>Proposals are due July 11, with an industry briefing scheduled for June 17.</p>
-        <p>The agency said HALO intends to provide opportunities for companies to gain valuable experience working with SDA on experimental projects and give them opportunities to demonstrate and mature their technologies so they're better prepared to bid for larger procurements of satellites that the agency calls 'tranches.'</p>`,
-      hero_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1920&h=800&fit=crop',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop',
-      category: { name: 'Launch' },
-      tags: ['ARTEMIS', 'SLS', 'SPACEX', 'NASA', 'MOON'],
-      summary: [
-        'NASA TO CANCEL SPACE LAUNCH SYSTEM AND ARTEMIS PROGRAM',
-        'NASA BLOWS UP ROCKET AT NASA KSC MUSEUM BY MISTAKE',
-        'SLS TRIPS ON NSF VAN DURING ROLLOUT',
-        'PRESS SITE FALLS INTO MASSIVE SINK HOLE TLP CREW WERE NOT ON SITE'
-      ],
-      author: {
-        id: 1,
-        full_name: 'ZACHARY AUBERT',
-        first_name: 'Zac',
-        last_name: 'Aubert',
-        title: 'SPACE NEWS JOURNALIST',
-        bio: 'Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.',
-        profile_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop'
-      },
-      published_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    },
-    'atmos-phoenix-1-reaches-orbit': {
-      id: 2,
-      slug: 'atmos-phoenix-1-reaches-orbit',
-      title: 'ATMOS PHOENIX 1 Reaches Orbit; Conducts Critical Inflatable ReEntry Test',
-      subtitle: 'The innovative inflatable reentry vehicle successfully completed its orbital test, marking a significant milestone in reusable spacecraft technology.',
-      content: `<p>WASHINGTON — The innovative ATMOS PHOENIX 1 mission has successfully reached orbit and completed its critical inflatable reentry test, marking a significant milestone in the development of reusable spacecraft technology.</p>
-        <p>The mission, launched from Vandenberg Space Force Base, demonstrated the viability of inflatable heat shield technology that could revolutionize how spacecraft return to Earth from orbit.</p>
-        <p>During the test, the vehicle deployed its inflatable heat shield at an altitude of 120 kilometers, successfully protecting the payload during atmospheric reentry at speeds exceeding Mach 25.</p>
-        <h3>Revolutionary Technology</h3>
-        <p>This technology represents a breakthrough in space exploration, potentially reducing the cost and complexity of returning payloads from space. Traditional rigid heat shields are heavy and take up significant space, but inflatable systems can be compact during launch and expand when needed.</p>
-        <p>The successful test opens the door for future missions that could use this technology for returning samples from Mars, delivering cargo from the International Space Station, or even enabling crewed missions with more efficient reentry systems.</p>
-        <p>NASA and commercial partners are closely watching these developments, as the technology could significantly impact future space exploration missions.</p>`,
-      hero_image_url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1920&h=800&fit=crop',
-      featured_image_url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&h=600&fit=crop',
-      category: { name: 'In Space' },
-      tags: ['IN SPACE', 'TECHNOLOGY', 'NASA', 'REUSABLE', 'ORBIT'],
-      summary: [
-        'ATMOS PHOENIX 1 SUCCESSFULLY COMPLETES ORBITAL TEST',
-        'INFLATABLE HEAT SHIELD TECHNOLOGY PROVES VIABLE',
-        'MISSION DEMONSTRATES REUSABLE SPACECRAFT CAPABILITIES',
-        'BREAKTHROUGH COULD REDUCE SPACE MISSION COSTS'
-      ],
-      author: {
-        id: 1,
-        full_name: 'ZACHARY AUBERT',
-        first_name: 'Zac',
-        last_name: 'Aubert',
-        title: 'SPACE NEWS JOURNALIST',
-        bio: 'Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.',
-        profile_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop'
-      },
-      published_at: new Date(Date.now() - 86400000).toISOString(),
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    },
-    'spacex-starship-successful-test-flight': {
-      id: 3,
-      slug: 'spacex-starship-successful-test-flight',
-      title: 'SpaceX Starship Completes Successful Test Flight to Orbit',
-      subtitle: 'Elon Musk\'s Starship achieves milestone with successful orbital test, bringing humanity one step closer to Mars colonization.',
-      content: `<p>BOCA CHICA, Texas — SpaceX's Starship has successfully completed its first orbital test flight, marking a historic milestone in the company's ambitious plan to colonize Mars.</p>
-        <p>The massive rocket, standing 120 meters tall, lifted off from SpaceX's Starbase facility in South Texas, successfully reaching orbit before completing a controlled reentry and splashdown in the Pacific Ocean.</p>
-        <p>This test flight represents years of development and testing, with SpaceX iterating through multiple prototypes to reach this point. The successful mission validates the company's approach to rapid development and testing.</p>
-        <h3>Mars Mission Progress</h3>
-        <p>Starship is designed to be fully reusable, capable of carrying up to 100 people or 100 tons of cargo to Mars. This successful test brings SpaceX significantly closer to its goal of establishing a permanent human presence on the Red Planet.</p>
-        <p>Elon Musk has stated that the first crewed mission to Mars could happen as early as 2029, though many experts believe this timeline is optimistic. Regardless, today's success demonstrates that the technology is progressing rapidly.</p>
-        <p>The successful orbital test also opens up possibilities for other missions, including point-to-point travel on Earth, lunar missions, and deep space exploration.</p>`,
-      hero_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=1920&h=800&fit=crop',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=800&h=600&fit=crop',
-      category: { name: 'Launch' },
-      tags: ['SPACEX', 'STARSHIP', 'MARS', 'ORBIT', 'ELON MUSK'],
-      summary: [
-        'SPACEX STARSHIP REACHES ORBIT FOR FIRST TIME',
-        'HISTORIC MILESTONE FOR MARS COLONIZATION EFFORTS',
-        'FULLY REUSABLE ROCKET VALIDATES TECHNOLOGY',
-        'CREWED MARS MISSION NOW CLOSER TO REALITY'
-      ],
-      author: {
-        id: 1,
-        full_name: 'ZACHARY AUBERT',
-        first_name: 'Zac',
-        last_name: 'Aubert',
-        title: 'SPACE NEWS JOURNALIST',
-        bio: 'Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.',
-        profile_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop'
-      },
-      published_at: new Date(Date.now() - 172800000).toISOString(),
-      created_at: new Date(Date.now() - 172800000).toISOString()
-    },
-    'nasa-artemis-2-mission-update': {
-      id: 4,
-      slug: 'nasa-artemis-2-mission-update',
-      title: 'NASA Artemis 2 Mission: Astronauts Prepare for Lunar Return',
-      subtitle: 'The Artemis 2 crew continues training for humanity\'s return to the Moon, with launch scheduled for next year.',
-      content: `<p>HOUSTON — The four astronauts selected for NASA's Artemis 2 mission are deep into their training regimen as they prepare to become the first humans to travel to the Moon in over 50 years.</p>
-        <p>The mission, scheduled for launch in 2025, will see the crew orbit the Moon before returning to Earth, paving the way for the Artemis 3 mission that will land astronauts on the lunar surface.</p>
-        <p>Commander Reid Wiseman, Pilot Victor Glover, Mission Specialist Christina Koch, and Mission Specialist Jeremy Hansen have been training together for months, practicing every aspect of the mission from launch to splashdown.</p>
-        <h3>Training Intensifies</h3>
-        <p>The crew has been working with the Orion spacecraft simulators, practicing emergency procedures, and learning to work with the Space Launch System (SLS) rocket that will carry them to the Moon.</p>
-        <p>This mission represents a new era of lunar exploration, with plans to establish a permanent presence on the Moon and use it as a stepping stone for future missions to Mars.</p>
-        <p>The Artemis program aims to land the first woman and first person of color on the Moon, while also establishing sustainable lunar operations that will support future deep space exploration.</p>`,
-      hero_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1920&h=800&fit=crop',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=800&h=600&fit=crop',
-      category: { name: 'Launch' },
-      tags: ['ARTEMIS', 'NASA', 'MOON', 'SLS', 'ORION'],
-      summary: [
-        'ARTEMIS 2 CREW TRAINING FOR LUNAR MISSION',
-        'FIRST HUMANS TO MOON IN OVER 50 YEARS',
-        'MISSION SCHEDULED FOR 2025 LAUNCH',
-        'PIONEERING NEW ERA OF LUNAR EXPLORATION'
-      ],
-      author: {
-        id: 1,
-        full_name: 'ZACHARY AUBERT',
-        first_name: 'Zac',
-        last_name: 'Aubert',
-        title: 'SPACE NEWS JOURNALIST',
-        bio: 'Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.',
-        profile_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop'
-      },
-      published_at: new Date(Date.now() - 259200000).toISOString(),
-      created_at: new Date(Date.now() - 259200000).toISOString()
-    },
-    'mars-sample-return-mission-progress': {
-      id: 5,
-      slug: 'mars-sample-return-mission-progress',
-      title: 'Mars Sample Return Mission Makes Significant Progress',
-      subtitle: 'NASA and ESA collaboration advances with successful sample collection on the Red Planet.',
-      content: `<p>PASADENA, Calif. — The Mars Sample Return mission has reached a critical milestone as NASA's Perseverance rover successfully collected and cached its first set of rock samples from the Jezero Crater.</p>
-        <p>These samples, carefully selected by scientists, represent some of the most promising locations for finding evidence of ancient Martian life. The rover has been exploring the crater for over two years, analyzing rocks and soil for signs of past microbial life.</p>
-        <p>The mission is a collaboration between NASA and the European Space Agency (ESA), with plans to retrieve these samples and return them to Earth for detailed analysis in laboratories around the world.</p>
-        <h3>Sample Collection Success</h3>
-        <p>Perseverance has collected over 20 samples so far, each carefully sealed in titanium tubes and cached at designated locations on the Martian surface. These samples will be retrieved by a future mission that will launch a rocket from the surface of Mars.</p>
-        <p>This ambitious mission represents the first time humans will attempt to return samples from another planet, requiring unprecedented coordination between multiple spacecraft and agencies.</p>
-        <p>The samples could provide definitive answers about whether life ever existed on Mars, and could help scientists understand the planet's geological history and potential for future human exploration.</p>`,
-      hero_image_url: 'https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=1920&h=800&fit=crop',
-      featured_image_url: 'https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=800&h=600&fit=crop',
-      category: { name: 'Technology' },
-      tags: ['MARS', 'NASA', 'ESA', 'PERSEVERANCE', 'SAMPLES'],
-      summary: [
-        'PERSEVERANCE COLLECTS FIRST MARS SAMPLES',
-        'HISTORIC MISSION TO RETURN SAMPLES TO EARTH',
-        'COLLABORATION BETWEEN NASA AND ESA',
-        'SAMPLES COULD REVEAL EVIDENCE OF ANCIENT LIFE'
-      ],
-      author: {
-        id: 1,
-        full_name: 'ZACHARY AUBERT',
-        first_name: 'Zac',
-        last_name: 'Aubert',
-        title: 'SPACE NEWS JOURNALIST',
-        bio: 'Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.',
-        profile_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop'
-      },
-      published_at: new Date(Date.now() - 345600000).toISOString(),
-      created_at: new Date(Date.now() - 345600000).toISOString()
-    },
-    'darpa-lunar-orbiter-water-prospecting': {
-      id: 6,
-      slug: 'darpa-lunar-orbiter-water-prospecting',
-      title: 'DARPA Seeks Proposals for Lunar Orbiter to Prospect Water Ice',
-      subtitle: 'Defense Advanced Research Projects Agency announces new initiative to map and prospect lunar water resources.',
-      content: `<p>ARLINGTON, Va. — The Defense Advanced Research Projects Agency (DARPA) has announced a new initiative to develop a lunar orbiter capable of prospecting for water ice and testing low orbit operations around the Moon.</p>
-        <p>The program, called "Lunar Water Prospecting and Low Orbit Operations" (LWPLO), aims to demonstrate technologies that could support future lunar operations and resource utilization.</p>
-        <p>Water ice on the Moon is considered a critical resource for future space exploration, as it can be converted into rocket fuel, breathable air, and drinking water for astronauts. Finding and mapping these resources is essential for establishing a sustainable presence on the Moon.</p>
-        <h3>Strategic Importance</h3>
-        <p>DARPA's interest in lunar water prospecting reflects the growing recognition that space resources will play a crucial role in future space operations. The agency is seeking proposals from commercial and academic partners to develop the orbiter and its instruments.</p>
-        <p>The mission would demonstrate the ability to operate in low lunar orbit, which presents unique challenges due to the Moon's irregular gravity field and the need for precise navigation.</p>
-        <p>This initiative comes as multiple nations and companies are planning lunar missions, making the Moon an increasingly important strategic location for space operations.</p>`,
-      hero_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1920&h=800&fit=crop',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=800&h=600&fit=crop',
-      category: { name: 'Military' },
-      tags: ['DARPA', 'MOON', 'WATER', 'ORBITER', 'MILITARY'],
-      summary: [
-        'DARPA ANNOUNCES LUNAR WATER PROSPECTING PROGRAM',
-        'ORBITER TO MAP LUNAR WATER ICE RESOURCES',
-        'CRITICAL FOR FUTURE SPACE OPERATIONS',
-        'COMMERCIAL AND ACADEMIC PARTNERS SOUGHT'
-      ],
-      author: {
-        id: 1,
-        full_name: 'ZACHARY AUBERT',
-        first_name: 'Zac',
-        last_name: 'Aubert',
-        title: 'SPACE NEWS JOURNALIST',
-        bio: 'Zac Aubert is the founder and ceo of The Launch pad, covering everything from rocket launches, space tech, and off planet mission.',
-        profile_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop'
-      },
-      published_at: new Date(Date.now() - 432000000).toISOString(),
-      created_at: new Date(Date.now() - 432000000).toISOString()
-    }
-  };
-
-  // Dummy related articles
-  const dummyRelatedArticles = [
-    {
-      id: 7,
-      slug: 'rocketlab-electron-launch-success',
-      title: 'RocketLab Electron Successfully Deploys 30 Satellites',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop'
-    },
-    {
-      id: 8,
-      slug: 'james-webb-telescope-new-discovery',
-      title: 'James Webb Telescope Discovers Ancient Galaxy Formation',
-      featured_image_url: 'https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=400&h=300&fit=crop'
-    },
-    {
-      id: 9,
-      slug: 'space-tourism-blue-origin-flight',
-      title: 'Blue Origin Completes 25th Suborbital Tourism Flight',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=300&fit=crop'
-    },
-    {
-      id: 10,
-      slug: 'international-space-station-expansion',
-      title: 'International Space Station Receives New Science Module',
-      featured_image_url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400&h=300&fit=crop'
-    }
-  ];
-
-  // Dummy related launches
-  const dummyRelatedLaunches = [
-    {
-      id: 1,
-      name: 'UNITED LAUNCH ALLIANCE',
-      subtitle: 'CREWED FLIGHT TEST',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=300&fit=crop',
-      launch_site: { name: 'Cape Canaveral, FL, USA' }
-    },
-    {
-      id: 2,
-      name: 'SPACEX FALCON 9',
-      subtitle: 'STARLINK MISSION',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop',
-      launch_site: { name: 'Kennedy Space Center, FL, USA' }
-    },
-    {
-      id: 3,
-      name: 'BLUE ORIGIN NEW SHEPARD',
-      subtitle: 'NS-25 TOURISM FLIGHT',
-      featured_image_url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400&h=300&fit=crop',
-      launch_site: { name: 'West Texas, USA' }
-    }
-  ];
-
-  // Demo images for articles
+  // Demo images for articles (placeholder when API does not provide image URL)
   const getDemoImage = (index = 0) => {
     const images = [
       'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1920&h=800&fit=crop',
@@ -335,98 +74,60 @@ const ArticleDetail = () => {
     try {
       const articleRes = await axios.get(`${API_URL}/api/news/${slug}`);
       
-      // Use API data if available, otherwise use dummy data
-      if (articleRes.data) {
-        // Ensure image URLs are set - check multiple possible field names
-        const articleData = {
-          ...articleRes.data,
-          hero_image_url: articleRes.data.hero_image_url || 
-                         articleRes.data.featured_image_url || 
-                         articleRes.data.image_url ||
-                         articleRes.data.hero_image ||
-                         articleRes.data.image ||
-                         getDemoImage(articleRes.data.id || 0),
-          featured_image_url: articleRes.data.featured_image_url || 
-                              articleRes.data.hero_image_url ||
-                              articleRes.data.image_url ||
-                              articleRes.data.featured_image ||
-                              articleRes.data.image ||
-                              getDemoImage(articleRes.data.id || 0)
-        };
-        setArticle(articleData);
-        
-        // Fetch related articles from same category
-        const categorySlug = articleRes.data.category_slug || articleRes.data.category?.slug;
-        try {
-          const relatedRes = await axios.get(`${API_URL}/api/news`, { 
-            params: { 
-              limit: 4, 
-              status: 'published',
-              ...(categorySlug ? { category: categorySlug } : {})
-            } 
-          });
-          
-          const relatedData = Array.isArray(relatedRes.data) 
-            ? relatedRes.data 
-            : relatedRes.data?.data || [];
-          
-          // Filter out current article
-          const filteredRelated = relatedData.filter(a => a.id !== articleRes.data.id && a.slug !== slug);
-          if (filteredRelated.length > 0) {
-            setRelatedArticles(filteredRelated.slice(0, 4));
-          } else {
-            setRelatedArticles(dummyRelatedArticles);
-          }
-        } catch (relatedError) {
-          console.error('Error fetching related articles:', relatedError);
-          setRelatedArticles(dummyRelatedArticles);
-        }
-        
-        // Fetch related launches
-        try {
-          const launchesRes = await axios.get(`${API_URL}/api/launches?limit=3&offset=0`);
-          const launchesData = Array.isArray(launchesRes.data) 
-            ? launchesRes.data 
-            : launchesRes.data?.data || [];
-          if (launchesData.length > 0) {
-            setRelatedLaunches(launchesData.slice(0, 3));
-          } else {
-            setRelatedLaunches(dummyRelatedLaunches);
-          }
-        } catch (launchesError) {
-          console.error('Error fetching related launches:', launchesError);
-          setRelatedLaunches(dummyRelatedLaunches);
-        }
-      } else {
-        // No data from API, use dummy data
-        const dummyArticle = dummyArticles[slug] || dummyArticles['live-coverage-china-shenzhou-20-crew-launch'];
-        if (dummyArticle) {
-          // Ensure image URLs are always set for dummy articles
-          const articleWithImages = {
-            ...dummyArticle,
-            hero_image_url: dummyArticle.hero_image_url || dummyArticle.featured_image_url || getDemoImage(dummyArticle.id || 0),
-            featured_image_url: dummyArticle.featured_image_url || dummyArticle.hero_image_url || getDemoImage(dummyArticle.id || 0)
-          };
-          setArticle(articleWithImages);
-        }
-        setRelatedArticles(dummyRelatedArticles);
-        setRelatedLaunches(dummyRelatedLaunches);
+      if (!articleRes.data) {
+        setArticle(null);
+        setRelatedArticles([]);
+        setRelatedLaunches([]);
+        return;
+      }
+
+      const articleData = {
+        ...articleRes.data,
+        hero_image_url: articleRes.data.hero_image_url || 
+                       articleRes.data.featured_image_url || 
+                       articleRes.data.image_url ||
+                       articleRes.data.hero_image ||
+                       articleRes.data.image ||
+                       getDemoImage(articleRes.data.id || 0),
+        featured_image_url: articleRes.data.featured_image_url || 
+                            articleRes.data.hero_image_url ||
+                            articleRes.data.image_url ||
+                            articleRes.data.featured_image ||
+                            articleRes.data.image ||
+                            getDemoImage(articleRes.data.id || 0)
+      };
+      setArticle(articleData);
+      
+      const categorySlug = articleRes.data.category_slug || articleRes.data.category?.slug;
+      try {
+        const relatedRes = await axios.get(`${API_URL}/api/news`, { 
+          params: { 
+            limit: 4, 
+            status: 'published',
+            ...(categorySlug ? { category: categorySlug } : {})
+          } 
+        });
+        const relatedData = Array.isArray(relatedRes.data) ? relatedRes.data : relatedRes.data?.data || [];
+        const filteredRelated = relatedData.filter(a => a.id !== articleRes.data.id && a.slug !== slug);
+        setRelatedArticles(filteredRelated.length > 0 ? filteredRelated.slice(0, 4) : []);
+      } catch (relatedError) {
+        console.error('Error fetching related articles:', relatedError);
+        setRelatedArticles([]);
+      }
+      
+      try {
+        const launchesRes = await axios.get(`${API_URL}/api/launches?limit=3&offset=0`);
+        const launchesData = Array.isArray(launchesRes.data) ? launchesRes.data : launchesRes.data?.data || [];
+        setRelatedLaunches(launchesData.length > 0 ? launchesData.slice(0, 3) : []);
+      } catch (launchesError) {
+        console.error('Error fetching related launches:', launchesError);
+        setRelatedLaunches([]);
       }
     } catch (error) {
       console.error('Error fetching article:', error);
-      // Use dummy data on error
-      const dummyArticle = dummyArticles[slug] || dummyArticles['live-coverage-china-shenzhou-20-crew-launch'];
-      if (dummyArticle) {
-        // Ensure image URLs are always set for dummy articles
-        const articleWithImages = {
-          ...dummyArticle,
-          hero_image_url: dummyArticle.hero_image_url || dummyArticle.featured_image_url || getDemoImage(dummyArticle.id || 0),
-          featured_image_url: dummyArticle.featured_image_url || dummyArticle.hero_image_url || getDemoImage(dummyArticle.id || 0)
-        };
-        setArticle(articleWithImages);
-      }
-      setRelatedArticles(dummyRelatedArticles);
-      setRelatedLaunches(dummyRelatedLaunches);
+      setArticle(null);
+      setRelatedArticles([]);
+      setRelatedLaunches([]);
     } finally {
       setLoading(false);
     }

@@ -31,83 +31,6 @@ const LaunchNewsDetail = () => {
 
   const categories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
 
-  // Dummy data matching the image
-  const dummyArticle = {
-    id: 1,
-    slug: 'maezawa-cancels-dearmoon-mission',
-    title: 'Maezawa Cancels DearMoon Mission',
-    excerpt: 'Japanese entrepreneur Yusaku Maezawa has cancelled the world\'s first civilian circumlunar voyage aboard SpaceX\'s Starship.',
-    content: `<p>WASHINGTON – The Space Development Agency (SDA) wants to give commercial space companies a chance to prove their mettle for future military satellite contracts. The agency on May 31 released a <span class="highlight-word" data-word="solicitation">solicitation</span> for its "Hybrid Acquisition for Proliferated LEO" (HALO) program, which aims to establish a pool of pre-approved vendors eligible to compete for upcoming demonstration projects.</p>
-      <h3>Seeking new players</h3>
-      <p>The Space Development Agency (SDA), a U.S. Space Force organization tasked with deploying a military low-Earth orbit (LEO) satellite constellation, is looking to bring in new blood from the commercial space industry.</p>
-      <p>Through HALO, selected vendors will be eligible to compete for future demonstration prototype projects. According to a solicitation, SDA plans to award multiple contracts annually.</p>`,
-    featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop',
-    category: { name: 'Launch' },
-    tags: ['SPACEX', 'SPACEX', 'SPACEX', 'SPACEX', 'SPACEX'],
-    summary: [
-      'Zachary Aubert is the Founder and CEO of The Launch Pad Network.',
-      'Zachary Aubert is the Founder and CEO of The Launch Pad Network.',
-      'Zachary Aubert is the Founder and CEO of The Launch Pad Network.',
-      'Zachary Aubert is the Founder and CEO of The Launch Pad Network.'
-    ],
-    author: {
-      id: 1,
-      full_name: 'Zac Aubert',
-      first_name: 'Zac',
-      last_name: 'Aubert',
-      title: 'SPACE NEWS JOURNALIST',
-      bio: 'Zachary Aubert is the Founder and CEO of The Launch Pad Network.',
-      profile_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop'
-    },
-    breaking_news: {
-      title: 'Maezawa Cancels DearMoon Mission',
-      description: 'Japanese entrepreneur Yusaku Maezawa has cancelled the world\'s first civilian circumlunar voyage aboard SpaceX\'s Starship.'
-    },
-    video: {
-      title: 'STARLINER',
-      thumbnail: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop',
-      countdown_text: 'COUNTDOWN TO LAUNCH'
-    },
-    published_at: new Date().toISOString(),
-  };
-
-  const dummyRelatedLaunches = [
-    {
-      id: 1,
-      name: 'United Launch Alliance',
-      subtitle: 'Crewed Flight Test',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=300&fit=crop',
-      location: 'Cape Canaveral, FL, USA'
-    }
-  ];
-
-  const dummyRelatedStories = [
-    {
-      id: 1,
-      slug: 'leocloud-space-edge-datacenter',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop'
-    },
-    {
-      id: 2,
-      slug: 'leocloud-space-edge-datacenter-2',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop'
-    },
-    {
-      id: 3,
-      slug: 'leocloud-space-edge-datacenter-3',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop'
-    },
-    {
-      id: 4,
-      slug: 'leocloud-space-edge-datacenter-4',
-      title: 'LEOcloud to Launch Space Edge Datacenter To ISS by 2025',
-      featured_image_url: 'https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=400&h=300&fit=crop'
-    }
-  ];
-
   useEffect(() => {
     fetchArticle();
   }, [slug]);
@@ -144,60 +67,44 @@ const LaunchNewsDetail = () => {
     try {
       const articleRes = await axios.get(`${API_URL}/api/news/${slug}`);
       
-      if (articleRes.data) {
-        setArticle(articleRes.data);
-        
-        // Fetch related articles from launch category
-        try {
-          const relatedRes = await axios.get(`${API_URL}/api/news`, { 
-            params: { 
-              limit: 4, 
-              status: 'published',
-              category: 'launch'
-            } 
-          });
-          
-          const relatedData = Array.isArray(relatedRes.data) 
-            ? relatedRes.data 
-            : relatedRes.data?.data || [];
-          
-          // Filter out current article
-          const filteredRelated = relatedData.filter(a => a.id !== articleRes.data.id && a.slug !== slug);
-          if (filteredRelated.length > 0) {
-            setRelatedArticles(filteredRelated.slice(0, 4));
-          } else {
-            setRelatedArticles(dummyRelatedStories);
-          }
-        } catch (relatedError) {
-          console.error('Error fetching related articles:', relatedError);
-          setRelatedArticles(dummyRelatedStories);
-        }
-        
-        // Fetch related launches
-        try {
-          const launchesRes = await axios.get(`${API_URL}/api/launches?limit=3&offset=0`);
-          const launchesData = Array.isArray(launchesRes.data) 
-            ? launchesRes.data 
-            : launchesRes.data?.data || [];
-          if (launchesData.length > 0) {
-            setRelatedLaunches(launchesData.slice(0, 3));
-          } else {
-            setRelatedLaunches(dummyRelatedLaunches);
-          }
-        } catch (launchesError) {
-          console.error('Error fetching related launches:', launchesError);
-          setRelatedLaunches(dummyRelatedLaunches);
-        }
-      } else {
-        setArticle(dummyArticle);
-        setRelatedArticles(dummyRelatedStories);
-        setRelatedLaunches(dummyRelatedLaunches);
+      if (!articleRes.data) {
+        setArticle(null);
+        setRelatedArticles([]);
+        setRelatedLaunches([]);
+        return;
+      }
+
+      setArticle(articleRes.data);
+      
+      try {
+        const relatedRes = await axios.get(`${API_URL}/api/news`, { 
+          params: { 
+            limit: 4, 
+            status: 'published',
+            category: 'launch'
+          } 
+        });
+        const relatedData = Array.isArray(relatedRes.data) ? relatedRes.data : relatedRes.data?.data || [];
+        const filteredRelated = relatedData.filter(a => a.id !== articleRes.data.id && a.slug !== slug);
+        setRelatedArticles(filteredRelated.length > 0 ? filteredRelated.slice(0, 4) : []);
+      } catch (relatedError) {
+        console.error('Error fetching related articles:', relatedError);
+        setRelatedArticles([]);
+      }
+      
+      try {
+        const launchesRes = await axios.get(`${API_URL}/api/launches?limit=3&offset=0`);
+        const launchesData = Array.isArray(launchesRes.data) ? launchesRes.data : launchesRes.data?.data || [];
+        setRelatedLaunches(launchesData.length > 0 ? launchesData.slice(0, 3) : []);
+      } catch (launchesError) {
+        console.error('Error fetching related launches:', launchesError);
+        setRelatedLaunches([]);
       }
     } catch (error) {
       console.error('Error fetching article:', error);
-      setArticle(dummyArticle);
-      setRelatedArticles(dummyRelatedStories);
-      setRelatedLaunches(dummyRelatedLaunches);
+      setArticle(null);
+      setRelatedArticles([]);
+      setRelatedLaunches([]);
     } finally {
       setLoading(false);
     }

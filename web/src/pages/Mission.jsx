@@ -64,7 +64,7 @@ const Mission = () => {
         <div className="max-w-full mx-auto px-4 md:px-6 py-2 flex justify-between items-center text-xs text-gray-400">
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-2">
-            <span>TLP Network Inc.</span>
+            <Link to="/" className="hover:text-white transition-colors">TLP Network Inc.</Link>
             <span>|</span>
             <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
             <span>|</span>

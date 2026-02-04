@@ -43,7 +43,7 @@ const News = () => {
           setCategoriesFromApi(data);
         }
       })
-      .catch(() => { /* keep default categories */ });
+      .catch(() => {});
   }, []);
 
   // Fetch trending topics from backend for TRENDING | SPACEX | ... bar
@@ -55,7 +55,7 @@ const News = () => {
           setTrendingTopicsFromApi(data);
         }
       })
-      .catch(() => { /* keep default trending */ });
+      .catch(() => {});
   }, []);
 
   const [articles, setArticles] = useState([]);
@@ -72,23 +72,11 @@ const News = () => {
   const [canScrollRight, setCanScrollRight] = useState(true);
   const interviewCarouselRef = useRef(null);
   const [stockTickers, setStockTickers] = useState([]);
-  // Categories from backend (fallback to default if API fails or empty)
-  const defaultCategories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
   const [categoriesFromApi, setCategoriesFromApi] = useState([]);
-  const categories = categoriesFromApi.length > 0 ? categoriesFromApi.map((c) => c.name) : defaultCategories;
-  // Slug map from API (name -> slug) for filtering and routes
+  const categories = categoriesFromApi.length > 0 ? categoriesFromApi.map((c) => c.name) : [];
   const categorySlugByName = categoriesFromApi.length > 0
     ? Object.fromEntries(categoriesFromApi.map((c) => [c.name, c.slug || c.name?.toLowerCase().replace(/\s+/g, '-')]))
-    : { 'NEWS': 'news', 'LAUNCH': 'launch', 'IN SPACE': 'in-space', 'TECHNOLOGY': 'technology', 'MILITARY': 'military', 'FINANCE': 'finance' };
-
-  // Trending topics from backend (GET /api/news/trending-topics); fallback to default if API fails or empty
-  const defaultTrending = [
-    { label: 'TRENDING', search: 'trending', route: null },
-    { label: 'SPACEX', search: 'spacex', route: null },
-    { label: 'ARTEMIS 2', search: 'artemis', route: null },
-    { label: 'MARS SAMPLE RETURN', search: 'mars-sample-return', route: null },
-    { label: 'DARPA LUNAR ORBITER', search: 'darpa-lunar-orbiter', route: null }
-  ];
+    : {};
   const [trendingTopicsFromApi, setTrendingTopicsFromApi] = useState([]);
   const trending = trendingTopicsFromApi.length > 0
     ? trendingTopicsFromApi.map((t) => ({
@@ -96,17 +84,8 @@ const News = () => {
         search: t.slug || t.name?.toLowerCase().replace(/\s+/g, '-'),
         route: null
       }))
-    : defaultTrending;
+    : [];
   const [selectedTrending, setSelectedTrending] = useState(null);
-  
-  // Fallback stock ticker data
-  const defaultStockTickers = [
-    { symbol: 'RKLB', name: 'RocketLab', price: 420069.00, change: 69.00, changePercent: 0.03, isPositive: true },
-    { symbol: 'RKLB', name: 'RocketLab', price: 420069.00, change: 69.00, changePercent: 0.03, isPositive: true },
-    { symbol: 'RKLB', name: 'RocketLab', price: 420069.00, change: 69.00, changePercent: 0.03, isPositive: true },
-    { symbol: 'RKLB', name: 'RocketLab', price: 420069.00, change: -69.00, changePercent: -0.03, isPositive: false },
-    { symbol: 'RKLB', name: 'RocketLab', price: 420069.00, change: -69.00, changePercent: -0.03, isPositive: false },
-  ];
 
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
@@ -180,228 +159,6 @@ const News = () => {
     return images[index % images.length];
   };
 
-  // Dummy data for development/fallback
-  const dummyFeaturedArticle = {
-    id: 1,
-    slug: 'live-coverage-china-shenzhou-20-crew-launch',
-    title: 'LIVE COVERAGE! China Shenzhou 20 Crew Launch',
-    excerpt: 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).',
-    featured_image_url: getDemoImage(0),
-    category: { name: 'China' },
-    published_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    is_featured: true
-  };
-
-  const dummyArticles = [
-    {
-      id: 2,
-      slug: 'atmos-phoenix-1-reaches-orbit',
-      title: 'ATMOS PHOENIX 1 Reaches Orbit; Conducts Critical Inflatable ReEntry Test',
-      excerpt: 'The innovative inflatable reentry vehicle successfully completed its orbital test, marking a significant milestone in reusable spacecraft technology.',
-      featured_image_url: getDemoImage(1),
-      category: { name: 'In Space' },
-      published_at: new Date(Date.now() - 86400000).toISOString(),
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-      id: 3,
-      slug: 'spacex-starship-successful-test-flight',
-      title: 'SpaceX Starship Completes Successful Test Flight to Orbit',
-      excerpt: 'Elon Musk\'s Starship achieves milestone with successful orbital test, bringing humanity one step closer to Mars colonization.',
-      featured_image_url: getDemoImage(2),
-      category: { name: 'Launch' },
-      published_at: new Date(Date.now() - 172800000).toISOString(),
-      created_at: new Date(Date.now() - 172800000).toISOString()
-    },
-    {
-      id: 4,
-      slug: 'nasa-artemis-2-mission-update',
-      title: 'NASA Artemis 2 Mission: Astronauts Prepare for Lunar Return',
-      excerpt: 'The Artemis 2 crew continues training for humanity\'s return to the Moon, with launch scheduled for next year.',
-      featured_image_url: getDemoImage(3),
-      category: { name: 'Launch' },
-      published_at: new Date(Date.now() - 259200000).toISOString(),
-      created_at: new Date(Date.now() - 259200000).toISOString()
-    },
-    {
-      id: 5,
-      slug: 'mars-sample-return-mission-progress',
-      title: 'Mars Sample Return Mission Makes Significant Progress',
-      excerpt: 'NASA and ESA collaboration advances with successful sample collection on the Red Planet.',
-      featured_image_url: getDemoImage(4),
-      category: { name: 'Technology' },
-      published_at: new Date(Date.now() - 345600000).toISOString(),
-      created_at: new Date(Date.now() - 345600000).toISOString()
-    },
-    {
-      id: 6,
-      slug: 'darpa-lunar-orbiter-water-prospecting',
-      title: 'DARPA Seeks Proposals for Lunar Orbiter to Prospect Water Ice',
-      excerpt: 'Defense Advanced Research Projects Agency announces new initiative to map and prospect lunar water resources.',
-      featured_image_url: getDemoImage(5),
-      category: { name: 'Military' },
-      published_at: new Date(Date.now() - 432000000).toISOString(),
-      created_at: new Date(Date.now() - 432000000).toISOString()
-    },
-    {
-      id: 7,
-      slug: 'rocketlab-electron-launch-success',
-      title: 'RocketLab Electron Successfully Deploys 30 Satellites',
-      excerpt: 'RocketLab achieves another successful launch, deploying a constellation of small satellites into low Earth orbit.',
-      featured_image_url: getDemoImage(6),
-      category: { name: 'Launch' },
-      published_at: new Date(Date.now() - 518400000).toISOString(),
-      created_at: new Date(Date.now() - 518400000).toISOString()
-    },
-    {
-      id: 8,
-      slug: 'james-webb-telescope-new-discovery',
-      title: 'James Webb Telescope Discovers Ancient Galaxy Formation',
-      excerpt: 'The most powerful space telescope reveals new insights into the early universe and galaxy formation processes.',
-      featured_image_url: getDemoImage(7),
-      category: { name: 'Technology' },
-      published_at: new Date(Date.now() - 604800000).toISOString(),
-      created_at: new Date(Date.now() - 604800000).toISOString()
-    },
-    {
-      id: 9,
-      slug: 'space-tourism-blue-origin-flight',
-      title: 'Blue Origin Completes 25th Suborbital Tourism Flight',
-      excerpt: 'Jeff Bezos\' space company continues its commercial spaceflight operations with another successful crewed mission.',
-      featured_image_url: getDemoImage(8),
-      category: { name: 'Launch' },
-      published_at: new Date(Date.now() - 691200000).toISOString(),
-      created_at: new Date(Date.now() - 691200000).toISOString()
-    },
-    {
-      id: 10,
-      slug: 'international-space-station-expansion',
-      title: 'International Space Station Receives New Science Module',
-      excerpt: 'The ISS expands its research capabilities with the addition of a new European-built science laboratory module.',
-      featured_image_url: getDemoImage(9),
-      category: { name: 'In Space' },
-      published_at: new Date(Date.now() - 777600000).toISOString(),
-      created_at: new Date(Date.now() - 777600000).toISOString()
-    },
-    {
-      id: 11,
-      slug: 'spacex-falcon-heavy-triple-landing',
-      title: 'SpaceX Falcon Heavy Achieves Triple Booster Landing',
-      excerpt: 'SpaceX successfully lands all three Falcon Heavy boosters, demonstrating advanced reusable rocket technology.',
-      featured_image_url: getDemoImage(0),
-      category: { name: 'Launch' },
-      published_at: new Date(Date.now() - 864000000).toISOString(),
-      created_at: new Date(Date.now() - 864000000).toISOString()
-    },
-    {
-      id: 12,
-      slug: 'nasa-perseverance-rover-findings',
-      title: 'NASA Perseverance Rover Finds Evidence of Ancient Water',
-      excerpt: 'The Mars rover discovers compelling evidence of past water activity in Jezero Crater, supporting theories of ancient Martian life.',
-      featured_image_url: getDemoImage(1),
-      category: { name: 'Technology' },
-      published_at: new Date(Date.now() - 950400000).toISOString(),
-      created_at: new Date(Date.now() - 950400000).toISOString()
-    }
-  ];
-
-  const dummyInterviews = [
-    {
-      id: 13,
-      slug: 'interview-jared-isaacman-nasa',
-      title: 'Exclusive Interview: Jared Isaacman on Private Spaceflight',
-      excerpt: 'The billionaire astronaut discusses his vision for commercial space exploration and upcoming missions.',
-      featured_image_url: getDemoImage(2),
-      category: { name: 'News' },
-      published_at: new Date(Date.now() - 1036800000).toISOString(),
-      created_at: new Date(Date.now() - 1036800000).toISOString()
-    },
-    {
-      id: 14,
-      slug: 'interview-chris-hadfield-astronaut',
-      title: 'Chris Hadfield: Life After Space',
-      excerpt: 'The Canadian astronaut shares his experiences on the ISS and his continued advocacy for space exploration.',
-      featured_image_url: getDemoImage(3),
-      category: { name: 'News' },
-      published_at: new Date(Date.now() - 1123200000).toISOString(),
-      created_at: new Date(Date.now() - 1123200000).toISOString()
-    },
-    {
-      id: 15,
-      slug: 'interview-elon-musk-spacex',
-      title: 'Elon Musk on the Future of SpaceX',
-      excerpt: 'The SpaceX CEO discusses Starship development, Mars colonization timeline, and the future of human spaceflight.',
-      featured_image_url: getDemoImage(4),
-      category: { name: 'News' },
-      published_at: new Date(Date.now() - 1209600000).toISOString(),
-      created_at: new Date(Date.now() - 1209600000).toISOString()
-    }
-  ];
-
-  const dummyAmericaArticles = [
-    {
-      id: 16,
-      slug: 'spacex-launches-starlink-constellation',
-      title: 'SpaceX Launches 60 More Starlink Satellites',
-      excerpt: 'The company continues expanding its global internet constellation with another successful Falcon 9 launch.',
-      featured_image_url: getDemoImage(5),
-      category: { name: 'America' },
-      published_at: new Date(Date.now() - 1296000000).toISOString(),
-      created_at: new Date(Date.now() - 1296000000).toISOString()
-    },
-    {
-      id: 17,
-      slug: 'nasa-commercial-crew-program',
-      title: 'NASA Commercial Crew Program Reaches Milestone',
-      excerpt: 'The agency celebrates successful partnership with private companies for crew transportation to the ISS.',
-      featured_image_url: getDemoImage(6),
-      category: { name: 'America' },
-      published_at: new Date(Date.now() - 1382400000).toISOString(),
-      created_at: new Date(Date.now() - 1382400000).toISOString()
-    },
-    {
-      id: 18,
-      slug: 'blue-origin-new-glenn-development',
-      title: 'Blue Origin New Glenn Rocket Enters Final Testing Phase',
-      excerpt: 'The heavy-lift rocket moves closer to its first launch as testing progresses at the company\'s facilities.',
-      featured_image_url: getDemoImage(7),
-      category: { name: 'America' },
-      published_at: new Date(Date.now() - 1468800000).toISOString(),
-      created_at: new Date(Date.now() - 1468800000).toISOString()
-    },
-    {
-      id: 19,
-      slug: 'nasa-viper-lunar-rover',
-      title: 'NASA VIPER Rover Prepares for Lunar South Pole Mission',
-      excerpt: 'The Volatiles Investigating Polar Exploration Rover will search for water ice on the Moon\'s south pole.',
-      featured_image_url: getDemoImage(8),
-      category: { name: 'America' },
-      published_at: new Date(Date.now() - 1555200000).toISOString(),
-      created_at: new Date(Date.now() - 1555200000).toISOString()
-    },
-    {
-      id: 20,
-      slug: 'space-force-satellite-launch',
-      title: 'US Space Force Launches Advanced Communication Satellite',
-      excerpt: 'The military branch successfully deploys a new satellite to enhance global communication capabilities.',
-      featured_image_url: getDemoImage(9),
-      category: { name: 'America' },
-      published_at: new Date(Date.now() - 1641600000).toISOString(),
-      created_at: new Date(Date.now() - 1641600000).toISOString()
-    },
-    {
-      id: 21,
-      slug: 'nasa-gateway-lunar-station',
-      title: 'NASA Gateway Lunar Station Construction Begins',
-      excerpt: 'The first components of the lunar space station are being prepared for launch as part of the Artemis program.',
-      featured_image_url: getDemoImage(0),
-      category: { name: 'America' },
-      published_at: new Date(Date.now() - 1728000000).toISOString(),
-      created_at: new Date(Date.now() - 1728000000).toISOString()
-    }
-  ];
-
   const fetchStockTickers = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/stock-tickers`, {
@@ -424,14 +181,11 @@ const News = () => {
       if (tickers.length > 0) {
         setStockTickers(tickers);
       } else {
-        // Use default if no tickers found
-        setStockTickers(defaultStockTickers);
+        setStockTickers([]);
       }
     } catch (error) {
       console.error('Error fetching stock tickers:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      // Use default on error
-      setStockTickers(defaultStockTickers);
+      setStockTickers([]);
     }
   };
 
@@ -556,8 +310,6 @@ const News = () => {
         ? trendingRes.data
         : trendingRes.data?.data || [];
 
-      // Use API data if available, otherwise use dummy data
-      // Add demo images to all articles
       const addDemoImages = (articleList, startIndex = 0) => {
         return articleList.map((article, idx) => ({
           ...article,
@@ -570,8 +322,8 @@ const News = () => {
         setArticles(articlesWithImages);
         setTopStories(articlesWithImages.slice(0, 5));
       } else {
-        setArticles(dummyArticles);
-        setTopStories(dummyArticles.slice(0, 5));
+        setArticles([]);
+        setTopStories([]);
       }
 
       if (featuredData.length > 0) {
@@ -585,32 +337,29 @@ const News = () => {
           featured_image_url: articlesData[0].featured_image_url || getDemoImage(0)
         });
       } else {
-        setFeaturedArticle(dummyFeaturedArticle);
+        setFeaturedArticle(null);
       }
 
       if (interviewsData.length > 0) {
         setInterviews(addDemoImages(interviewsData, 2));
       } else {
-        setInterviews(dummyInterviews);
+        setInterviews([]);
       }
 
-      // Use trending articles for "America" section, or fallback to top stories
       if (trendingData.length > 0) {
         setAmericaArticles(addDemoImages(trendingData.slice(0, 6), 5));
       } else if (articlesData.length > 0) {
         setAmericaArticles(addDemoImages(articlesData.slice(0, 6), 5));
       } else {
-        setAmericaArticles(dummyAmericaArticles);
+        setAmericaArticles([]);
       }
     } catch (error) {
       console.error('Error fetching articles:', error);
-      // Use dummy data on error
-      console.error('Error fetching articles:', error);
-      setArticles(dummyArticles);
-      setFeaturedArticle(dummyFeaturedArticle);
-      setTopStories(dummyArticles.slice(0, 5));
-      setInterviews(dummyInterviews);
-      setAmericaArticles(dummyAmericaArticles);
+      setArticles([]);
+      setFeaturedArticle(null);
+      setTopStories([]);
+      setInterviews([]);
+      setAmericaArticles([]);
     } finally {
       setLoading(false);
     }
@@ -1081,23 +830,25 @@ const News = () => {
           </div>
         )}
 
-        {/* Stock Ticker */}
-        <div className="mb-8 sm:mb-10 md:mb-12 w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-0 w-full">
-            {(stockTickers.length > 0 ? stockTickers : defaultStockTickers).map((stock, idx) => (
-              <StockTickerCard key={stock.symbol + '-' + idx} stock={stock} />
-            ))}
+        {/* Stock Ticker - only show when API returns data */}
+        {stockTickers.length > 0 && (
+          <div className="mb-8 sm:mb-10 md:mb-12 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-0 w-full">
+              {stockTickers.map((stock, idx) => (
+                <StockTickerCard key={stock.symbol + '-' + idx} stock={stock} />
+              ))}
+            </div>
+            <div className="flex justify-end mt-2">
+              <Link
+                to="/news/finance"
+                className="text-white text-xs sm:text-sm font-bold uppercase hover:text-orange-400 transition-colors"
+                style={{ fontFamily: 'Orbitron, sans-serif' }}
+              >
+                SEE MORE
+              </Link>
+            </div>
           </div>
-          <div className="flex justify-end mt-2">
-            <Link
-              to="/news/finance"
-              className="text-white text-xs sm:text-sm font-bold uppercase hover:text-orange-400 transition-colors"
-              style={{ fontFamily: 'Orbitron, sans-serif' }}
-            >
-              SEE MORE
-            </Link>
-          </div>
-        </div>
+        )}
 
         {/* ATMOS PHOENIX 1 Section */}
         {articles.length > 0 && (
@@ -1224,8 +975,8 @@ const News = () => {
                   <div className="shrink-0 w-64 sm:w-72 md:w-80 flex items-center justify-center bg-black">
                     <Link
                       to="/news/interviews"
-                      className="bg-newstheme text-white px-4 sm:px-6 py-2 sm:py-3 rounded font-bold uppercase hover:bg-newstheme/90 transition-colors text-sm sm:text-base" style={{ backgroundColor: '#fa9a00' }}
-                      style={{ fontFamily: 'sans-serif' }}
+                      className="bg-newstheme text-white px-4 sm:px-6 py-2 sm:py-3 rounded font-bold uppercase hover:bg-newstheme/90 transition-colors text-sm sm:text-base"
+                      style={{ backgroundColor: '#fa9a00', fontFamily: 'sans-serif' }}
                     >
                       MORE
                     </Link>
