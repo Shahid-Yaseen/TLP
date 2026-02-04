@@ -44,7 +44,8 @@ jobs:
       - name: Build production bundle
         working-directory: ./web
         env:
-          VITE_API_URL: ${{ secrets.API_URL }}
+          # Empty = same-origin in browser (https://tlpnetwork.com/api). Fixes mixed content when site is HTTPS.
+          VITE_API_URL: ''
         run: npm run build
 
       - name: Upload build artifacts

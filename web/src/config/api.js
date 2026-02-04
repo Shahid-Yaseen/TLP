@@ -1,18 +1,20 @@
 // Centralized API configuration
 // Uses VITE_API_URL environment variable, falls back to localhost for development
-// Vite automatically exposes environment variables prefixed with VITE_
-// Automatically converts HTTPS to HTTP if needed (for IP-based access)
-let API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3007';
+const envUrl = import.meta.env.VITE_API_URL;
+let API_URL = (envUrl && envUrl.trim() !== '') ? envUrl.trim() : 'http://localhost:3007';
 
-// If API_URL is HTTPS but we're accessing via IP, convert to HTTP
-// This handles cases where the secret is set to HTTPS but server only supports HTTP
-if (API_URL.startsWith('https://') && window.location.protocol === 'http:') {
-  API_URL = API_URL.replace('https://', 'http://');
+// When the page is loaded over HTTPS, always use same-origin to avoid mixed content blocking.
+// Browsers block HTTP requests from HTTPS pages (mixed content).
+if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+  API_URL = '';
 }
-
-// If no explicit API_URL is set and we're in production, use relative URLs
-if (!import.meta.env.VITE_API_URL && window.location.hostname !== 'localhost') {
-  API_URL = ''; // Use relative URLs - same domain as frontend
+// If built with no API URL and not localhost, use same-origin
+else if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && (!envUrl || envUrl.trim() === '')) {
+  API_URL = '';
+}
+// If env is HTTPS but page is HTTP (e.g. dev via IP), use HTTP for API
+else if (typeof window !== 'undefined' && API_URL.startsWith('https://') && window.location.protocol === 'http:') {
+  API_URL = API_URL.replace('https://', 'http://');
 }
 
 export default API_URL;
