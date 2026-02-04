@@ -571,14 +571,15 @@ export const dataProvider: DataProvider = {
         return undefined;
       };
 
-      // Handle hero_image_url upload
-      if (data.hero_image_url) {
-        data.hero_image_url = await handleArticleImageUpload(data.hero_image_url);
+      // Handle hero_image_url upload (use extracted variables - on create they are not in data yet)
+      if (hero_image_url !== undefined && hero_image_url !== null && hero_image_url !== '') {
+        const processedHero = await handleArticleImageUpload(hero_image_url);
+        if (processedHero !== undefined) data.hero_image_url = processedHero;
       }
-
       // Handle featured_image_url upload
-      if (data.featured_image_url) {
-        data.featured_image_url = await handleArticleImageUpload(data.featured_image_url);
+      if (featured_image_url !== undefined && featured_image_url !== null && featured_image_url !== '') {
+        const processedFeatured = await handleArticleImageUpload(featured_image_url);
+        if (processedFeatured !== undefined) data.featured_image_url = processedFeatured;
       }
 
       console.log('Article data being sent:', JSON.stringify(data, null, 2));
