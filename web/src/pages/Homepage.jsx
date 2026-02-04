@@ -18,6 +18,9 @@ const Homepage = () => {
   const [heroImage, setHeroImage] = useState('https://thespacedevs-prod.nyc3.digitaloceanspaces.com/media/images/spectrum_on_the_image_20250321072643.jpeg');
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [spacebaseEmail, setSpacebaseEmail] = useState('');
+  const [spacebaseSubmitting, setSpacebaseSubmitting] = useState(false);
+  const [spacebaseMessage, setSpacebaseMessage] = useState({ type: '', text: '' });
 
   // Preload hero image to ensure it's ready
   useEffect(() => {
@@ -217,6 +220,42 @@ const Homepage = () => {
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return '1d';
     return `${diffDays}d`;
+  };
+
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const handleSpacebaseSubscribe = async (e) => {
+    e.preventDefault();
+    if (!spacebaseEmail.trim()) {
+      setSpacebaseMessage({ type: 'error', text: 'Please enter your email address' });
+      return;
+    }
+    if (!isValidEmail(spacebaseEmail)) {
+      setSpacebaseMessage({ type: 'error', text: 'Please enter a valid email address' });
+      return;
+    }
+    setSpacebaseSubmitting(true);
+    setSpacebaseMessage({ type: '', text: '' });
+    try {
+      const response = await axios.post(`${API_URL}/api/subscribe`, {
+        email: spacebaseEmail.trim().toLowerCase(),
+        source_page: 'spacebase'
+      });
+      if (response.data.success) {
+        setSpacebaseMessage({
+          type: 'success',
+          text: response.data.message || "You're on the list! We'll notify you when SPACEBASE is ready."
+        });
+        setSpacebaseEmail('');
+      }
+    } catch (error) {
+      setSpacebaseMessage({
+        type: 'error',
+        text: error.response?.data?.error || error.message || 'Failed to subscribe. Please try again.'
+      });
+    } finally {
+      setSpacebaseSubmitting(false);
+    }
   };
 
   const NewsCard = ({ article }) => {
@@ -558,60 +597,48 @@ const Homepage = () => {
           </div>
         </div>
 
-        {/* Spacebase Section */}
+        {/* Spacebase Section - Coming Soon */}
         <div className={`${panelClassName} p-6 pt-10`}>
           <PanelTopAccentBlue />
-          <div className="flex items-center justify-between gap-6 mb-6">
-            <div className="flex items-baseline gap-6">
-              <h2
-                className="text-3xl md:text-4xl font-bold uppercase tracking-wide text-white"
-                style={{ fontFamily: 'Nasalization, sans-serif' }}
-              >
-                SPACEBASE
-              </h2>
-              <p className="text-gray-300 text-sm md:text-base">
-                A Complete Space History Database
-              </p>
-            </div>
-            <Link
-              to="/spacebase"
-              className="bg-[#1f4fbf] hover:bg-[#2b64e0] text-white font-semibold px-6 py-2 transition-colors uppercase text-sm whitespace-nowrap shadow-[0_0_0_1px_rgba(255,255,255,0.12)]"
+          <div className="flex flex-col items-center text-center py-8 md:py-12">
+            <h2
+              className="text-3xl md:text-4xl font-bold uppercase tracking-wide text-white mb-2"
               style={{ fontFamily: 'Nasalization, sans-serif' }}
             >
-              Enter The Database
-            </Link>
-          </div>
+              SPACEBASE
+            </h2>
+            <p className="text-gray-300 text-sm md:text-base mb-2">
+              A Complete Space History Database
+            </p>
+            <p className="text-white/90 text-xl md:text-2xl font-semibold uppercase tracking-wide mb-10" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+              Coming Soon
+            </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Link
-                key={i}
-                to="/spacebase/rockets"
-                className="group bg-[#232323] shadow-[0_0_18px_rgba(0,0,0,0.55)] ring-1 ring-white/10 hover:ring-white/20 transition-colors"
+            <p className="text-gray-400 text-sm mb-4 max-w-md">Be the first to know when the database launches.</p>
+            <form onSubmit={handleSpacebaseSubscribe} className="w-full max-w-md flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                value={spacebaseEmail}
+                onChange={(e) => setSpacebaseEmail(e.target.value)}
+                placeholder="Your email"
+                className="flex-1 min-w-0 px-4 py-3 bg-[#232323] border border-white/20 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#1f4fbf] focus:border-transparent"
+                disabled={spacebaseSubmitting}
+                aria-label="Email for updates"
+              />
+              <button
+                type="submit"
+                disabled={spacebaseSubmitting}
+                className="bg-[#1f4fbf] hover:bg-[#2b64e0] disabled:opacity-60 text-white font-semibold px-6 py-3 transition-colors uppercase text-sm whitespace-nowrap"
+                style={{ fontFamily: 'Nasalization, sans-serif' }}
               >
-                <div className="p-3">
-                  <div className="aspect-video w-full overflow-hidden bg-black ring-1 ring-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
-                    <img
-                      src="/electron_image_20190705175640.jpeg"
-                      alt="Launch vehicle"
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
-                <div className="px-4 pb-4 text-center">
-                  <div
-                    className="text-white text-lg font-bold uppercase"
-                    style={{ fontFamily: 'Nasalization, sans-serif' }}
-                  >
-                    LAUNCH VEHICLES
-                  </div>
-                  <div className="text-gray-300 text-sm">
-                    {Math.max(totalRockets || 0, 623)} Profiles
-                  </div>
-                </div>
-              </Link>
-            ))}
+                {spacebaseSubmitting ? 'Sending…' : 'Sign up for updates'}
+              </button>
+            </form>
+            {spacebaseMessage.text && (
+              <p className={`mt-4 text-sm max-w-md ${spacebaseMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                {spacebaseMessage.text}
+              </p>
+            )}
           </div>
         </div>
       </div>
