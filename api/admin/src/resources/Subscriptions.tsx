@@ -16,6 +16,7 @@ import {
 import { Box, Typography, Dialog, DialogTitle, DialogContent, DialogActions, TextField as MuiTextField, Button as MuiButton, CircularProgress } from '@mui/material';
 import { useState } from 'react';
 import SendIcon from '@mui/icons-material/Send';
+import { getApiUrl } from '../config/api';
 
 const SubscriptionFilters = (props: any) => (
   <Filter {...props}>
@@ -49,8 +50,7 @@ const SendUpdateEmailButton = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3007';
-      const response = await fetch(`${API_URL}/api/subscribers/send-update`, {
+      const response = await fetch(`${getApiUrl()}/api/subscribers/send-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

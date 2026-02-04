@@ -16,8 +16,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useRedirect } from 'react-admin';
 import { BackButtonActions } from '../components/BackButtonActions';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3007';
+import { getApiUrl } from '../config/api';
 
 const outcomeChoices = [
   { id: 'success', name: 'Success' },
@@ -1339,7 +1338,7 @@ const LaunchCommentsComponent = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/launches/${record.id}/comments`, {
+      const response = await fetch(`${getApiUrl()}/api/launches/${record.id}/comments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -1385,7 +1384,7 @@ const LaunchCommentsComponent = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/comments/${editingComment.id}`, {
+      const response = await fetch(`${getApiUrl()}/api/comments/${editingComment.id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1418,7 +1417,7 @@ const LaunchCommentsComponent = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/comments/${commentId}`, {
+      const response = await fetch(`${getApiUrl()}/api/comments/${commentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

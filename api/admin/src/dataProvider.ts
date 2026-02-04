@@ -1,6 +1,5 @@
 import { DataProvider, fetchUtils } from 'react-admin';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3007';
+import { getApiUrl } from './config/api';
 
 // Centralized resource endpoint mapping (categories/tags used by Articles ReferenceInput/ReferenceArrayInput)
 const getResourceEndpoint = (resource: string): string => {
@@ -75,7 +74,7 @@ export const dataProvider: DataProvider = {
     // Handle mission_content singleton - always return single object wrapped in array
     if (resource === 'mission_content') {
       const endpoint = getResourceEndpoint(resource);
-      const url = `${API_URL}/api/${endpoint}`;
+      const url = `${getApiUrl()}/api/${endpoint}`;
       const { json } = await httpClient(url);
       
       // Transform image URLs to objects for ImageInput/ImageField
@@ -119,7 +118,7 @@ export const dataProvider: DataProvider = {
       query.order = order?.toLowerCase() || 'asc';
     }
 
-    const url = `${API_URL}/api/${endpoint}?${new URLSearchParams(query as any).toString()}`;
+    const url = `${getApiUrl()}/api/${endpoint}?${new URLSearchParams(query as any).toString()}`;
     const { json } = await httpClient(url);
 
     // Handle different response formats
@@ -147,7 +146,7 @@ export const dataProvider: DataProvider = {
     // Handle mission_content singleton - always use id=1, fetch from /api/mission/content (no id in URL)
     if (resource === 'mission_content') {
       const endpoint = getResourceEndpoint(resource);
-      const url = `${API_URL}/api/${endpoint}`;
+      const url = `${getApiUrl()}/api/${endpoint}`;
       const { json } = await httpClient(url);
       
       // Ensure id is set to 1 for singleton
@@ -171,7 +170,7 @@ export const dataProvider: DataProvider = {
     }
 
     const endpoint = getResourceEndpoint(resource);
-    const url = `${API_URL}/api/${endpoint}/${params.id}`;
+    const url = `${getApiUrl()}/api/${endpoint}/${params.id}`;
     const { json } = await httpClient(url);
 
     // Fix ID mapping for launches - API returns external_id as id, but we need database_id
@@ -371,7 +370,7 @@ export const dataProvider: DataProvider = {
   getMany: async (resource: string, params: any) => {
     const endpoint = getResourceEndpoint(resource);
     const ids = params.ids.join(',');
-    const url = `${API_URL}/api/${endpoint}?ids=${ids}`;
+    const url = `${getApiUrl()}/api/${endpoint}?ids=${ids}`;
     const { json } = await httpClient(url);
 
     const data = Array.isArray(json) ? json : json.data || [];
@@ -389,7 +388,7 @@ export const dataProvider: DataProvider = {
       offset: (page - 1) * perPage,
     };
 
-    const url = `${API_URL}/api/${endpoint}?${new URLSearchParams(query as any).toString()}`;
+    const url = `${getApiUrl()}/api/${endpoint}?${new URLSearchParams(query as any).toString()}`;
     const { json } = await httpClient(url);
 
     const data = Array.isArray(json) ? json : json.data || [];
@@ -403,7 +402,7 @@ export const dataProvider: DataProvider = {
 
   create: async (resource: string, params: any) => {
     const endpoint = getResourceEndpoint(resource);
-    const url = `${API_URL}/api/${endpoint}`;
+    const url = `${getApiUrl()}/api/${endpoint}`;
 
     // Handle file uploads
     let data = { ...params.data };
@@ -530,7 +529,7 @@ export const dataProvider: DataProvider = {
           formData.append('image', imageField.rawFile);
 
           const token = localStorage.getItem('access_token');
-          const uploadResponse = await fetch(`${API_URL}/api/upload/article`, {
+          const uploadResponse = await fetch(`${getApiUrl()}/api/upload/article`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -556,7 +555,7 @@ export const dataProvider: DataProvider = {
             
             return (uploadedUrl.match(/^https?:\/\//)) 
               ? uploadedUrl 
-              : `${API_URL}${uploadedUrl}`;
+              : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -591,7 +590,7 @@ export const dataProvider: DataProvider = {
         formData.append('image', data.profile_image_url.rawFile);
 
         const token = localStorage.getItem('access_token');
-        const uploadResponse = await fetch(`${API_URL}/api/upload/crew`, {
+        const uploadResponse = await fetch(`${getApiUrl()}/api/upload/crew`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -623,10 +622,10 @@ export const dataProvider: DataProvider = {
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
           
-          // Only prepend API_URL if it's not already an absolute URL
+          // Only prepend API base URL if it's not already an absolute URL
           data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 
             ? uploadedUrl 
-            : `${API_URL}${uploadedUrl}`;
+            : `${getApiUrl()}${uploadedUrl}`;
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -646,7 +645,7 @@ export const dataProvider: DataProvider = {
           formData.append('image', imageField.rawFile);
 
           const token = localStorage.getItem('access_token');
-          const uploadResponse = await fetch(`${API_URL}/api/upload/${uploadEndpoint}`, {
+          const uploadResponse = await fetch(`${getApiUrl()}/api/upload/${uploadEndpoint}`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -677,10 +676,10 @@ export const dataProvider: DataProvider = {
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
             
-            // Only prepend API_URL if it's not already an absolute URL
+            // Only prepend API base URL if it's not already an absolute URL
             return (uploadedUrl.match(/^https?:\/\//)) 
               ? uploadedUrl 
-              : `${API_URL}${uploadedUrl}`;
+              : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -742,7 +741,7 @@ export const dataProvider: DataProvider = {
     // Handle mission_content singleton - PUT to /api/mission/content (no id in URL)
     if (resource === 'mission_content') {
       const endpoint = getResourceEndpoint(resource);
-      const url = `${API_URL}/api/${endpoint}`;
+      const url = `${getApiUrl()}/api/${endpoint}`;
       
       // Handle file uploads
       let data = { ...params.data };
@@ -754,7 +753,7 @@ export const dataProvider: DataProvider = {
           formData.append('image', imageField.rawFile);
 
           const token = localStorage.getItem('access_token');
-          const uploadResponse = await fetch(`${API_URL}/api/upload/${uploadEndpoint}`, {
+          const uploadResponse = await fetch(`${getApiUrl()}/api/upload/${uploadEndpoint}`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -775,10 +774,10 @@ export const dataProvider: DataProvider = {
             uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
             uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
             
-            // Only prepend API_URL if it's not already an absolute URL
+            // Only prepend API base URL if it's not already an absolute URL
             return (uploadedUrl.match(/^https?:\/\//)) 
               ? uploadedUrl 
-              : `${API_URL}${uploadedUrl}`;
+              : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -804,7 +803,7 @@ export const dataProvider: DataProvider = {
     }
 
     const endpoint = getResourceEndpoint(resource);
-    const url = `${API_URL}/api/${endpoint}/${params.id}`;
+    const url = `${getApiUrl()}/api/${endpoint}/${params.id}`;
 
     // Handle file uploads
     let data = { ...params.data };
@@ -931,7 +930,7 @@ export const dataProvider: DataProvider = {
           formData.append('image', imageField.rawFile);
 
           const token = localStorage.getItem('access_token');
-          const uploadResponse = await fetch(`${API_URL}/api/upload/article`, {
+          const uploadResponse = await fetch(`${getApiUrl()}/api/upload/article`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -957,7 +956,7 @@ export const dataProvider: DataProvider = {
             
             return (uploadedUrl.match(/^https?:\/\//)) 
               ? uploadedUrl 
-              : `${API_URL}${uploadedUrl}`;
+              : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -1010,7 +1009,7 @@ export const dataProvider: DataProvider = {
         formData.append('image', data.profile_image_url.rawFile);
 
         const token = localStorage.getItem('access_token');
-        const uploadResponse = await fetch(`${API_URL}/api/upload/crew`, {
+        const uploadResponse = await fetch(`${getApiUrl()}/api/upload/crew`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -1042,10 +1041,10 @@ export const dataProvider: DataProvider = {
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
           
-          // Only prepend API_URL if it's not already an absolute URL
+          // Only prepend API base URL if it's not already an absolute URL
           data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 
             ? uploadedUrl 
-            : `${API_URL}${uploadedUrl}`;
+            : `${getApiUrl()}${uploadedUrl}`;
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
@@ -1090,7 +1089,7 @@ export const dataProvider: DataProvider = {
 
   delete: async (resource: string, params: any) => {
     const endpoint = getResourceEndpoint(resource);
-    const url = `${API_URL}/api/${endpoint}/${params.id}`;
+    const url = `${getApiUrl()}/api/${endpoint}/${params.id}`;
 
     // Get existing record before deletion for return value
     const existing = await dataProvider.getOne(resource, { id: params.id });
@@ -1114,7 +1113,7 @@ export const dataProvider: DataProvider = {
 
 // Custom method to fetch launch statistics
 export const fetchLaunchStatistics = async () => {
-  const url = `${API_URL}/api/statistics/launches/detailed`;
+  const url = `${getApiUrl()}/api/statistics/launches/detailed`;
   const { json } = await httpClient(url);
   return json;
 };

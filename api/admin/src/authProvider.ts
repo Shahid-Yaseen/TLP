@@ -1,10 +1,9 @@
 import { AuthProvider } from 'react-admin';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3007';
+import { getApiUrl } from './config/api';
 
 export const authProvider: AuthProvider = {
   login: async ({ email, password }: { email: string; password: string }) => {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
+    const response = await fetch(`${getApiUrl()}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -28,7 +27,7 @@ export const authProvider: AuthProvider = {
     
     if (refreshToken) {
       try {
-        await fetch(`${API_URL}/api/auth/logout`, {
+        await fetch(`${getApiUrl()}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -57,7 +56,7 @@ export const authProvider: AuthProvider = {
 
     // Optionally verify token is still valid
     try {
-      const response = await fetch(`${API_URL}/api/users/me`, {
+      const response = await fetch(`${getApiUrl()}/api/users/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -67,7 +66,7 @@ export const authProvider: AuthProvider = {
         // Try to refresh token
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
-          const refreshResponse = await fetch(`${API_URL}/api/auth/refresh`, {
+          const refreshResponse = await fetch(`${getApiUrl()}/api/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh_token: refreshToken }),
