@@ -6,18 +6,21 @@ import {
   SelectInput,
   ReferenceArrayInput,
   SelectArrayInput,
+  AutocompleteArrayInput,
   SaveButton,
   Toolbar,
   BooleanInput,
   ImageInput,
   ImageField,
+  ArrayInput,
+  SimpleFormIterator,
 } from 'react-admin';
 import { useFormContext } from 'react-hook-form';
 import { Box, Grid, Typography, Switch, FormControlLabel, Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
 const CustomToolbar = (props: any) => (
-  <Toolbar {...props} sx={{ display: 'none' }}>
+  <Toolbar {...props}>
     <SaveButton />
   </Toolbar>
 );
@@ -26,7 +29,7 @@ const ArticleFormContent = () => {
   const { watch, setValue } = useFormContext();
   const theme = useTheme();
   const isDark = theme?.palette?.mode === 'dark' || false;
-  
+
   // Theme-aware colors
   const textPrimary = isDark ? '#e0e0e0' : '#1a1a1a';
   const textSecondary = isDark ? '#b0b0b0' : '#666';
@@ -35,10 +38,8 @@ const ArticleFormContent = () => {
   const borderColor = isDark ? '#404040' : '#e0e0e0';
   const linkColor = theme?.palette?.primary?.main || '#1976d2';
   const textDisabled = isDark ? '#808080' : '#999';
-  
+
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const heroImageUrl = watch('hero_image_url');
-  const featuredImageUrl = watch('featured_image_url');
   const youtubeUrl = watch('video_youtube_url');
   const isBreaking = watch('is_breaking') || false;
   const isDeveloping = watch('is_developing') || false;
@@ -183,13 +184,19 @@ const ArticleFormContent = () => {
               helperText="Select country for country-based article filtering"
             />
           </ReferenceInput>
-          <TextInput
-            source="sub_category"
-            label="Sub Category"
-            fullWidth
-            sx={{ mt: 2 }}
-            helperText="Optional sub-category for further classification"
-          />
+          <ReferenceInput
+            source="sub_category_id"
+            reference="categories"
+            filter={{ parent_id: watch('category_id') }}
+            allowEmpty
+          >
+            <SelectInput
+              optionText="name"
+              label="Sub Category"
+              sx={{ mt: 2 }}
+              helperText="Optional sub-category for further classification"
+            />
+          </ReferenceInput>
           <ReferenceArrayInput source="tag_ids" reference="tags">
             <SelectArrayInput
               optionText="name"
@@ -225,7 +232,7 @@ const ArticleFormContent = () => {
         >
           Article Settings
         </Typography>
-        
+
         <Grid container spacing={2}>
           {/* Left Column - Content Flags */}
           <Grid item xs={12} md={6}>
@@ -243,33 +250,33 @@ const ArticleFormContent = () => {
               Content Flags
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isBreaking}
-                onChange={(e) => setValue('is_breaking', e.target.checked)}
-              />
-            }
-            label={
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isBreaking}
+                    onChange={(e) => setValue('is_breaking', e.target.checked)}
+                  />
+                }
+                label={
                   <Typography sx={{ color: textPrimary, fontSize: '0.875rem', fontWeight: 500 }}>
                     Breaking News
-              </Typography>
-            }
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isDeveloping}
-                onChange={(e) => setValue('is_developing', e.target.checked)}
+                  </Typography>
+                }
               />
-            }
-            label={
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isDeveloping}
+                    onChange={(e) => setValue('is_developing', e.target.checked)}
+                  />
+                }
+                label={
                   <Typography sx={{ color: textPrimary, fontSize: '0.875rem', fontWeight: 500 }}>
                     Developing Story
-              </Typography>
-            }
-          />
-        </Box>
+                  </Typography>
+                }
+              />
+            </Box>
           </Grid>
 
           {/* Right Column - Visibility Settings */}
@@ -340,41 +347,41 @@ const ArticleFormContent = () => {
                   </Typography>
                 }
               />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isPublished}
-                onChange={(e) => {
-                  const newStatus = e.target.checked ? 'published' : 'draft';
-                  setValue('status', newStatus, { shouldDirty: true, shouldTouch: true });
-                }}
-              />
-            }
-            label={
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isPublished}
+                    onChange={(e) => {
+                      const newStatus = e.target.checked ? 'published' : 'draft';
+                      setValue('status', newStatus, { shouldDirty: true, shouldTouch: true });
+                    }}
+                  />
+                }
+                label={
                   <Typography sx={{ color: textPrimary, fontSize: '0.875rem', fontWeight: 500 }}>
                     Published
-              </Typography>
-            }
-          />
+                  </Typography>
+                }
+              />
             </Box>
           </Grid>
         </Grid>
 
         {/* Hidden fields for form submission */}
-          <Box sx={{ display: 'none' }}>
-            <SelectInput
-              source="status"
-              choices={[
-                { id: 'draft', name: 'Draft' },
-                { id: 'published', name: 'Published' },
-                { id: 'archived', name: 'Archived' },
-              ]}
-              defaultValue="draft"
-            />
+        <Box sx={{ display: 'none' }}>
+          <SelectInput
+            source="status"
+            choices={[
+              { id: 'draft', name: 'Draft' },
+              { id: 'published', name: 'Published' },
+              { id: 'archived', name: 'Archived' },
+            ]}
+            defaultValue="draft"
+          />
           <BooleanInput source="is_breaking" />
           <BooleanInput source="is_developing" />
-            <BooleanInput source="is_featured" />
-            <BooleanInput source="is_trending" />
+          <BooleanInput source="is_featured" />
+          <BooleanInput source="is_trending" />
           <BooleanInput source="is_interview" />
           <BooleanInput source="is_top_story" />
         </Box>
@@ -411,11 +418,12 @@ const ArticleFormContent = () => {
               }}
             >
               <TextInput
-                source="summary"
+                source="summary_string"
                 multiline
-                rows={4}
+                rows={6}
                 fullWidth
-                placeholder="Enter summary..."
+                label="Summary Points (One per line)"
+                placeholder="Enter summary points, one per line..."
                 sx={{
                   '& .MuiOutlinedInput-notchedOutline': {
                     border: 'none',
@@ -722,9 +730,67 @@ const ArticleFormContent = () => {
         </Grid>
       </Paper>
 
-      {/* Save Button at the end */}
-      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-        <SaveButton />
+      {/* Related Content & Polls */}
+      <Grid container spacing={2} sx={{ mt: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              border: `1px solid ${borderColor}`,
+              backgroundColor: bgCard,
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ mb: 2, color: textSecondary, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+              Related Launch
+            </Typography>
+            <ReferenceArrayInput source="related_launch_ids" reference="launches" perPage={100}>
+              <AutocompleteArrayInput
+                optionText="name"
+                label="Search Related Launches"
+                fullWidth
+                shouldRenderSuggestions={(val: any) => true}
+                helperText="Search and link this article to specific launches"
+              />
+            </ReferenceArrayInput>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              border: `1px solid ${borderColor}`,
+              backgroundColor: bgCard,
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ mb: 2, color: textSecondary, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+              Article Polls
+            </Typography>
+            <ArrayInput source="polls" label="Polls">
+              <SimpleFormIterator sx={{ width: '100%', mb: 2 }}>
+                <TextInput
+                  source="question"
+                  label="Poll Question"
+                  fullWidth
+                  helperText="Enter the question for this poll"
+                  sx={{ mb: 2 }}
+                />
+                <ArrayInput source="options" label="Poll Options">
+                  <SimpleFormIterator inline>
+                    <TextInput source="text" label="Option Text" fullWidth />
+                  </SimpleFormIterator>
+                </ArrayInput>
+              </SimpleFormIterator>
+            </ArrayInput>
+          </Paper>
+        </Grid>
+      </Grid>
+      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', pb: 2 }}>
+        <SaveButton label="Save Article" />
       </Box>
     </Box>
   );

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import CommentItem from '../components/CommentItem';
+import PollCard from '../components/PollCard';
 import { useAuth } from '../contexts/AuthContext';
 import RedDotLoader from '../components/common/RedDotLoader';
 
@@ -11,6 +11,7 @@ const ArticleDetail = () => {
   const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { setSectionNav } = useOutletContext();
   const { user } = useAuth();
   const [article, setArticle] = useState(null);
   const [relatedArticles, setRelatedArticles] = useState([]);
@@ -18,23 +19,26 @@ const ArticleDetail = () => {
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
   const [authorImageError, setAuthorImageError] = useState(false);
-  
+
   // Comments state
   const [comments, setComments] = useState([]);
   const [commentSort, setCommentSort] = useState('newest');
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentsTotal, setCommentsTotal] = useState(0);
   const [newComment, setNewComment] = useState('');
+  const [categoriesFromApi, setCategoriesFromApi] = useState([]);
+  const categories = categoriesFromApi.length > 0 ? categoriesFromApi.map(c => c.name) : ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
+  const categorySlugByName = categoriesFromApi.length > 0
+    ? Object.fromEntries(categoriesFromApi.map(c => [c.name, c.slug || c.name?.toLowerCase().replace(/\s+/g, '-')]))
+    : {};
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
 
-  const trending = [
-    { label: 'TRENDING', search: 'trending', route: null },
-    { label: 'SPACEX', search: 'spacex', route: null },
-    { label: 'ARTEMIS 2', search: 'artemis', route: null },
-    { label: 'MARS SAMPLE RETURN', search: 'mars sample return', route: null },
-    { label: 'DARPA LUNAR ORBITER', search: 'darpa lunar', route: null }
-  ];
+  const [trendingTopics, setTrendingTopics] = useState([
+    { name: 'TRENDING', slug: 'trending' },
+    { name: 'SPACEX', slug: 'spacex' },
+    { name: 'ARTEMIS 2', slug: 'artemis' }
+  ]);
 
   useEffect(() => {
     fetchArticle();
@@ -51,7 +55,79 @@ const ArticleDetail = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const categories = ['NEWS', 'LAUNCH', 'IN SPACE', 'TECHNOLOGY', 'MILITARY', 'FINANCE'];
+  useEffect(() => {
+    // Fetch dynamic trending topics
+    axios.get(`${API_URL}/api/news/trending-topics`)
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (data.length > 0) {
+          setTrendingTopics(data);
+        }
+      })
+      .catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    axios.get(`${API_URL}/api/news/categories`)
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (data.length > 0) {
+          setCategoriesFromApi(data);
+        }
+      })
+      .catch(() => { });
+  }, []);
+
+  const sectionNav = (
+    <div className="border-t-2 border-white bg-newstheme" style={{ backgroundColor: '#fa9a00' }}>
+      <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between py-0">
+        <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-black flex items-center justify-center overflow-hidden">
+                <img src="/TLP Helmet.png" alt="TLP Logo" className="w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 object-contain" />
+              </div>
+              <div className="absolute top-full left-0 bg-red-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
+                {currentTime}
+              </div>
+            </div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
+          </div>
+          <div className="flex items-center gap-0 text-[10px] sm:text-xs uppercase flex-wrap">
+            {categories.slice(1).map((cat, idx) => {
+              const slug = categorySlugByName[cat];
+              const isSelected = article?.category_name === cat || (cat === 'LAUNCH' && article?.category_slug === 'launch');
+
+              return (
+                <div key={cat} className="flex items-center">
+                  {idx > 0 && <span className="mx-0.5 sm:mx-1 font-bold text-white">|</span>}
+                  <button
+                    onClick={() => {
+                      if (cat === 'LAUNCH') {
+                        navigate('/launches/news');
+                      } else if (slug) {
+                        navigate(`/news/${slug}`);
+                      } else {
+                        navigate('/news');
+                      }
+                    }}
+                    className={`px-1 sm:px-2 py-1 text-white transition-all ${isSelected ? 'border-b-2 border-white font-bold' : 'font-normal hover:border-b-2 hover:border-white hover:font-bold'}`}
+                  >
+                    {cat}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, [article?.category_name, currentTime]);
 
   // Demo images for articles (placeholder when API does not provide image URL)
   const getDemoImage = (index = 0) => {
@@ -73,7 +149,7 @@ const ArticleDetail = () => {
   const fetchArticle = async () => {
     try {
       const articleRes = await axios.get(`${API_URL}/api/news/${slug}`);
-      
+
       if (!articleRes.data) {
         setArticle(null);
         setRelatedArticles([]);
@@ -83,29 +159,29 @@ const ArticleDetail = () => {
 
       const articleData = {
         ...articleRes.data,
-        hero_image_url: articleRes.data.hero_image_url || 
-                       articleRes.data.featured_image_url || 
-                       articleRes.data.image_url ||
-                       articleRes.data.hero_image ||
-                       articleRes.data.image ||
-                       getDemoImage(articleRes.data.id || 0),
-        featured_image_url: articleRes.data.featured_image_url || 
-                            articleRes.data.hero_image_url ||
-                            articleRes.data.image_url ||
-                            articleRes.data.featured_image ||
-                            articleRes.data.image ||
-                            getDemoImage(articleRes.data.id || 0)
+        hero_image_url: articleRes.data.hero_image_url ||
+          articleRes.data.featured_image_url ||
+          articleRes.data.image_url ||
+          articleRes.data.hero_image ||
+          articleRes.data.image ||
+          getDemoImage(articleRes.data.id || 0),
+        featured_image_url: articleRes.data.featured_image_url ||
+          articleRes.data.hero_image_url ||
+          articleRes.data.image_url ||
+          articleRes.data.featured_image ||
+          articleRes.data.image ||
+          getDemoImage(articleRes.data.id || 0)
       };
       setArticle(articleData);
-      
+
       const categorySlug = articleRes.data.category_slug || articleRes.data.category?.slug;
       try {
-        const relatedRes = await axios.get(`${API_URL}/api/news`, { 
-          params: { 
-            limit: 4, 
+        const relatedRes = await axios.get(`${API_URL}/api/news`, {
+          params: {
+            limit: 4,
             status: 'published',
             ...(categorySlug ? { category: categorySlug } : {})
-          } 
+          }
         });
         const relatedData = Array.isArray(relatedRes.data) ? relatedRes.data : relatedRes.data?.data || [];
         const filteredRelated = relatedData.filter(a => a.id !== articleRes.data.id && a.slug !== slug);
@@ -114,7 +190,7 @@ const ArticleDetail = () => {
         console.error('Error fetching related articles:', relatedError);
         setRelatedArticles([]);
       }
-      
+
       try {
         const launchesRes = await axios.get(`${API_URL}/api/launches?limit=3&offset=0`);
         const launchesData = Array.isArray(launchesRes.data) ? launchesRes.data : launchesRes.data?.data || [];
@@ -135,7 +211,7 @@ const ArticleDetail = () => {
 
   const fetchComments = async () => {
     if (!article?.id) return;
-    
+
     setCommentsLoading(true);
     try {
       const response = await axios.get(`${API_URL}/api/news/${article.id}/comments`, {
@@ -220,14 +296,14 @@ const ArticleDetail = () => {
 
   if (!article) {
     return (
-      <Layout>
+      <>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Article Not Found</h1>
           <Link to="/news" className="text-newstheme hover:text-newstheme/80" style={{ color: '#fa9a00' }}>
             Return to News
           </Link>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -236,71 +312,6 @@ const ArticleDetail = () => {
     article.hero_image_url = getDemoImage(article.id || 0);
     article.featured_image_url = getDemoImage(article.id || 0);
   }
-
-  const sectionNav = (
-    <div className="border-t-2 border-white bg-newstheme" style={{ backgroundColor: '#fa9a00' }}>
-      <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 flex items-center justify-between py-0">
-        <div className="flex items-center gap-2 sm:gap-4 md:gap-8 flex-wrap">
-          {/* Logo Section */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-black flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/TLP Helmet.png" 
-                  alt="TLP Logo" 
-                  className="w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 object-contain"
-                />
-              </div>
-              <div className="absolute top-full left-0 bg-red-500 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] md:text-[10px] text-white font-semibold whitespace-nowrap z-50">
-                {currentTime}
-              </div>
-            </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-0 text-[10px] sm:text-xs uppercase flex-wrap">
-            {categories.slice(1).map((cat, idx) => {
-              const categorySlugMap = {
-                'LAUNCH': '/launches/news',
-                'IN SPACE': '/news/in-space',
-                'TECHNOLOGY': '/news/technology',
-                'MILITARY': '/news/military',
-                'FINANCE': '/news/finance',
-                'NEWS': '/news'
-              };
-              const route = categorySlugMap[cat] || '/news';
-              
-              return (
-                <div key={cat} className="flex items-center">
-                  {idx > 0 && <span className="mx-0.5 sm:mx-1 font-bold text-white">|</span>}
-                  {cat === 'LAUNCH' ? (
-                    <button
-                      onClick={() => navigate('/launches/news')}
-                      className="px-1 sm:px-2 py-1 text-white border-b-2 border-white font-bold"
-                  >
-                    {cat}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        if (route) {
-                          navigate(route);
-                        }
-                      }}
-                      className="px-1 sm:px-2 py-1 text-white font-normal hover:border-b-2 hover:border-white hover:font-bold transition-all"
-                    >
-                      {cat}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   // Extract summary points from article content or use defaults
   const summaryPoints = article.summary || [
@@ -313,7 +324,7 @@ const ArticleDetail = () => {
   // Extract tags from article - API returns array of tag objects
   const tags = article.tags && Array.isArray(article.tags) && article.tags.length > 0
     ? article.tags.map(tag => typeof tag === 'string' ? tag : tag.name || tag.slug?.toUpperCase())
-    : article.category_name 
+    : article.category_name
       ? [article.category_name.toUpperCase()]
       : ['NEWS'];
 
@@ -321,37 +332,33 @@ const ArticleDetail = () => {
   const shareText = `${article.title} - ${article.excerpt || ''}`;
 
   // Get the image URL for the hero section - always ensure we have an image
-  const heroImageUrl = article.hero_image_url || 
-                      article.featured_image_url || 
-                      article.image_url ||
-                      article.hero_image ||
-                      article.image ||
-                      getDemoImage(article.id || 0);
+  const heroImageUrl = article.hero_image_url ||
+    article.featured_image_url ||
+    article.image_url ||
+    article.hero_image ||
+    article.image ||
+    getDemoImage(article.id || 0);
 
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       {/* Trending Sub-Navigation */}
       <div className="bg-white border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-0">
           <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
-            {trending.map((topic, idx) => (
+            {trendingTopics.map((topic, idx) => (
               <div key={idx} className="flex items-center shrink-0">
                 {idx > 0 && <span className="text-black mx-2 sm:mx-3">|</span>}
                 <button
                   onClick={() => {
-                    const categorySlugMap = {
-                      'TRENDING': '/news?trending=trending',
-                      'SPACEX': '/news?trending=spacex',
-                      'ARTEMIS 2': '/news?trending=artemis',
-                      'MARS SAMPLE RETURN': '/news?trending=mars-sample-return',
-                      'DARPA LUNAR ORBITER': '/news?trending=darpa-lunar'
-                    };
-                    const route = categorySlugMap[topic.label] || '/news';
-                    navigate(route);
+                    if (topic.slug === 'trending') {
+                      navigate('/news?trending=trending');
+                    } else {
+                      navigate(`/news?tag=${topic.slug}`);
+                    }
                   }}
                   className="text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-0.5 hover:text-newstheme" style={{ '--hover-color': '#fa9a00' }}
                 >
-                  {topic.label}
+                  {topic.name}
                 </button>
               </div>
             ))}
@@ -392,34 +399,41 @@ const ArticleDetail = () => {
             {/* Article Content */}
             <div className="bg-[#121212] border-t-4 border-newstheme mb-8" style={{ borderTopColor: '#fa9a00' }}>
               <div className="p-6">
-              <div
-                className="prose prose-invert max-w-none text-white text-base leading-relaxed"
-                dangerouslySetInnerHTML={{ 
-                  __html: article.content 
-                    ? article.content.split('\n\n').map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`).join('')
-                    : article.body || '<p>No content available.</p>' 
-                }}
-                style={{
-                  color: 'white',
-                }}
-              />
-            </div>
+                <div
+                  className="prose prose-invert max-w-none text-white text-base leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: article.content || article.body || '<p>No content available.</p>'
+                  }}
+                  style={{
+                    color: 'white',
+                  }}
+                />
+              </div>
 
-            {/* Tags */}
+              {/* Polls Section */}
+              {article.polls && article.polls.length > 0 && (
+                <div className="px-6 pb-4">
+                  {article.polls.map((poll) => (
+                    <PollCard key={poll.id} poll={poll} />
+                  ))}
+                </div>
+              )}
+
+              {/* Tags */}
               <div className="px-6 pb-6 flex gap-2 flex-wrap">
-              {tags.map((tag, idx) => {
-                const tagSlug = tag.toLowerCase().replace(/\s+/g, '-');
-                return (
-                  <Link
-                    key={idx}
-                    to={`/news?tag=${encodeURIComponent(tagSlug)}`}
-                    className="bg-newstheme text-white px-4 py-2 text-sm font-semibold rounded-full hover:opacity-80 transition-opacity cursor-pointer"
-                    style={{ backgroundColor: '#fa9a00' }}
-                  >
-                    {tag}
-                  </Link>
-                );
-              })}
+                {tags.map((tag, idx) => {
+                  const tagSlug = tag.toLowerCase().replace(/\s+/g, '-');
+                  return (
+                    <Link
+                      key={idx}
+                      to={`/news?tag=${encodeURIComponent(tagSlug)}`}
+                      className="bg-newstheme text-white px-4 py-2 text-sm font-semibold rounded-full hover:opacity-80 transition-opacity cursor-pointer"
+                      style={{ backgroundColor: '#fa9a00' }}
+                    >
+                      {tag}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
@@ -454,7 +468,7 @@ const ArticleDetail = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="mb-3">
                     <h3 className="text-xl font-bold inline text-newstheme uppercase tracking-wide" style={{ color: '#fa9a00' }}>
@@ -522,9 +536,9 @@ const ArticleDetail = () => {
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center shrink-0 border border-[#383838]">
                           {user.profile_image_url ? (
-                            <img 
-                              src={user.profile_image_url} 
-                              alt={user.username} 
+                            <img
+                              src={user.profile_image_url}
+                              alt={user.username}
                               className="w-full h-full rounded-full object-cover"
                             />
                           ) : (
@@ -566,9 +580,9 @@ const ArticleDetail = () => {
                     <div className="flex items-start gap-4 mb-4">
                       <div className="w-10 h-10 rounded-full bg-[#222222] flex items-center justify-center shrink-0 border border-[#383838]">
                         {user.profile_image_url ? (
-                          <img 
-                            src={user.profile_image_url} 
-                            alt={user.username} 
+                          <img
+                            src={user.profile_image_url}
+                            alt={user.username}
                             className="w-full h-full rounded-full object-cover"
                           />
                         ) : (
@@ -631,31 +645,28 @@ const ArticleDetail = () => {
               <div className="flex items-center justify-end gap-4 mb-4 pb-4 border-b border-[#222222]">
                 <button
                   onClick={() => setCommentSort('best')}
-                  className={`text-sm transition-colors px-1 pb-1 ${
-                    commentSort === 'best'
-                      ? 'font-semibold text-newstheme border-b-2 border-newstheme'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'best'
+                    ? 'font-semibold text-newstheme border-b-2 border-newstheme'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   Best
                 </button>
                 <button
                   onClick={() => setCommentSort('newest')}
-                  className={`text-sm transition-colors px-1 pb-1 ${
-                    commentSort === 'newest'
-                      ? 'font-semibold text-newstheme border-b-2 border-newstheme'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'newest'
+                    ? 'font-semibold text-newstheme border-b-2 border-newstheme'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   Newest
                 </button>
                 <button
                   onClick={() => setCommentSort('oldest')}
-                  className={`text-sm transition-colors px-1 pb-1 ${
-                    commentSort === 'oldest'
-                      ? 'font-semibold text-newstheme border-b-2 border-newstheme'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'oldest'
+                    ? 'font-semibold text-newstheme border-b-2 border-newstheme'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   Oldest
                 </button>
@@ -698,7 +709,7 @@ const ArticleDetail = () => {
               >
                 <span className="text-sm font-bold">X</span>
               </button>
-              <button 
+              <button
                 className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Share on Facebook"
                 onClick={() => {
@@ -707,7 +718,7 @@ const ArticleDetail = () => {
               >
                 <span className="text-sm font-bold">f</span>
               </button>
-              <button 
+              <button
                 className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Share on LinkedIn"
                 onClick={() => {
@@ -715,10 +726,10 @@ const ArticleDetail = () => {
                 }}
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                 </svg>
               </button>
-              <button 
+              <button
                 className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Share"
                 onClick={() => {
@@ -735,10 +746,10 @@ const ArticleDetail = () => {
                 }}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
                 </svg>
               </button>
-              <button 
+              <button
                 className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Email"
                 onClick={() => {
@@ -749,7 +760,7 @@ const ArticleDetail = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </button>
-              <button 
+              <button
                 className="w-10 h-10 rounded-full bg-newstheme flex items-center justify-center hover:opacity-90 text-white transition-opacity" style={{ backgroundColor: '#fa9a00' }}
                 title="Copy link"
                 onClick={() => {
@@ -844,7 +855,7 @@ const ArticleDetail = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import RedDotLoader from '../components/common/RedDotLoader';
 
@@ -11,6 +10,7 @@ const AuthorProfile = () => {
   const authorSlugFromQuery = searchParams.get('author');
   const authorSlug = slug || authorSlugFromQuery;
   const navigate = useNavigate();
+  const { setSectionNav } = useOutletContext();
   
   const [author, setAuthor] = useState(null);
   const [articles, setArticles] = useState([]);
@@ -147,17 +147,22 @@ const AuthorProfile = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, [currentTime]);
+
   if (loading) {
     return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
   }
 
   if (!author) {
     return (
-      <Layout sectionNav={sectionNav}>
+      <>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center text-gray-400">
           Author not found
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -167,7 +172,7 @@ const AuthorProfile = () => {
   const authorSlugFromName = generateSlug(authorName);
 
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Modern Author Header Section */}
         <div className="mb-12">
@@ -317,7 +322,7 @@ const AuthorProfile = () => {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

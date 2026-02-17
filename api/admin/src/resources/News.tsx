@@ -19,35 +19,35 @@ const ArticleCardView = () => {
   const theme = useTheme();
   const isDark = theme?.palette?.mode === 'dark' || false;
   const redirect = useRedirect();
-  
+
   const textPrimary = isDark ? '#e0e0e0' : '#1a1a1a';
   const textSecondary = isDark ? '#b0b0b0' : '#666';
   const bgCard = isDark ? '#2a2a2a' : '#ffffff';
   const borderColor = isDark ? '#404040' : '#e0e0e0';
   const linkColor = theme?.palette?.primary?.main || '#1976d2';
-  
+
   if (isLoading) {
     return <Box sx={{ p: 3 }}>Loading...</Box>;
   }
-  
+
   if (!data || data.length === 0) {
     return <Box sx={{ p: 3 }}>No articles found</Box>;
   }
-  
+
   return (
     <Grid container spacing={3} sx={{ p: 2 }}>
       {data.map((record: any) => {
         const status = record?.status || 'draft';
         const statusChoice = statusChoices.find(c => c.id === status);
         const statusName = statusChoice ? statusChoice.name : status;
-        
+
         const statusColors: any = {
           published: { bg: '#4caf50', color: '#fff' },
           draft: { bg: '#ff9800', color: '#fff' },
           archived: { bg: '#9e9e9e', color: '#fff' }
         };
         const colors = statusColors[status] || statusColors.draft;
-        
+
         return (
           <Grid item xs={12} sm={6} md={4} lg={3} key={record.id}>
             <Card
@@ -72,7 +72,7 @@ const ArticleCardView = () => {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={record.hero_image_url}
+                  image={typeof record.hero_image_url === 'object' ? record.hero_image_url.src : record.hero_image_url}
                   alt={record.title || 'Article'}
                   sx={{ objectFit: 'cover' }}
                 />
@@ -95,7 +95,7 @@ const ArticleCardView = () => {
                 >
                   {record.title || 'Untitled Article'}
                 </Typography>
-                
+
                 {record.subtitle && (
                   <Typography
                     variant="body2"
@@ -112,7 +112,7 @@ const ArticleCardView = () => {
                     {record.subtitle}
                   </Typography>
                 )}
-                
+
                 <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
                   <Chip
                     label={statusName.toUpperCase()}
@@ -152,7 +152,7 @@ const ArticleCardView = () => {
                     />
                   )}
                 </Box>
-                
+
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                   {record.author_name && (
                     <Typography variant="body2" sx={{ color: textSecondary, fontSize: '0.85rem' }}>
@@ -175,7 +175,7 @@ const ArticleCardView = () => {
                     </Typography>
                   )}
                 </Box>
-                
+
                 {record.excerpt && (
                   <Typography
                     variant="body2"
@@ -221,21 +221,21 @@ const ArticleCardView = () => {
 
 export const ArticleList = (props: any) => {
   const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
-  
+
   useEffect(() => {
     const saved = localStorage.getItem('articleListViewMode');
     if (saved === 'cards' || saved === 'list') {
       setViewMode(saved);
     }
   }, []);
-  
+
   const handleViewChange = (mode: 'list' | 'cards') => {
     setViewMode(mode);
     localStorage.setItem('articleListViewMode', mode);
   };
-  
+
   return (
-    <List 
+    <List
       {...props}
       actions={
         <TopToolbar>
@@ -260,35 +260,35 @@ export const ArticleList = (props: any) => {
       }
     >
       {viewMode === 'list' ? (
-    <Datagrid rowClick="show">
-      <TextField source="id" />
-      <TextField source="title" />
-      <FunctionField
-        source="author_name"
-        render={(record: any) => record.author_name || 'Unknown'}
-      />
-      <FunctionField
-        source="category_name"
-        render={(record: any) => record.category_name || 'Uncategorized'}
-      />
-      <FunctionField
-        source="status"
-        render={(record: any) => {
-          const choice = statusChoices.find(c => c.id === record.status);
-          return choice ? choice.name : record.status;
-        }}
-      />
-      <DateField source="published_at" showTime />
-      <TextField source="views_count" />
-      <ShowButton />
-      <EditButton />
-      <DeleteButton />
-    </Datagrid>
+        <Datagrid rowClick="show">
+          <TextField source="id" />
+          <TextField source="title" />
+          <FunctionField
+            source="author_name"
+            render={(record: any) => record.author_name || 'Unknown'}
+          />
+          <FunctionField
+            source="category_name"
+            render={(record: any) => record.category_name || 'Uncategorized'}
+          />
+          <FunctionField
+            source="status"
+            render={(record: any) => {
+              const choice = statusChoices.find(c => c.id === record.status);
+              return choice ? choice.name : record.status;
+            }}
+          />
+          <DateField source="published_at" showTime />
+          <TextField source="views_count" />
+          <ShowButton />
+          <EditButton />
+          <DeleteButton />
+        </Datagrid>
       ) : (
         <ArticleCardView />
       )}
-  </List>
-);
+    </List>
+  );
 };
 
 export const ArticleCreate = (props: any) => (
@@ -319,7 +319,7 @@ const ArticleShowActions = () => {
 export const ArticleShow = (props: any) => {
   const theme = useTheme();
   const isDark = theme?.palette?.mode === 'dark' || false;
-  
+
   // Theme-aware colors
   const textPrimary = isDark ? '#e0e0e0' : '#1a1a1a';
   const textSecondary = isDark ? '#b0b0b0' : '#666';
@@ -328,7 +328,7 @@ export const ArticleShow = (props: any) => {
   const bgPaper = isDark ? '#1e1e1e' : '#f8f9fa';
   const borderColor = isDark ? '#404040' : '#e0e0e0';
   const linkColor = theme?.palette?.primary?.main || '#1976d2';
-  
+
   return (
     <Show {...props} title={<ArticleTitle />} actions={<ArticleShowActions />}>
       <TabbedShowLayout>
@@ -339,30 +339,30 @@ export const ArticleShow = (props: any) => {
             render={(record: any) => (
               <Box sx={{ mb: 3 }}>
                 {record?.hero_image_url && (
-                  <Box sx={{ 
-                    mb: 2, 
-                    borderRadius: 2, 
+                  <Box sx={{
+                    mb: 2,
+                    borderRadius: 2,
                     overflow: 'hidden',
                     boxShadow: 2
                   }}>
-                    <img 
-                      src={record.hero_image_url} 
+                    <img
+                      src={record.hero_image_url}
                       alt={record.title}
-                      style={{ 
-                        width: '100%', 
-                        maxHeight: '400px', 
+                      style={{
+                        width: '100%',
+                        maxHeight: '400px',
                         objectFit: 'cover',
                         display: 'block'
                       }}
                     />
                   </Box>
                 )}
-                
-                <Typography 
-                  variant="h4" 
-                  component="h1" 
-                  sx={{ 
-                    mb: 1, 
+
+                <Typography
+                  variant="h4"
+                  component="h1"
+                  sx={{
+                    mb: 1,
                     fontWeight: 700,
                     color: textPrimary,
                     lineHeight: 1.2
@@ -370,13 +370,13 @@ export const ArticleShow = (props: any) => {
                 >
                   {record?.title || 'Untitled Article'}
                 </Typography>
-                
+
                 {record?.subtitle && (
-                  <Typography 
-                    variant="h6" 
-                    component="h2" 
-                    sx={{ 
-                      mb: 2, 
+                  <Typography
+                    variant="h6"
+                    component="h2"
+                    sx={{
+                      mb: 2,
                       color: textSecondary,
                       fontWeight: 400,
                       fontStyle: 'italic'
@@ -385,12 +385,12 @@ export const ArticleShow = (props: any) => {
                     {record.subtitle}
                   </Typography>
                 )}
-                
+
                 {/* Status and Meta Info */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexWrap: 'wrap', 
-                  gap: 1.5, 
+                <Box sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1.5,
                   mb: 3,
                   alignItems: 'center'
                 }}>
@@ -417,7 +417,7 @@ export const ArticleShow = (props: any) => {
                       );
                     }}
                   />
-                  
+
                   {record?.is_featured && (
                     <Chip
                       label="FEATURED"
@@ -430,7 +430,7 @@ export const ArticleShow = (props: any) => {
                       }}
                     />
                   )}
-                  
+
                   {record?.is_trending && (
                     <Chip
                       label="TRENDING"
@@ -447,24 +447,24 @@ export const ArticleShow = (props: any) => {
               </Box>
             )}
           />
-          
+
           {/* Key Information Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2, 
+                sx={{
+                  p: 2,
                   backgroundColor: bgCard,
                   border: `1px solid ${borderColor}`,
                   borderRadius: 2,
                   height: '100%'
                 }}
               >
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: textSecondary, 
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: textSecondary,
                     textTransform: 'uppercase',
                     fontSize: '0.7rem',
                     letterSpacing: '0.5px',
@@ -475,10 +475,10 @@ export const ArticleShow = (props: any) => {
                 </Typography>
                 <FunctionField
                   render={(record: any) => (
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        mt: 0.5, 
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mt: 0.5,
                         fontWeight: 600,
                         color: textPrimary
                       }}
@@ -489,22 +489,22 @@ export const ArticleShow = (props: any) => {
                 />
               </Paper>
             </Grid>
-            
+
             <Grid item xs={12} sm={6} md={3}>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2, 
+                sx={{
+                  p: 2,
                   backgroundColor: bgCard,
                   border: `1px solid ${borderColor}`,
                   borderRadius: 2,
                   height: '100%'
                 }}
               >
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: textSecondary, 
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: textSecondary,
                     textTransform: 'uppercase',
                     fontSize: '0.7rem',
                     letterSpacing: '0.5px',
@@ -515,10 +515,10 @@ export const ArticleShow = (props: any) => {
                 </Typography>
                 <FunctionField
                   render={(record: any) => (
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        mt: 0.5, 
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mt: 0.5,
                         fontWeight: 600,
                         color: textPrimary
                       }}
@@ -529,22 +529,22 @@ export const ArticleShow = (props: any) => {
                 />
               </Paper>
             </Grid>
-            
+
             <Grid item xs={12} sm={6} md={3}>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2, 
+                sx={{
+                  p: 2,
                   backgroundColor: bgCard,
                   border: `1px solid ${borderColor}`,
                   borderRadius: 2,
                   height: '100%'
                 }}
               >
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: textSecondary, 
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: textSecondary,
                     textTransform: 'uppercase',
                     fontSize: '0.7rem',
                     letterSpacing: '0.5px',
@@ -555,10 +555,10 @@ export const ArticleShow = (props: any) => {
                 </Typography>
                 <FunctionField
                   render={(record: any) => (
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        mt: 0.5, 
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mt: 0.5,
                         fontWeight: 600,
                         color: linkColor,
                         fontSize: '1.25rem'
@@ -570,22 +570,22 @@ export const ArticleShow = (props: any) => {
                 />
               </Paper>
             </Grid>
-            
+
             <Grid item xs={12} sm={6} md={3}>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2, 
+                sx={{
+                  p: 2,
                   backgroundColor: bgCard,
                   border: `1px solid ${borderColor}`,
                   borderRadius: 2,
                   height: '100%'
                 }}
               >
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: textSecondary, 
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: textSecondary,
                     textTransform: 'uppercase',
                     fontSize: '0.7rem',
                     letterSpacing: '0.5px',
@@ -594,10 +594,10 @@ export const ArticleShow = (props: any) => {
                 >
                   Published
                 </Typography>
-                <DateField 
-                  source="published_at" 
-                  showTime 
-                  sx={{ 
+                <DateField
+                  source="published_at"
+                  showTime
+                  sx={{
                     mt: 0.5,
                     '& .RaDateField-root': {
                       fontWeight: 600,
@@ -608,26 +608,26 @@ export const ArticleShow = (props: any) => {
               </Paper>
             </Grid>
           </Grid>
-          
+
           {/* Excerpt */}
           <FunctionField
             label="Excerpt"
             render={(record: any) => {
               if (!record?.excerpt) return null;
               return (
-                <Paper 
+                <Paper
                   elevation={0}
-                  sx={{ 
-                    p: 2.5, 
+                  sx={{
+                    p: 2.5,
                     backgroundColor: bgPaper,
                     border: `1px solid ${borderColor}`,
                     borderRadius: 2,
                     mb: 3
                   }}
                 >
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
+                  <Typography
+                    variant="body1"
+                    sx={{
                       color: textPrimary,
                       lineHeight: 1.7,
                       fontStyle: 'italic',
@@ -640,26 +640,26 @@ export const ArticleShow = (props: any) => {
               );
             }}
           />
-          
+
           {/* Content */}
           <FunctionField
             label="Content"
             render={(record: any) => {
               if (!record?.content) return null;
               return (
-                <Paper 
+                <Paper
                   elevation={0}
-                  sx={{ 
-                    p: 3, 
+                  sx={{
+                    p: 3,
                     backgroundColor: bgCard,
                     border: `1px solid ${borderColor}`,
                     borderRadius: 2,
                     mb: 3
                   }}
                 >
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
+                  <Typography
+                    variant="body1"
+                    sx={{
                       color: textPrimary,
                       lineHeight: 1.8,
                       whiteSpace: 'pre-wrap',
@@ -672,7 +672,7 @@ export const ArticleShow = (props: any) => {
               );
             }}
           />
-          
+
           {/* Tags */}
           <FunctionField
             label="Tags"
@@ -680,10 +680,10 @@ export const ArticleShow = (props: any) => {
               if (!record?.tags || record.tags.length === 0) return null;
               return (
                 <Box sx={{ mb: 3 }}>
-                  <Typography 
-                    variant="subtitle2" 
-                    sx={{ 
-                      mb: 1.5, 
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      mb: 1.5,
                       color: textSecondary,
                       fontWeight: 600,
                       textTransform: 'uppercase',
@@ -712,26 +712,26 @@ export const ArticleShow = (props: any) => {
             }}
           />
         </TabbedShowLayout.Tab>
-        
+
         <TabbedShowLayout.Tab label="Media">
           <FunctionField
             render={(record: any) => (
               <Grid container spacing={2}>
                 {record?.featured_image_url && (
                   <Grid item xs={12} md={6}>
-                    <Paper 
+                    <Paper
                       elevation={0}
-                      sx={{ 
-                        p: 2, 
+                      sx={{
+                        p: 2,
                         backgroundColor: bgCard,
                         border: `1px solid ${borderColor}`,
                         borderRadius: 2
                       }}
                     >
-                      <Typography 
-                        variant="subtitle2" 
-                        sx={{ 
-                          mb: 1.5, 
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          mb: 1.5,
                           color: textSecondary,
                           fontWeight: 600,
                           textTransform: 'uppercase',
@@ -741,44 +741,44 @@ export const ArticleShow = (props: any) => {
                       >
                         Featured Image
                       </Typography>
-                      <Box sx={{ 
-                        borderRadius: 1, 
+                      <Box sx={{
+                        borderRadius: 1,
                         overflow: 'hidden',
                         boxShadow: 1
                       }}>
-                        <img 
-                          src={record.featured_image_url} 
+                        <img
+                          src={typeof record.featured_image_url === 'object' ? record.featured_image_url.src : record.featured_image_url}
                           alt="Featured"
-                          style={{ 
-                            width: '100%', 
-                            height: 'auto', 
+                          style={{
+                            width: '100%',
+                            height: 'auto',
                             display: 'block'
                           }}
                         />
                       </Box>
-                      <TextField 
-                        source="featured_image_url" 
+                      <TextField
+                        source="featured_image_url"
                         sx={{ mt: 1.5 }}
                       />
                     </Paper>
                   </Grid>
                 )}
-                
+
                 {record?.hero_image_url && (
                   <Grid item xs={12} md={6}>
-                    <Paper 
+                    <Paper
                       elevation={0}
-                      sx={{ 
-                        p: 2, 
+                      sx={{
+                        p: 2,
                         backgroundColor: bgCard,
                         border: `1px solid ${borderColor}`,
                         borderRadius: 2
                       }}
                     >
-                      <Typography 
-                        variant="subtitle2" 
-                        sx={{ 
-                          mb: 1.5, 
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          mb: 1.5,
                           color: textSecondary,
                           fontWeight: 600,
                           textTransform: 'uppercase',
@@ -788,43 +788,43 @@ export const ArticleShow = (props: any) => {
                       >
                         Hero Image
                       </Typography>
-                      <Box sx={{ 
-                        borderRadius: 1, 
+                      <Box sx={{
+                        borderRadius: 1,
                         overflow: 'hidden',
                         boxShadow: 1
                       }}>
-                        <img 
-                          src={record.hero_image_url} 
+                        <img
+                          src={typeof record.hero_image_url === 'object' ? record.hero_image_url.src : record.hero_image_url}
                           alt="Hero"
-                          style={{ 
-                            width: '100%', 
-                            height: 'auto', 
+                          style={{
+                            width: '100%',
+                            height: 'auto',
                             display: 'block'
                           }}
                         />
                       </Box>
-                      <TextField 
-                        source="hero_image_url" 
+                      <TextField
+                        source="hero_image_url"
                         sx={{ mt: 1.5 }}
                       />
                     </Paper>
                   </Grid>
                 )}
-                
+
                 {(!record?.featured_image_url && !record?.hero_image_url) && (
                   <Grid item xs={12}>
-                    <Paper 
+                    <Paper
                       elevation={0}
-                      sx={{ 
-                        p: 3, 
+                      sx={{
+                        p: 3,
                         backgroundColor: bgPaper,
                         border: `1px dashed ${borderColor}`,
                         borderRadius: 2,
                         textAlign: 'center'
                       }}
                     >
-                      <Typography 
-                        variant="body2" 
+                      <Typography
+                        variant="body2"
                         sx={{ color: textDisabled }}
                       >
                         No images available
@@ -836,24 +836,24 @@ export const ArticleShow = (props: any) => {
             )}
           />
         </TabbedShowLayout.Tab>
-        
+
         <TabbedShowLayout.Tab label="Details">
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2.5, 
+                sx={{
+                  p: 2.5,
                   backgroundColor: bgCard,
                   border: `1px solid ${borderColor}`,
                   borderRadius: 2,
                   mb: 2
                 }}
               >
-                <Typography 
-                  variant="subtitle2" 
-                  sx={{ 
-                    mb: 2, 
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 2,
                     color: textSecondary,
                     fontWeight: 600,
                     textTransform: 'uppercase',
@@ -863,16 +863,16 @@ export const ArticleShow = (props: any) => {
                 >
                   Article Information
                 </Typography>
-                
+
                 <FunctionField
                   render={(record: any) => (
                     <Box>
                       <Box sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${borderColor}` }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 0.5,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -886,13 +886,13 @@ export const ArticleShow = (props: any) => {
                           #{record?.id || 'N/A'}
                         </Typography>
                       </Box>
-                      
+
                       <Box sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${borderColor}` }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 0.5,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -902,10 +902,10 @@ export const ArticleShow = (props: any) => {
                         >
                           Slug
                         </Typography>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: linkColor, 
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: linkColor,
                             fontFamily: 'monospace',
                             wordBreak: 'break-all'
                           }}
@@ -913,13 +913,13 @@ export const ArticleShow = (props: any) => {
                           {record?.slug || 'N/A'}
                         </Typography>
                       </Box>
-                      
+
                       <Box sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${borderColor}` }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 0.5,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -955,13 +955,13 @@ export const ArticleShow = (props: any) => {
                           />
                         </Box>
                       </Box>
-                      
+
                       <Box sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${borderColor}` }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 0.5,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -971,10 +971,10 @@ export const ArticleShow = (props: any) => {
                         >
                           Created At
                         </Typography>
-                        <DateField 
-                          source="created_at" 
-                          showTime 
-                          sx={{ 
+                        <DateField
+                          source="created_at"
+                          showTime
+                          sx={{
                             mt: 0.5,
                             '& .RaDateField-root': {
                               color: textPrimary,
@@ -983,13 +983,13 @@ export const ArticleShow = (props: any) => {
                           }}
                         />
                       </Box>
-                      
+
                       <Box>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 0.5,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -999,10 +999,10 @@ export const ArticleShow = (props: any) => {
                         >
                           Last Updated
                         </Typography>
-                        <DateField 
-                          source="updated_at" 
-                          showTime 
-                          sx={{ 
+                        <DateField
+                          source="updated_at"
+                          showTime
+                          sx={{
                             mt: 0.5,
                             '& .RaDateField-root': {
                               color: textPrimary,
@@ -1016,22 +1016,22 @@ export const ArticleShow = (props: any) => {
                 />
               </Paper>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2.5, 
+                sx={{
+                  p: 2.5,
                   backgroundColor: bgCard,
                   border: `1px solid ${borderColor}`,
                   borderRadius: 2,
                   mb: 2
                 }}
               >
-                <Typography 
-                  variant="subtitle2" 
-                  sx={{ 
-                    mb: 2, 
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 2,
                     color: textSecondary,
                     fontWeight: 600,
                     textTransform: 'uppercase',
@@ -1041,16 +1041,16 @@ export const ArticleShow = (props: any) => {
                 >
                   Flags & Settings
                 </Typography>
-                
+
                 <FunctionField
                   render={(record: any) => (
                     <Box>
                       <Box sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${borderColor}` }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 1,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -1071,13 +1071,13 @@ export const ArticleShow = (props: any) => {
                           }}
                         />
                       </Box>
-                      
+
                       <Box sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${borderColor}` }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 1,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -1098,13 +1098,13 @@ export const ArticleShow = (props: any) => {
                           }}
                         />
                       </Box>
-                      
+
                       <Box sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${borderColor}` }}>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 0.5,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -1118,13 +1118,13 @@ export const ArticleShow = (props: any) => {
                           {record?.views_count || 0}
                         </Typography>
                       </Box>
-                      
+
                       <Box>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: textSecondary, 
-                            display: 'block', 
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: textSecondary,
+                            display: 'block',
                             mb: 0.5,
                             textTransform: 'uppercase',
                             fontSize: '0.7rem',
@@ -1135,10 +1135,10 @@ export const ArticleShow = (props: any) => {
                           Published Date
                         </Typography>
                         {record?.published_at ? (
-                          <DateField 
-                            source="published_at" 
-                            showTime 
-                            sx={{ 
+                          <DateField
+                            source="published_at"
+                            showTime
+                            sx={{
                               mt: 0.5,
                               '& .RaDateField-root': {
                                 color: textPrimary,
@@ -1157,21 +1157,21 @@ export const ArticleShow = (props: any) => {
                 />
               </Paper>
             </Grid>
-            
+
             <Grid item xs={12}>
-              <Paper 
+              <Paper
                 elevation={0}
-                sx={{ 
-                  p: 2.5, 
+                sx={{
+                  p: 2.5,
                   backgroundColor: bgCard,
                   border: `1px solid ${borderColor}`,
                   borderRadius: 2
                 }}
               >
-                <Typography 
-                  variant="subtitle2" 
-                  sx={{ 
-                    mb: 2, 
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 2,
                     color: textSecondary,
                     fontWeight: 600,
                     textTransform: 'uppercase',
@@ -1181,7 +1181,7 @@ export const ArticleShow = (props: any) => {
                 >
                   Metadata
                 </Typography>
-                
+
                 <FunctionField
                   render={(record: any) => {
                     if (!record?.metadata || Object.keys(record.metadata).length === 0) {
@@ -1191,24 +1191,24 @@ export const ArticleShow = (props: any) => {
                         </Typography>
                       );
                     }
-                    
+
                     return (
                       <Box>
                         {Object.entries(record.metadata).map(([key, value]: [string, any]) => (
-                          <Box 
-                            key={key} 
-                            sx={{ 
-                              mb: 2, 
-                              pb: 2, 
+                          <Box
+                            key={key}
+                            sx={{
+                              mb: 2,
+                              pb: 2,
                               borderBottom: `1px solid ${borderColor}`,
                               '&:last-child': { borderBottom: 'none', mb: 0, pb: 0 }
                             }}
                           >
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                color: textSecondary, 
-                                display: 'block', 
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: textSecondary,
+                                display: 'block',
                                 mb: 0.5,
                                 textTransform: 'uppercase',
                                 fontSize: '0.7rem',
@@ -1218,16 +1218,16 @@ export const ArticleShow = (props: any) => {
                             >
                               {key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                             </Typography>
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
+                            <Typography
+                              variant="body2"
+                              sx={{
                                 color: textPrimary,
                                 fontFamily: typeof value === 'object' ? 'monospace' : 'inherit',
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word'
                               }}
                             >
-                              {typeof value === 'object' 
+                              {typeof value === 'object'
                                 ? JSON.stringify(value, null, 2)
                                 : String(value)
                               }
@@ -1243,6 +1243,6 @@ export const ArticleShow = (props: any) => {
           </Grid>
         </TabbedShowLayout.Tab>
       </TabbedShowLayout>
-  </Show>
-);
+    </Show>
+  );
 };

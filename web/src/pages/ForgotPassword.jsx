@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import RedDotLoader from '../components/common/RedDotLoader';
 
@@ -30,7 +29,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <Layout>
+    <>
       {loading && <RedDotLoader fullScreen={true} size="large" />}
       <div className="min-h-screen flex items-center justify-center px-6 py-12">
         <div className="max-w-md w-full">
@@ -94,7 +93,7 @@ const ForgotPassword = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

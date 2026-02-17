@@ -47,6 +47,7 @@ const { exec } = require('child_process');
 const launchesRoutes = require('./routes/launches');
 const authRoutes = require('./routes/auth');
 const newsRoutes = require('./routes/news');
+const pollsRoutes = require('./routes/polls');
 const spacebaseRoutes = require('./routes/spacebase');
 const statisticsRoutes = require('./routes/statistics');
 const usersRoutes = require('./routes/users');
@@ -67,6 +68,7 @@ const countriesRoutes = require('./routes/countries');
 const stockTickersRoutes = require('./routes/stockTickers');
 const subscriptionsRoutes = require('./routes/subscriptions');
 const missionRoutes = require('./routes/mission');
+const stockSync = require('./services/stockSync');
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -88,7 +90,7 @@ const pool = getPool();
 
 // Health check routes
 app.get('/health', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'TLP API'
@@ -98,12 +100,12 @@ app.get('/health', (req, res) => {
 app.get('/db-health', async (req, res) => {
   try {
     await pool.query('SELECT NOW()');
-    res.json({ 
+    res.json({
       status: 'db-ok',
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       status: 'db-error',
       error: err.message,
       timestamp: new Date().toISOString()
@@ -118,6 +120,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/news/categories', categoriesRoutes);
 app.use('/api/news/tags', tagsRoutes);
 app.use('/api/news/trending-topics', trendingTopicsRoutes);
+app.use('/api/polls', pollsRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/spacebase', spacebaseRoutes);
 app.use('/api/statistics', statisticsRoutes);
@@ -180,7 +183,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('  GET  /health - API health check');
   console.log('  GET  /db-health - Database health check');
   console.log('');
-  
+
   // Automatically set up cron job for launch sync (only in production, non-blocking)
   if (process.env.NODE_ENV === 'production' || process.env.AUTO_SETUP_CRON === 'true') {
     const setupScript = path.join(__dirname, 'scripts', 'setup_cron_on_deploy.sh');
@@ -240,4 +243,8 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// Initialize stock ticker sync
+stockSync.initStockSync();
+
 module.exports = app;
+

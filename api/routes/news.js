@@ -45,7 +45,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
       return roleName === 'admin' || roleName === 'Admin';
     });
   }
-  
+
   if (!isAdmin) {
     filters.push(`news_articles.status = $${paramCount++}`);
     args.push('published');
@@ -80,24 +80,34 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
     args.push(parseInt(req.query.author_id));
   }
 
-  if (req.query.featured === 'true') {
+  if (req.query.country_id) {
+    filters.push(`news_articles.country_id = $${paramCount++}`);
+    args.push(parseInt(req.query.country_id));
+  }
+
+  if (req.query.country) {
+    filters.push(`countries.slug = $${paramCount++}`);
+    args.push(req.query.country);
+  }
+
+  if (req.query.featured !== undefined) {
     filters.push(`news_articles.is_featured = $${paramCount++}`);
-    args.push(true);
+    args.push(req.query.featured === 'true');
   }
 
-  if (req.query.trending === 'true') {
+  if (req.query.trending !== undefined) {
     filters.push(`news_articles.is_trending = $${paramCount++}`);
-    args.push(true);
+    args.push(req.query.trending === 'true');
   }
 
-  if (req.query.is_interview === 'true' || req.query.is_interview === true) {
+  if (req.query.is_interview !== undefined) {
     filters.push(`news_articles.is_interview = $${paramCount++}`);
-    args.push(true);
+    args.push(req.query.is_interview === 'true');
   }
 
-  if (req.query.is_top_story === 'true' || req.query.is_top_story === true) {
+  if (req.query.is_top_story !== undefined) {
     filters.push(`news_articles.is_top_story = $${paramCount++}`);
-    args.push(true);
+    args.push(req.query.is_top_story === 'true');
   }
 
   if (req.query.date_from) {
@@ -121,7 +131,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   }
 
   let sql = `
-    SELECT 
+    SELECT DISTINCT
       news_articles.id,
       news_articles.title,
       news_articles.subtitle,
@@ -142,10 +152,14 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
       authors.profile_image_url as author_image,
       news_categories.id as category_id,
       news_categories.name as category_name,
-      news_categories.slug as category_slug
+      news_categories.slug as category_slug,
+      countries.id as country_id,
+      countries.name as country_name,
+      countries.alpha_2_code as country_code
     FROM news_articles
     LEFT JOIN authors ON news_articles.author_id = authors.id
     LEFT JOIN news_categories ON news_articles.category_id = news_categories.id
+    LEFT JOIN countries ON news_articles.country_id = countries.id
     ${filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : ''}
     ORDER BY news_articles.published_at DESC NULLS LAST, news_articles.created_at DESC
   `;
@@ -387,6 +401,41 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
   `, [article.id]);
   article.comments_count = parseInt(commentRows[0].count);
 
+  // Get related launch IDs
+  const { rows: launchRows } = await pool.query(`
+    SELECT launch_id
+    FROM article_launch_relationships
+    WHERE article_id = $1
+  `, [article.id]);
+  article.related_launch_ids = launchRows.map(row => row.launch_id);
+
+  // Get polls
+  const { rows: pollRows } = await pool.query(`
+    SELECT id, question, created_at, updated_at
+    FROM polls
+    WHERE article_id = $1
+    ORDER BY created_at ASC
+  `, [article.id]);
+
+  article.polls = [];
+  for (const poll of pollRows) {
+    const { rows: optionRows } = await pool.query(`
+      SELECT id, option_text, votes_count, display_order
+      FROM poll_options
+      WHERE poll_id = $1
+      ORDER BY display_order ASC
+    `, [poll.id]);
+
+    article.polls.push({
+      ...poll,
+      options: optionRows.map(opt => ({
+        id: opt.id,
+        text: opt.option_text,
+        votes_count: opt.votes_count
+      }))
+    });
+  }
+
   res.json(article);
 }));
 
@@ -401,6 +450,7 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
     slug,
     author_id,
     category_id,
+    sub_category_id,
     featured_image_url,
     hero_image_url,
     content,
@@ -412,7 +462,11 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
     is_trending,
     is_interview,
     is_top_story,
-    country_id
+    country_id,
+    poll_data,
+    polls,
+    related_launch_ids,
+    summary
   } = req.body;
 
   console.log('POST /api/news - Received data:', JSON.stringify(req.body, null, 2));
@@ -483,13 +537,26 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
     }
   }
 
+  // Validate sub_category_id if provided
+  let finalSubCategoryId = null;
+  if (sub_category_id && sub_category_id !== '' && sub_category_id !== '0' && sub_category_id !== 0) {
+    const subCategoryIdNum = parseInt(sub_category_id);
+    if (!isNaN(subCategoryIdNum) && subCategoryIdNum > 0) {
+      const { rows: subCatRows } = await pool.query('SELECT id FROM news_categories WHERE id = $1', [subCategoryIdNum]);
+      if (subCatRows.length > 0) {
+        finalSubCategoryId = subCategoryIdNum;
+      }
+    }
+  }
+
   // Create article
   const { rows } = await pool.query(`
     INSERT INTO news_articles (
-      title, subtitle, slug, author_id, category_id, country_id,
+      title, subtitle, slug, author_id, category_id, sub_category_id, country_id,
       featured_image_url, hero_image_url, content, excerpt,
-      status, published_at, metadata, is_featured, is_trending, is_interview, is_top_story
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      status, published_at, metadata, is_featured, is_trending, is_interview, is_top_story,
+      summary
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
     RETURNING *
   `, [
     title,
@@ -497,6 +564,7 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
     finalSlug,
     finalAuthorId || null,  // Use validated author_id (null if invalid or not provided)
     (category_id && category_id !== '' && category_id !== '0' && category_id !== 0) ? category_id : null,
+    finalSubCategoryId || null,
     finalCountryId || null,
     featured_image_url || null,
     hero_image_url || null,
@@ -508,7 +576,8 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
     Boolean(is_featured) || false,
     Boolean(is_trending) || false,
     Boolean(is_interview) || false,
-    Boolean(is_top_story) || false
+    Boolean(is_top_story) || false,
+    summary || null
   ]);
 
   const article = rows[0];
@@ -520,6 +589,54 @@ router.post('/', authenticate, role('admin', 'writer'), asyncHandler(async (req,
         'INSERT INTO article_tags_articles (article_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [article.id, tagId]
       );
+    }
+  }
+
+  // Create polls if provided
+  const pollsToCreate = [...(Array.isArray(polls) ? polls : [])];
+  if (poll_data && poll_data.question && Array.isArray(poll_data.options) && poll_data.options.length >= 2) {
+    pollsToCreate.push(poll_data);
+  }
+
+  if (pollsToCreate.length > 0) {
+    for (const poll_item of pollsToCreate) {
+      if (poll_item.question && poll_item.options && Array.isArray(poll_item.options) && poll_item.options.length >= 2) {
+        const { rows: pollRows } = await pool.query(`
+          INSERT INTO polls (question, article_id)
+          VALUES ($1, $2)
+          RETURNING *
+        `, [poll_item.question, article.id]);
+
+        const poll = pollRows[0];
+
+        // Create poll options
+        for (let i = 0; i < poll_item.options.length; i++) {
+          const optionText = typeof poll_item.options[i] === 'string'
+            ? poll_item.options[i]
+            : (poll_item.options[i].text || poll_item.options[i].option_text);
+
+          if (optionText) {
+            await pool.query(`
+              INSERT INTO poll_options (poll_id, option_text, display_order)
+              VALUES ($1, $2, $3)
+            `, [poll.id, optionText, i]);
+          }
+        }
+      }
+    }
+  }
+
+  // Add related launches if provided
+  if (related_launch_ids && Array.isArray(related_launch_ids) && related_launch_ids.length > 0) {
+    for (const launchId of related_launch_ids) {
+      await pool.query(`
+        INSERT INTO article_launch_relationships (article_id, launch_id)
+        VALUES ($1, $2)
+        ON CONFLICT DO NOTHING
+      `, [article.id, launchId]).catch(err => {
+        // Table might not exist yet, log but don't fail
+        console.log('Could not insert launch relationship:', err.message);
+      });
     }
   }
 
@@ -565,7 +682,8 @@ router.patch('/:id', authenticate, role('admin', 'writer'), asyncHandler(async (
   const allowedFields = [
     'title', 'subtitle', 'slug', 'category_id', 'country_id', 'featured_image_url',
     'hero_image_url', 'content', 'excerpt', 'status', 'metadata',
-    'is_featured', 'is_trending', 'is_interview', 'is_top_story'
+    'is_featured', 'is_trending', 'is_interview', 'is_top_story', 'summary',
+    'sub_category_id'
   ];
   const updates = Object.keys(req.body).filter(key => allowedFields.includes(key));
 
@@ -615,7 +733,68 @@ router.patch('/:id', authenticate, role('admin', 'writer'), asyncHandler(async (
     values
   );
 
-  res.json(rows[0]);
+  const updatedArticle = rows[0];
+
+  // Update tags if provided
+  if (req.body.tag_ids && Array.isArray(req.body.tag_ids)) {
+    await pool.query('DELETE FROM article_tags_articles WHERE article_id = $1', [id]);
+    for (const tagId of req.body.tag_ids) {
+      await pool.query(
+        'INSERT INTO article_tags_articles (article_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [id, tagId]
+      );
+    }
+  }
+
+  // Update related launches if provided
+  if (req.body.related_launch_ids && Array.isArray(req.body.related_launch_ids)) {
+    await pool.query('DELETE FROM article_launch_relationships WHERE article_id = $1', [id]);
+    for (const launchId of req.body.related_launch_ids) {
+      await pool.query(
+        'INSERT INTO article_launch_relationships (article_id, launch_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [id, launchId]
+      );
+    }
+  }
+
+  // Update polls if provided
+  const pollsToUpdate = req.body.polls && Array.isArray(req.body.polls) ? [...req.body.polls] : [];
+  if (req.body.poll_data && req.body.poll_data.question && Array.isArray(req.body.poll_data.options) && req.body.poll_data.options.length >= 2) {
+    pollsToUpdate.push(req.body.poll_data);
+  }
+
+  if (pollsToUpdate.length > 0 || (req.body.polls && req.body.polls.length === 0)) {
+    // Note: Simple approach is to delete all and recreate, but this loses old votes.
+    // For now, if it's an admin tool and they are editing the poll, recreating is common.
+    await pool.query('DELETE FROM polls WHERE article_id = $1', [id]);
+
+    for (const poll_item of pollsToUpdate) {
+      if (poll_item.question && poll_item.options && Array.isArray(poll_item.options) && poll_item.options.length >= 2) {
+        const { rows: pollRows } = await pool.query(`
+          INSERT INTO polls (question, article_id)
+          VALUES ($1, $2)
+          RETURNING *
+        `, [poll_item.question, id]);
+
+        const poll = pollRows[0];
+
+        for (let i = 0; i < poll_item.options.length; i++) {
+          const optionText = typeof poll_item.options[i] === 'string'
+            ? poll_item.options[i]
+            : (poll_item.options[i].text || poll_item.options[i].option_text);
+
+          if (optionText) {
+            await pool.query(`
+              INSERT INTO poll_options (poll_id, option_text, display_order)
+              VALUES ($1, $2, $3)
+            `, [poll.id, optionText, i]);
+          }
+        }
+      }
+    }
+  }
+
+  res.json(updatedArticle);
 }));
 
 /**

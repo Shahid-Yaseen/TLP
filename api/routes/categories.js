@@ -17,20 +17,42 @@ const pool = getPool();
  * Get all news categories (supports ids, limit, offset for admin dataProvider)
  */
 router.get('/', optionalAuth, asyncHandler(async (req, res) => {
-  const { ids, limit, offset } = req.query;
+  const { ids, limit, offset, parent_id, q } = req.query;
   let sql = 'SELECT * FROM news_categories';
   const params = [];
   let paramCount = 1;
 
+  const filters = [];
   if (ids) {
     const idList = ids.split(',').map((id) => parseInt(id.trim(), 10)).filter((id) => !isNaN(id));
     if (idList.length > 0) {
-      sql += ` WHERE id = ANY($${paramCount++}::int[])`;
+      filters.push(`id = ANY($${paramCount++}::int[])`);
       params.push(idList);
     }
   }
 
-  sql += ' ORDER BY name ASC';
+  if (parent_id !== undefined) {
+    if (parent_id === 'null' || parent_id === null) {
+      filters.push('parent_id IS NULL');
+    } else {
+      const pid = parseInt(parent_id, 10);
+      if (!isNaN(pid)) {
+        filters.push(`parent_id = $${paramCount++}`);
+        params.push(pid);
+      }
+    }
+  }
+
+  if (q) {
+    filters.push(`name ILIKE $${paramCount++}`);
+    params.push(`%${q}%`);
+  }
+
+  if (filters.length > 0) {
+    sql += ` WHERE ${filters.join(' AND ')}`;
+  }
+
+  sql += ' ORDER BY display_order ASC, name ASC';
 
   if (limit !== undefined && offset !== undefined) {
     const lim = Math.min(parseInt(limit, 10) || 100, 100);
@@ -43,11 +65,10 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
 
   if (limit !== undefined && offset !== undefined) {
     let countSql = 'SELECT COUNT(*) FROM news_categories';
-    const countParams = [];
-    if (ids && params.length > 0) {
-      countSql = 'SELECT COUNT(*) FROM news_categories WHERE id = ANY($1::int[])';
-      countParams.push(params[0]);
+    if (filters.length > 0) {
+      countSql += ` WHERE ${filters.join(' AND ')}`;
     }
+    const countParams = params.slice(0, filters.length);
     const countResult = await pool.query(countSql, countParams);
     const total = parseInt(countResult.rows[0].count, 10);
     return res.json({ data: rows, total });

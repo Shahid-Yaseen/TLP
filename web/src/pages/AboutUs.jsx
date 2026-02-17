@@ -24,18 +24,27 @@ const AboutUs = () => {
     const updateTime = () => {
       setCurrentTime(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(/\s/g, ''));
     };
-    
+
     updateTime();
     const interval = setInterval(updateTime, 60000); // Update every minute
-    
+
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     if (selectedCategory === 'ALL') {
       setFilteredCrew(crewMembers);
+      console.log(`[AboutUs] Filter: ALL - Showing ${crewMembers.length} crew members`);
     } else {
-      setFilteredCrew(crewMembers.filter(member => member.category === selectedCategory));
+      // Normalize category comparison: case-insensitive and trim whitespace
+      const filtered = crewMembers.filter(member => {
+        if (!member.category) return false;
+        const memberCategory = member.category.toString().trim().toUpperCase();
+        const selectedCat = selectedCategory.trim().toUpperCase();
+        return memberCategory === selectedCat;
+      });
+      setFilteredCrew(filtered);
+      console.log(`[AboutUs] Filter: ${selectedCategory} - Showing ${filtered.length} of ${crewMembers.length} crew members`);
     }
   }, [selectedCategory, crewMembers]);
 
@@ -55,66 +64,6 @@ const AboutUs = () => {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden">
-      {/* Top Header Bar */}
-      <div className="bg-black border-b border-gray-800">
-        <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-1.5 sm:py-2">
-          <div className="flex items-center justify-between">
-            {/* Desktop View */}
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-400 w-full justify-between">
-              <div className="flex items-center gap-2">
-                <Link to="/" className="hover:text-white transition-colors">TLP Network Inc.</Link>
-                <span>|</span>
-                <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-                <span>|</span>
-                <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
-                <span>|</span>
-                <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
-                <span className="hidden lg:inline">|</span>
-                <Link to="/spacebase" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
-                <span className="hidden xl:inline">|</span>
-                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hidden xl:inline hover:text-white transition-colors">SHOP</a>
-                <span className="hidden xl:inline">|</span>
-                <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
-                <span>|</span>
-                <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
-              </div>
-            </div>
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-white p-2"
-              aria-label="Toggle menu"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-black border-t border-gray-800 px-4 py-3 space-y-2">
-            <Link to="/launches/upcoming" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>LAUNCH CENTER</Link>
-            <Link to="/news" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP SPACE NEWS</Link>
-            <Link to="/mission" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP MISSION</Link>
-            <Link to="/spacebase" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
-            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="block text-gray-400 hover:text-white transition-colors">SHOP</a>
-            <Link to="/navigator/advanced" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>3D ORBIT NAVIGATOR</Link>
-            <div className="border-t border-gray-800 pt-2 mt-2">
-              <Link to="/about" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>ABOUT US</Link>
-              <Link to="/support" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SUPPORT</Link>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Main Navigation Bar */}
       <div className="bg-black border-t-2 border-white">
         <div className="max-w-full mx-4 sm:mx-6 md:mx-8 px-3 sm:px-6 py-2 sm:py-0">
@@ -123,9 +72,9 @@ const AboutUs = () => {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative" style={{ overflow: 'visible' }}>
                 <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black flex items-center justify-center overflow-hidden">
-                  <img 
-                    src="/TLP Helmet.png" 
-                    alt="TLP Logo" 
+                  <img
+                    src="/TLP Helmet.png"
+                    alt="TLP Logo"
                     className="w-7 h-7 sm:w-10 sm:h-10 object-contain"
                   />
                 </div>
@@ -142,9 +91,9 @@ const AboutUs = () => {
       {/* Hero Section */}
       <div
         className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh] bg-cover bg-center flex items-start justify-center pt-[150px] md:pt-[250px] lg:pt-[350px] xl:pt-[450px]"
-        style={{ 
-          backgroundImage: `url(${HERO_BG_IMAGE})`, 
-          backgroundSize: 'cover', 
+        style={{
+          backgroundImage: `url(${HERO_BG_IMAGE})`,
+          backgroundSize: 'cover',
           backgroundPosition: 'center',
           width: '100vw',
           marginLeft: 'calc(50% - 50vw)',
@@ -153,13 +102,13 @@ const AboutUs = () => {
       >
         <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}></div>
         <div className="relative z-10 text-center w-full h-full flex items-center justify-center">
-          <div 
-            className="w-full h-full flex flex-col justify-center" 
-            style={{ 
-              width: '100vw', 
-              marginLeft: 'calc(50% - 50vw)', 
-              marginRight: 'calc(50% - 50vw)', 
-              paddingLeft: 0, 
+          <div
+            className="w-full h-full flex flex-col justify-center"
+            style={{
+              width: '100vw',
+              marginLeft: 'calc(50% - 50vw)',
+              marginRight: 'calc(50% - 50vw)',
+              paddingLeft: 0,
               paddingRight: 0,
               background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.95))'
             }}
@@ -179,7 +128,7 @@ const AboutUs = () => {
       {/* OUR CREW Section */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 mt-8 md:mt-12">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 md:mb-8 text-center uppercase px-4" style={{ fontFamily: 'Nasalization, sans-serif' }}>OUR CREW</h2>
-        
+
         {/* World Map */}
         <div className="bg-black p-4 md:p-6 lg:p-8 mb-8 md:mb-12 rounded">
           <div className="h-[300px] md:h-[400px] lg:h-[500px] w-full rounded overflow-hidden relative" style={{ minHeight: '300px' }}>
@@ -195,11 +144,10 @@ const AboutUs = () => {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm uppercase font-sans transition-colors border-0 whitespace-nowrap shrink-0 ${
-                selectedCategory === category
+              className={`px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm uppercase font-sans transition-colors border-0 whitespace-nowrap shrink-0 ${selectedCategory === category
                   ? 'bg-white text-black font-semibold'
                   : 'bg-black text-white hover:text-gray-300'
-              }`}
+                }`}
             >
               {category}
             </button>

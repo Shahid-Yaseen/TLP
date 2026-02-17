@@ -59,63 +59,6 @@ const Mission = () => {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      {/* Top Header Bar */}
-      <div className="bg-black border-b border-gray-800">
-        <div className="max-w-full mx-auto px-4 md:px-6 py-2 flex justify-between items-center text-xs text-gray-400">
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-2">
-            <Link to="/" className="hover:text-white transition-colors">TLP Network Inc.</Link>
-            <span>|</span>
-            <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-            <span>|</span>
-            <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
-            <span>|</span>
-            <Link to="/spacebase" className="hover:text-white transition-colors">SPACEBASE</Link>
-            <span>|</span>
-            <Link to="/mission" className="text-white transition-colors">TLP MISSIONS</Link>
-            <span>|</span>
-            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">SHOP</a>
-            <span>|</span>
-            <Link to="/navigator/advanced" className="hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
-          </div>
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-white p-2"
-            aria-label="Toggle menu"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-          {/* Desktop Right Side */}
-          <div className="hidden md:flex items-center gap-2">
-            <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
-            <span>|</span>
-            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
-          </div>
-        </div>
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-black border-t border-gray-800 px-4 py-3 space-y-2">
-            <Link to="/launches/upcoming" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>LAUNCH CENTER</Link>
-            <Link to="/news" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP SPACE NEWS</Link>
-            <Link to="/spacebase" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SPACEBASE</Link>
-            <Link to="/mission" className="block text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>TLP MISSIONS</Link>
-            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="block text-gray-400 hover:text-white transition-colors">SHOP</a>
-            <Link to="/navigator/advanced" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>3D ORBIT NAVIGATOR</Link>
-            <div className="border-t border-gray-800 pt-2 mt-2">
-              <Link to="/about" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>ABOUT US</Link>
-              <Link to="/support" className="block text-gray-400 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>SUPPORT</Link>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Main Navigation Bar */}
       <div className="bg-[#595959] border-t-2 border-white">
         <div className="max-w-full mx-4 sm:mx-6 md:mx-8 px-3 sm:px-6 py-2 sm:py-0 bg-[#595959]">

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import OrbitSceneDirect from '../components/orbit/OrbitSceneDirect';
 import API_URL from '../config/api';
 import RedDotLoader from '../components/common/RedDotLoader';
@@ -144,7 +143,7 @@ const EarthOrbitNavigator = () => {
   const earthTextureUrl = 'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg';
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-black text-white">
         <div className="flex flex-col lg:flex-row h-screen relative">
           {/* 3D Canvas */}
@@ -370,7 +369,7 @@ const EarthOrbitNavigator = () => {
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

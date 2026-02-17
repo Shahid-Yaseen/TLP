@@ -54,7 +54,18 @@ router.post('/crew', authenticate, role('admin'), upload.single('image'), asyncH
   if (!req.file) {
     return res.status(400).json({
       error: 'No file uploaded',
-      code: 'VALIDATION_ERROR'
+      code: 'NO_FILE',
+      message: 'Please select an image file to upload'
+    });
+  }
+
+  // Validate file size (already handled by multer, but add explicit check)
+  if (req.file.size > 5 * 1024 * 1024) {
+    return res.status(400).json({
+      error: 'File too large',
+      code: 'FILE_TOO_LARGE',
+      message: 'Image must be less than 5MB',
+      details: `File size: ${(req.file.size / 1024 / 1024).toFixed(2)}MB`
     });
   }
 
@@ -73,11 +84,53 @@ router.post('/crew', authenticate, role('admin'), upload.single('image'), asyncH
     });
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({
-      error: 'Failed to upload image to R2',
-      message: error.message,
-      details: 'Please check R2 configuration and credentials'
-    });
+
+    // Provide specific error messages based on error type
+    let errorResponse = {
+      error: 'Upload failed',
+      code: 'UPLOAD_ERROR',
+      message: error.message
+    };
+
+    // Check for specific error types
+    if (error.message.includes('R2 configuration')) {
+      errorResponse = {
+        error: 'R2 configuration error',
+        code: 'R2_CONFIG_ERROR',
+        message: 'Server storage configuration is invalid. Please contact administrator.',
+        details: 'R2 credentials or bucket configuration is missing or incorrect'
+      };
+    } else if (error.message.includes('timeout') || error.code === 'ETIMEDOUT') {
+      errorResponse = {
+        error: 'Upload timeout',
+        code: 'TIMEOUT',
+        message: 'Upload took too long. Please try again with a smaller file.',
+        details: error.message
+      };
+    } else if (error.message.includes('network') || error.code === 'ECONNREFUSED') {
+      errorResponse = {
+        error: 'Network error',
+        code: 'NETWORK_ERROR',
+        message: 'Unable to connect to storage service. Please check your internet connection.',
+        details: error.message
+      };
+    } else if (error.code === 'NoSuchBucket') {
+      errorResponse = {
+        error: 'Storage bucket not found',
+        code: 'BUCKET_NOT_FOUND',
+        message: 'Storage bucket does not exist. Please contact administrator.',
+        details: 'R2 bucket configuration is incorrect'
+      };
+    } else if (error.code === 'AccessDenied') {
+      errorResponse = {
+        error: 'Access denied',
+        code: 'ACCESS_DENIED',
+        message: 'Server does not have permission to upload files. Please contact administrator.',
+        details: 'R2 access credentials are invalid or insufficient'
+      };
+    }
+
+    res.status(500).json(errorResponse);
   }
 }));
 

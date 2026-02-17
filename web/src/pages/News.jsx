@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import RedDotLoader from '../components/common/RedDotLoader';
 
 const News = () => {
   const navigate = useNavigate();
+  const { setSectionNav } = useOutletContext();
   const [searchParams] = useSearchParams();
   const tagParam = searchParams.get('tag');
   const trendingParam = searchParams.get('trending');
   const authorParam = searchParams.get('author');
-  
+
   // Redirect to author profile page if author param exists
   useEffect(() => {
     if (authorParam) {
@@ -43,7 +43,7 @@ const News = () => {
           setCategoriesFromApi(data);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Fetch trending topics from backend for TRENDING | SPACEX | ... bar
@@ -55,7 +55,7 @@ const News = () => {
           setTrendingTopicsFromApi(data);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const [articles, setArticles] = useState([]);
@@ -80,10 +80,10 @@ const News = () => {
   const [trendingTopicsFromApi, setTrendingTopicsFromApi] = useState([]);
   const trending = trendingTopicsFromApi.length > 0
     ? trendingTopicsFromApi.map((t) => ({
-        label: t.name,
-        search: t.slug || t.name?.toLowerCase().replace(/\s+/g, '-'),
-        route: null
-      }))
+      label: t.name,
+      search: t.slug || t.name?.toLowerCase().replace(/\s+/g, '-'),
+      route: null
+    }))
     : [];
   const [selectedTrending, setSelectedTrending] = useState(null);
 
@@ -103,8 +103,8 @@ const News = () => {
         <div
           className="border border-black overflow-hidden h-full"
           style={{
-            background: isPositive 
-              ? 'linear-gradient(to right, #062817, #11442b)' 
+            background: isPositive
+              ? 'linear-gradient(to right, #062817, #11442b)'
               : 'linear-gradient(to right, #7a4a00, #4a2e00)'
           }}
         >
@@ -164,10 +164,10 @@ const News = () => {
       const response = await axios.get(`${API_URL}/api/stock-tickers`, {
         params: { active_only: 'true' }
       });
-      
+
       // Handle both array and object responses
       const data = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-      
+
       // Transform API data to match component format
       const tickers = data.map(ticker => ({
         symbol: ticker.symbol,
@@ -177,7 +177,7 @@ const News = () => {
         changePercent: parseFloat(ticker.change_percent) || 0,
         isPositive: parseFloat(ticker.change) >= 0
       }));
-      
+
       if (tickers.length > 0) {
         setStockTickers(tickers);
       } else {
@@ -233,10 +233,10 @@ const News = () => {
   const fetchArticles = async () => {
     try {
       setLoading(true);
-      
+
       const now = new Date();
       let dateFrom = null;
-      
+
       // Only apply date filter if explicitly selected
       // This ensures we show articles even if none were published in the selected time period
       if (timeFilter === 'TODAY') {
@@ -256,6 +256,9 @@ const News = () => {
         status: 'published',
         limit: 30,
         offset: 0,
+        featured: 'false',
+        is_top_story: 'false',
+        is_interview: 'false'
       };
 
       if (dateFrom) {
@@ -283,32 +286,34 @@ const News = () => {
         params.tag = tagParam;
       }
 
-      const [articlesRes, featuredRes, interviewsRes, trendingRes] = await Promise.all([
+      const [articlesRes, featuredRes, interviewsRes, topStoriesRes, americaRes] = await Promise.all([
         axios.get(`${API_URL}/api/news`, { params }),
-        axios.get(`${API_URL}/api/news/featured`, { params: { limit: 1 } }),
+        axios.get(`${API_URL}/api/news`, { params: { status: 'published', is_featured: 'true', limit: 1 } }),
         axios.get(`${API_URL}/api/news`, { params: { status: 'published', limit: 12, is_interview: 'true' } }),
-        axios.get(`${API_URL}/api/news/trending`, { params: { limit: 6 } }),
+        axios.get(`${API_URL}/api/news`, { params: { ...params, is_top_story: 'true', featured: undefined, is_interview: undefined, limit: 6 } }),
+        axios.get(`${API_URL}/api/news`, { params: { status: 'published', limit: 6, country_id: 1 } }),
       ]);
 
       // Handle API response structure: { data: [...], pagination: {...} } or direct array
-      const articlesData = Array.isArray(articlesRes.data) 
-        ? articlesRes.data 
+      const articlesData = Array.isArray(articlesRes.data)
+        ? articlesRes.data
         : articlesRes.data?.data || [];
-      
-      // Featured endpoint returns array directly
-      const featuredData = Array.isArray(featuredRes.data) 
-        ? featuredRes.data 
+
+      const featuredData = Array.isArray(featuredRes.data)
+        ? featuredRes.data
         : featuredRes.data?.data || [];
-      
-      // Interviews - handle both array and wrapped response
+
       const interviewsData = Array.isArray(interviewsRes.data)
         ? interviewsRes.data
         : interviewsRes.data?.data || [];
-      
-      // Trending articles for "America" section (or use top stories)
-      const trendingData = Array.isArray(trendingRes.data)
-        ? trendingRes.data
-        : trendingRes.data?.data || [];
+
+      const topStoriesData = Array.isArray(topStoriesRes.data)
+        ? topStoriesRes.data
+        : topStoriesRes.data?.data || [];
+
+      const americaData = Array.isArray(americaRes.data)
+        ? americaRes.data
+        : americaRes.data?.data || [];
 
       const addDemoImages = (articleList, startIndex = 0) => {
         return articleList.map((article, idx) => ({
@@ -317,39 +322,45 @@ const News = () => {
         }));
       };
 
+      let finalFeatured = null;
+      if (featuredData.length > 0) {
+        finalFeatured = {
+          ...featuredData[0],
+          featured_image_url: featuredData[0].featured_image_url || getDemoImage(0)
+        };
+      } else if (articlesData.length > 0) {
+        finalFeatured = {
+          ...articlesData[0],
+          featured_image_url: articlesData[0].featured_image_url || getDemoImage(0)
+        };
+      }
+      setFeaturedArticle(finalFeatured);
+
+      const featuredId = finalFeatured?.id;
+
       if (articlesData.length > 0) {
         const articlesWithImages = addDemoImages(articlesData, 0);
         setArticles(articlesWithImages);
-        setTopStories(articlesWithImages.slice(0, 5));
       } else {
         setArticles([]);
+      }
+
+      if (topStoriesData.length > 0) {
+        const otherTopStories = addDemoImages(topStoriesData, 0).filter(a => a.id !== featuredId);
+        setTopStories(otherTopStories.slice(0, 5));
+      } else {
         setTopStories([]);
       }
 
-      if (featuredData.length > 0) {
-        setFeaturedArticle({
-          ...featuredData[0],
-          featured_image_url: featuredData[0].featured_image_url || getDemoImage(0)
-        });
-      } else if (articlesData.length > 0) {
-        setFeaturedArticle({
-          ...articlesData[0],
-          featured_image_url: articlesData[0].featured_image_url || getDemoImage(0)
-        });
-      } else {
-        setFeaturedArticle(null);
-      }
-
       if (interviewsData.length > 0) {
-        setInterviews(addDemoImages(interviewsData, 2));
+        setInterviews(addDemoImages(interviewsData, 2).filter(a => a.id !== featuredId));
       } else {
         setInterviews([]);
       }
 
-      if (trendingData.length > 0) {
-        setAmericaArticles(addDemoImages(trendingData.slice(0, 6), 5));
-      } else if (articlesData.length > 0) {
-        setAmericaArticles(addDemoImages(articlesData.slice(0, 6), 5));
+      if (americaData.length > 0) {
+        const otherAmerica = addDemoImages(americaData, 5).filter(a => a.id !== featuredId);
+        setAmericaArticles(otherAmerica.slice(0, 6));
       } else {
         setAmericaArticles([]);
       }
@@ -371,7 +382,7 @@ const News = () => {
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return '1d';
     return `${diffDays}d`;
@@ -388,29 +399,31 @@ const News = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
-    return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
-  }
-
   const sectionNav = (
     <div className="border-t-2 border-white" style={{ backgroundColor: '#fa9a00' }}>
       <div className="max-w-full mx-4 sm:mx-6 md:mx-8 px-3 sm:px-6 py-2 sm:py-0" style={{ backgroundColor: '#fa9a00' }}>
         <div className="flex items-center gap-4 md:gap-8 flex-wrap" style={{ backgroundColor: '#fa9a00' }}>
           {/* Logo and Title */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative" style={{ overflow: 'visible' }}>
-              <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/TLP Helmet.png" 
-                  alt="TLP Logo" 
-                  className="w-7 h-7 sm:w-10 sm:h-10 object-contain"
+          <div className="flex items-center gap-3">
+            <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
+              <div className="w-14 h-14 bg-black flex items-center justify-center overflow-hidden">
+                <img
+                  src="/TLP Helmet.png"
+                  alt="TLP Logo"
+                  className="w-10 h-10 object-contain"
                 />
               </div>
-              <div className="absolute top-full left-0 w-10 sm:w-14 bg-[#8B1A1A] px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50 flex items-center justify-center">
+              <div className="absolute top-full left-0 bg-red-500 px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
                 {currentTime}
               </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
+            <button
+              onClick={() => navigate('/news')}
+              className={`text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white transition-all ${selectedCategory === 'NEWS' ? 'border-b-2 border-white' : 'opacity-80 hover:opacity-100'}`}
+              style={{ fontFamily: 'Nasalization, sans-serif' }}
+            >
+              NEWS
+            </button>
           </div>
 
           {/* Navigation Tabs - categories from backend (GET /api/news/categories) */}
@@ -421,7 +434,10 @@ const News = () => {
                 {cat === 'LAUNCH' ? (
                   <button
                     onClick={() => navigate('/launches/news')}
-                    className="px-1 sm:px-2 py-1 text-white border-b-2 border-white font-bold"
+                    className={`px-1 sm:px-2 py-1 text-white ${selectedCategory === cat
+                      ? 'border-b-2 border-white font-bold'
+                      : 'font-normal'
+                      }`}
                   >
                     {cat}
                   </button>
@@ -435,11 +451,10 @@ const News = () => {
                         handleCategoryChange(cat);
                       }
                     }}
-                    className={`px-1 sm:px-2 py-1 text-white ${
-                      selectedCategory === cat 
-                        ? 'border-b-2 border-white font-bold' 
-                        : 'font-normal'
-                    }`}
+                    className={`px-1 sm:px-2 py-1 text-white ${selectedCategory === cat
+                      ? 'border-b-2 border-white font-bold'
+                      : 'font-normal'
+                      }`}
                   >
                     {cat}
                   </button>
@@ -452,13 +467,22 @@ const News = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, [selectedCategory, trendingParam, tagParam, currentTime]);
+
+  if (loading) {
+    return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
+  }
+
   // If trending parameter exists, show trending-filtered layout
   if (trendingParam && !tagParam) {
     const trendingItem = trending.find(t => t.search === trendingParam || t.label.toLowerCase().replace(/\s+/g, '-') === trendingParam);
     const trendingName = trendingItem ? trendingItem.label : trendingParam.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    
+
     return (
-      <Layout sectionNav={sectionNav}>
+      <>
         <div className="w-full px-6 pt-[2px] pb-[2px]">
           {/* Trending Header */}
           <div className="flex items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-6">
@@ -473,7 +497,7 @@ const News = () => {
           {featuredArticle && (
             <div className="mb-6">
               <Link to={`/news/${featuredArticle?.slug || featuredArticle?.id}`}>
-                <div 
+                <div
                   className="relative h-[600px] overflow-hidden"
                   style={{
                     backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || getDemoImage(0)})`,
@@ -481,14 +505,14 @@ const News = () => {
                     backgroundPosition: 'center',
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute inset-0"
                     style={{
                       background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
                     }}
                   ></div>
                   <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
-                    <h1 
+                    <h1
                       className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
                       style={{ fontFamily: 'Nasalization, sans-serif' }}
                     >
@@ -507,11 +531,11 @@ const News = () => {
           )}
 
           {/* Secondary Hero Section - Two Smaller Cards */}
-          {articles.length >= 2 && (
+          {articles.filter(a => a.id !== featuredArticle?.id).length >= 2 && (
             <div className="grid grid-cols-2 gap-3 mb-6">
-              {articles.slice(0, 2).map((article, idx) => (
+              {articles.filter(a => a.id !== featuredArticle?.id).slice(0, 2).map((article, idx) => (
                 <Link key={article.id || idx} to={`/news/${article.slug || article.id}`}>
-                  <div 
+                  <div
                     className="relative h-[300px] overflow-hidden"
                     style={{
                       backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1)})`,
@@ -519,14 +543,14 @@ const News = () => {
                       backgroundPosition: 'center',
                     }}
                   >
-                    <div 
+                    <div
                       className="absolute inset-0"
                       style={{
                         background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
                       }}
                     ></div>
                     <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
-                      <h3 
+                      <h3
                         className="text-lg font-bold mb-2 text-white uppercase leading-tight"
                         style={{ fontFamily: 'Nasalization, sans-serif' }}
                       >
@@ -544,7 +568,7 @@ const News = () => {
 
           {/* Article List Section */}
           <div className="space-y-8">
-            {articles.map((article, idx) => (
+            {articles.filter(a => a.id !== featuredArticle?.id).map((article, idx) => (
               <Link key={article.id} to={`/news/${article.slug || article.id}`}>
                 <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors mb-6">
                   {/* Left Side - Image */}
@@ -555,7 +579,7 @@ const News = () => {
                       className="w-full h-48 object-cover"
                     />
                   </div>
-                  
+
                   {/* Right Side - Text Content */}
                   <div className="col-span-2 p-6 flex flex-col justify-between">
                     <div>
@@ -566,7 +590,7 @@ const News = () => {
                         {article.excerpt}
                       </p>
                     </div>
-                    
+
                     {/* Tags/Buttons */}
                     <div className="flex gap-2 mt-4 flex-wrap">
                       <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
@@ -579,16 +603,16 @@ const News = () => {
             ))}
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   // If tag parameter exists, show tag-filtered layout similar to LaunchNews
   if (tagParam) {
     const tagName = tagParam.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    
+
     return (
-      <Layout sectionNav={sectionNav}>
+      <>
         <div className="w-full px-6 pt-[2px] pb-[2px]">
           {/* Tag Header */}
           <div className="flex items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-6">
@@ -603,7 +627,7 @@ const News = () => {
           {featuredArticle && (
             <div className="mb-6">
               <Link to={`/news/${featuredArticle?.slug || featuredArticle?.id}`}>
-                <div 
+                <div
                   className="relative h-[600px] overflow-hidden"
                   style={{
                     backgroundImage: `url(${featuredArticle?.featured_image_url || featuredArticle?.hero_image_url || getDemoImage(0)})`,
@@ -611,14 +635,14 @@ const News = () => {
                     backgroundPosition: 'center',
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute inset-0"
                     style={{
                       background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
                     }}
                   ></div>
                   <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
-                    <h1 
+                    <h1
                       className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
                       style={{ fontFamily: 'Nasalization, sans-serif' }}
                     >
@@ -641,7 +665,7 @@ const News = () => {
             <div className="grid grid-cols-2 gap-3 mb-6">
               {articles.slice(0, 2).map((article, idx) => (
                 <Link key={article.id || idx} to={`/news/${article.slug || article.id}`}>
-                  <div 
+                  <div
                     className="relative h-[300px] overflow-hidden"
                     style={{
                       backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1)})`,
@@ -649,14 +673,14 @@ const News = () => {
                       backgroundPosition: 'center',
                     }}
                   >
-                    <div 
+                    <div
                       className="absolute inset-0"
                       style={{
                         background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
                       }}
                     ></div>
                     <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
-                      <h3 
+                      <h3
                         className="text-lg font-bold mb-2 text-white uppercase leading-tight"
                         style={{ fontFamily: 'Nasalization, sans-serif' }}
                       >
@@ -674,7 +698,7 @@ const News = () => {
 
           {/* Article List Section */}
           <div className="space-y-8">
-            {articles.map((article, idx) => (
+            {articles.filter(a => a.id !== featuredArticle?.id).map((article, idx) => (
               <Link key={article.id} to={`/news/${article.slug || article.id}`}>
                 <div className="grid grid-cols-3 gap-6 bg-black hover:bg-gray-900 transition-colors mb-6">
                   {/* Left Side - Image */}
@@ -685,7 +709,7 @@ const News = () => {
                       className="w-full h-48 object-cover"
                     />
                   </div>
-                  
+
                   {/* Right Side - Text Content */}
                   <div className="col-span-2 p-6 flex flex-col justify-between">
                     <div>
@@ -696,7 +720,7 @@ const News = () => {
                         {article.excerpt}
                       </p>
                     </div>
-                    
+
                     {/* Tags/Buttons */}
                     <div className="flex gap-2 mt-4 flex-wrap">
                       <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
@@ -709,12 +733,12 @@ const News = () => {
             ))}
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       {/* Trending Sub-Navigation */}
       <div className="bg-white border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-0">
@@ -722,19 +746,18 @@ const News = () => {
             {trending.map((topic, idx) => {
               const trendingSlug = topic.search || topic.label.toLowerCase().replace(/\s+/g, '-');
               const isActive = trendingParam === trendingSlug || (selectedTrending === topic.label && !trendingParam);
-              
+
               return (
                 <div key={idx} className="flex items-center shrink-0">
                   {idx > 0 && <span className="text-black mx-2 sm:mx-3">|</span>}
                   <button
                     onClick={() => handleTrendingClick(topic)}
-                    className={`text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-0.5 hover:text-newstheme ${
-                      isActive
-                        ? 'font-bold text-newstheme border-b-2 border-newstheme' 
-                        : topic.label === 'SPACEX' && !trendingParam && !selectedTrending
-                        ? 'font-bold' 
+                    className={`text-xs sm:text-sm font-medium text-black transition-colors whitespace-nowrap px-1 sm:px-2 py-0.5 hover:text-newstheme ${isActive
+                      ? 'font-bold text-newstheme border-b-2 border-newstheme'
+                      : topic.label === 'SPACEX' && !trendingParam && !selectedTrending
+                        ? 'font-bold'
                         : ''
-                    }`}
+                      }`}
                     style={isActive ? { color: '#fa9a00', borderBottomColor: '#fa9a00' } : {}}
                   >
                     {topic.label}
@@ -794,32 +817,32 @@ const News = () => {
                   </div>
                 </Link>
               </div>
-              
+
               {/* Side Articles */}
               <div className="hidden lg:block space-y-3">
-                {[1, 2].map((idx) => (
-                  <Link key={idx} to={`/news/${featuredArticle.slug || featuredArticle.id}`}>
+                {topStories.slice(0, 2).map((article, idx) => (
+                  <Link key={article.id || idx} to={`/news/${article.slug || article.id}`}>
                     <div className="relative h-[290px] overflow-hidden" style={{ background: 'linear-gradient(to bottom, #0a1f3a, #000000)' }}>
                       <div className="absolute inset-0">
                         <img
-                          src={featuredArticle.featured_image_url || getDemoImage(0)}
-                          alt={featuredArticle.title}
+                          src={article.featured_image_url || getDemoImage(idx + 1)}
+                          alt={article.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.target.src = getDemoImage(0);
+                            e.target.src = getDemoImage(idx + 1);
                           }}
                         />
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-b from-blue-950/50 via-transparent to-black/70"></div>
                       <div className="absolute inset-0 flex flex-col justify-end items-center p-4 z-10 text-center">
                         <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 leading-tight uppercase max-w-full" style={{ fontFamily: 'Nasalization, sans-serif' }}>
-                          {featuredArticle.title || 'LIVE COVERAGE! China Shenzhou 20 Crew Launch'}
+                          {article.title}
                         </h3>
                         <p className="text-white text-xs mb-3 line-clamp-2 leading-relaxed max-w-full">
-                          {featuredArticle.excerpt || 'The Shenzhou 20 mission will lift off aboard a Long March 2F rocket from the Jiuquan Satellite Launch Center in northwest China at 5:17 a.m. EDT (0917 GMT; 5:17 p.m. Beijing time).'}
+                          {article.excerpt}
                         </p>
                         <button className="bg-newstheme text-white px-4 py-1.5 rounded-full font-semibold text-xs hover:bg-newstheme/90 transition-colors" style={{ backgroundColor: '#fa9a00' }}>
-                          {featuredArticle.category_name || featuredArticle.category?.name || 'NEWS'}
+                          {article.category_name || article.category?.name || 'NEWS'}
                         </button>
                       </div>
                     </div>
@@ -886,7 +909,7 @@ const News = () => {
                   </div>
                 </Link>
               </div>
-              
+
               {/* 2x2 Grid */}
               <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {articles.slice(1, 5).map((article, idx) => (
@@ -930,7 +953,7 @@ const News = () => {
           <div className="mb-8 sm:mb-10 md:mb-12">
             <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-newstheme uppercase" style={{ fontFamily: 'sans-serif', color: '#fa9a00' }}>RECENT INTERVIEWS</h2>
             <div className="relative">
-              <div 
+              <div
                 ref={interviewCarouselRef}
                 className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth scrollbar-hide pb-2"
                 onScroll={(e) => {
@@ -938,7 +961,7 @@ const News = () => {
                   const scrollLeft = target.scrollLeft;
                   const scrollWidth = target.scrollWidth;
                   const clientWidth = target.clientWidth;
-                  
+
                   setInterviewScrollPosition(scrollLeft);
                   setCanScrollLeft(scrollLeft > 0);
                   setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
@@ -1031,11 +1054,10 @@ const News = () => {
                 <button
                   key={filter}
                   onClick={() => setTimeFilter(filter)}
-                  className={`px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium transition-colors ${
-                    timeFilter === filter
-                      ? 'bg-white text-black'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium transition-colors ${timeFilter === filter
+                    ? 'bg-white text-black'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   {filter}
                 </button>
@@ -1085,77 +1107,77 @@ const News = () => {
               </div>
             </div>
           ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
-            {/* Large Article */}
-            {topStories.length > 0 && (
-              <div className="md:col-span-1 flex">
-                <Link to={`/news/${topStories[0]?.slug || topStories[0]?.id}`} className="flex flex-col w-full">
-                  <div className="bg-black flex flex-col h-full">
-                    <div className="flex-1 w-full overflow-hidden min-h-[250px] sm:min-h-[300px] md:min-h-[320px]">
-                      <img
-                        src={topStories[0]?.featured_image_url || getDemoImage(0)}
-                        alt={topStories[0]?.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = getDemoImage(0);
-                        }}
-                      />
-                    </div>
-                    <div className="p-4 sm:p-5 md:p-6 bg-black">
-                      <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4" style={{ fontFamily: 'sans-serif' }}>
-                        {topStories[0]?.title || 'ATMOS PHOENIX 1 Reaches Orbit; Conducts Critical Inflatable ReEntry Test'}
-                      </h2>
-                      <div className="border-t border-white mb-3 sm:mb-4"></div>
-                      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                        <div className="flex items-center gap-2 text-white text-xs sm:text-sm">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span>{formatDate(topStories[0]?.published_at || topStories[0]?.created_at)}</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
+              {/* Large Article */}
+              {topStories.length > 0 && (
+                <div className="md:col-span-1 flex">
+                  <Link to={`/news/${topStories[0]?.slug || topStories[0]?.id}`} className="flex flex-col w-full">
+                    <div className="bg-black flex flex-col h-full">
+                      <div className="flex-1 w-full overflow-hidden min-h-[250px] sm:min-h-[300px] md:min-h-[320px]">
+                        <img
+                          src={topStories[0]?.featured_image_url || getDemoImage(0)}
+                          alt={topStories[0]?.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = getDemoImage(0);
+                          }}
+                        />
+                      </div>
+                      <div className="p-4 sm:p-5 md:p-6 bg-black">
+                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4" style={{ fontFamily: 'sans-serif' }}>
+                          {topStories[0]?.title || 'ATMOS PHOENIX 1 Reaches Orbit; Conducts Critical Inflatable ReEntry Test'}
+                        </h2>
+                        <div className="border-t border-white mb-3 sm:mb-4"></div>
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 text-white text-xs sm:text-sm">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{formatDate(topStories[0]?.published_at || topStories[0]?.created_at)}</span>
+                          </div>
+                          <span className="bg-newstheme text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{topStories[0]?.category_name || topStories[0]?.category?.name || 'NEWS'}</span>
                         </div>
-                        <span className="bg-newstheme text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{topStories[0]?.category_name || topStories[0]?.category?.name || 'NEWS'}</span>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
+              )}
+
+              {/* 2x2 Grid */}
+              <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {topStories.slice(1, 5).map((article, idx) => (
+                  <Link key={article.id || idx} to={`/news/${article.slug || article.id}`} className="flex flex-col h-full">
+                    <div className="bg-black flex flex-col h-full">
+                      <div className="h-40 sm:h-44 md:h-40 w-full overflow-hidden flex-shrink-0">
+                        <img
+                          src={article.featured_image_url || getDemoImage(idx + 1)}
+                          alt={article.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = getDemoImage(idx + 1);
+                          }}
+                        />
+                      </div>
+                      <div className="p-3 sm:p-4 bg-black flex-1 flex flex-col">
+                        <h3 className="text-sm font-bold text-white mb-2 sm:mb-3 line-clamp-2" style={{ fontFamily: 'sans-serif' }}>
+                          {article.title || 'ATMOS PHOENIX 1 Reaches Orbit; Conducts Critical Inflatable ReEntry Test'}
+                        </h3>
+                        <div className="border-t border-white mb-2 sm:mb-3"></div>
+                        <div className="flex items-center gap-2 sm:gap-3 mt-auto flex-wrap">
+                          <div className="flex items-center gap-2 text-white text-xs">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{formatDate(article.published_at || article.created_at)}</span>
+                          </div>
+                          <span className="bg-newstheme text-white px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{article.category_name || article.category?.name || 'NEWS'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            )}
-            
-            {/* 2x2 Grid */}
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              {topStories.slice(1, 5).map((article, idx) => (
-                <Link key={article.id || idx} to={`/news/${article.slug || article.id}`} className="flex flex-col h-full">
-                  <div className="bg-black flex flex-col h-full">
-                    <div className="h-40 sm:h-44 md:h-40 w-full overflow-hidden flex-shrink-0">
-                      <img
-                        src={article.featured_image_url || getDemoImage(idx + 1)}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = getDemoImage(idx + 1);
-                        }}
-                      />
-                    </div>
-                    <div className="p-3 sm:p-4 bg-black flex-1 flex flex-col">
-                      <h3 className="text-sm font-bold text-white mb-2 sm:mb-3 line-clamp-2" style={{ fontFamily: 'sans-serif' }}>
-                        {article.title || 'ATMOS PHOENIX 1 Reaches Orbit; Conducts Critical Inflatable ReEntry Test'}
-                      </h3>
-                      <div className="border-t border-white mb-2 sm:mb-3"></div>
-                      <div className="flex items-center gap-2 sm:gap-3 mt-auto flex-wrap">
-                        <div className="flex items-center gap-2 text-white text-xs">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span>{formatDate(article.published_at || article.created_at)}</span>
-                        </div>
-                        <span className="bg-newstheme text-white px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: '#fa9a00' }}>{article.category_name || article.category?.name || 'NEWS'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
             </div>
-          </div>
           )}
         </div>
 
@@ -1205,7 +1227,7 @@ const News = () => {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

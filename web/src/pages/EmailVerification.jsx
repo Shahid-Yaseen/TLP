@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
 import RedDotLoader from '../components/common/RedDotLoader';
 
 const EmailVerification = () => {
@@ -129,7 +128,7 @@ const EmailVerification = () => {
 
   if (!email) {
     return (
-      <Layout>
+      <>
         <div className="min-h-screen flex items-center justify-center px-6 py-12">
           <div className="max-w-md w-full">
             <div className="bg-[#222222] p-8 rounded-lg border border-[#222222] text-center">
@@ -145,12 +144,12 @@ const EmailVerification = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen flex items-center justify-center px-6 py-12">
         <div className="max-w-md w-full">
           <div className="bg-[#222222] p-8 rounded-lg border border-[#222222]">
@@ -231,7 +230,7 @@ const EmailVerification = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../../components/Layout';
-
 import API_URL from '../../config/api';
 const HERO_BG_IMAGE = 'https://i.imgur.com/3kPqWvM.jpeg';
 
 const AstronautProfile = () => {
   const { id } = useParams();
+  const { setSectionNav } = useOutletContext();
   const [astronaut, setAstronaut] = useState(null);
   const [activeTab, setActiveTab] = useState('ROCKET');
   const [loading, setLoading] = useState(true);
@@ -31,24 +30,24 @@ const AstronautProfile = () => {
 
   if (loading) {
     return (
-      <Layout>
+      <>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center text-gray-400">
           Loading astronaut profile...
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (!astronaut) {
     return (
-      <Layout>
+      <>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Astronaut Not Found</h1>
           <Link to="/spacebase/astronauts" className="text-orange-500 hover:text-orange-400">
             Return to Astronauts
           </Link>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -71,8 +70,13 @@ const AstronautProfile = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, [astronaut]);
+
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       {/* Hero Section */}
       <div
         className="relative h-[50vh] bg-cover bg-center flex items-center justify-center"
@@ -203,7 +207,7 @@ const AstronautProfile = () => {
                 </a>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold mb-2">ASTRONAUT #{astronaut.astronaut_number || astronaut.id}</div>
+                <div className="text-2xl font-bold mb-2">ASTRONAUT{astronaut.astronaut_number != null && astronaut.astronaut_number !== '' ? ` #${astronaut.astronaut_number}` : ''}</div>
                 <div className={`mb-2 ${astronaut.status === 'active' ? 'text-green-500' : 'text-gray-400'}`}>
                   STATUS: {astronaut.status?.toUpperCase() || 'N/A'}
                 </div>
@@ -251,7 +255,7 @@ const AstronautProfile = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -15,16 +15,44 @@ const pool = getPool();
 
 /**
  * GET /api/news/trending-topics
- * Get active trending topics (for public news page bar), sorted by priority
+ * Get active trending topics (for public news page bar), dynamically calculated based on tag frequency
  */
 router.get('/', optionalAuth, asyncHandler(async (req, res) => {
+  // Calculate trending topics based on tag frequency in the last 30 days
   const { rows } = await pool.query(
-    `SELECT id, name, slug, topic_type, priority, is_active, created_at
-     FROM trending_topics
-     WHERE is_active = true
-     ORDER BY priority DESC, name ASC`
+    `SELECT at.id, at.name, at.slug, COUNT(ata.article_id) as priority
+     FROM article_tags at
+     JOIN article_tags_articles ata ON at.id = ata.tag_id
+     JOIN news_articles na ON ata.article_id = na.id
+     WHERE na.status = 'published'
+       AND na.published_at > NOW() - INTERVAL '30 days'
+     GROUP BY at.id, at.name, at.slug
+     ORDER BY priority DESC, at.name ASC
+     LIMIT 10`
   );
-  res.json(rows);
+
+  // If no dynamic tags found (e.g. no articles in 30 days), fallback to active trending_topics table
+  if (rows.length === 0) {
+    const { rows: fallbackRows } = await pool.query(
+      `SELECT id, name, slug, topic_type, priority, is_active, created_at
+       FROM trending_topics
+       WHERE is_active = true
+       ORDER BY priority DESC, name ASC`
+    );
+    return res.json(fallbackRows);
+  }
+
+  // Format to match trending_topics structure
+  const formattedRows = rows.map(row => ({
+    id: row.id,
+    name: row.name.toUpperCase(),
+    slug: row.slug,
+    topic_type: 'tag',
+    priority: parseInt(row.priority, 10),
+    is_active: true
+  }));
+
+  res.json(formattedRows);
 }));
 
 /**

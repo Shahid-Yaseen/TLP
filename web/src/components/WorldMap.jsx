@@ -17,7 +17,7 @@ const locations = [
   { name: 'Colorado', coordinates: [39.7392, -104.9903], region: 'north-america' }, // Denver, Colorado
   { name: 'New York', coordinates: [40.7128, -74.0060], region: 'north-america' }, // New York City
   { name: 'Virginia', coordinates: [38.9072, -77.0369], region: 'north-america' }, // Washington DC area
-  
+
   // Europe - Using accurate coordinates
   { name: 'Netherlands', coordinates: [52.3676, 4.9041], region: 'europe' }, // Amsterdam
   { name: 'United Kingdom', coordinates: [51.5074, -0.1278], region: 'europe' }, // London
@@ -82,8 +82,8 @@ function GeoJSONHighlight() {
 
   const styleFeature = (feature) => {
     const name = feature.properties?.name || feature.properties?.NAME || feature.properties?.NAME_LONG || '';
-    const isHighlighted = highlightedCountries.some(country => 
-      name.toLowerCase().includes(country.toLowerCase()) || 
+    const isHighlighted = highlightedCountries.some(country =>
+      name.toLowerCase().includes(country.toLowerCase()) ||
       country.toLowerCase().includes(name.toLowerCase())
     );
 
@@ -112,7 +112,7 @@ const WorldMap = ({ crewMembers = [] }) => {
 
   useEffect(() => {
     setIsClient(true);
-    
+
     // Dynamically import Leaflet and react-leaflet only on client
     Promise.all([
       import('leaflet'),
@@ -121,7 +121,7 @@ const WorldMap = ({ crewMembers = [] }) => {
     ]).then(([leaflet, , reactLeaflet]) => {
       const leafletLib = leaflet.default;
       setL(leafletLib);
-      
+
       // Fix for default marker icons
       delete leafletLib.Icon.Default.prototype._getIconUrl;
       leafletLib.Icon.Default.mergeOptions({
@@ -129,74 +129,100 @@ const WorldMap = ({ crewMembers = [] }) => {
         iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
       });
-      
+
       setLeafletComponents(reactLeaflet);
     });
   }, []);
 
   // Extract locations from crew members if available, otherwise use default locations
-  const mapLocations = crewMembers.length > 0 
+  const mapLocations = crewMembers.length > 0
     ? crewMembers
-        .filter(member => {
-          // Check if coordinates exist in various possible formats
-          const coords = member.coordinates;
-          if (!coords) return false;
-          
-          // Handle different coordinate formats
-          if (Array.isArray(coords) && coords.length >= 2) {
-            return true; // [lat, lng] or [lng, lat] format
-          }
-          if (typeof coords === 'object') {
-            // Check for common property names
-            return !!(coords.lat || coords.latitude || coords.lng || coords.longitude);
-          }
-          return false;
-        })
-        .map(member => {
-          const coords = member.coordinates;
-          let lat, lng;
-          
-          // Parse coordinates from different formats
-          if (Array.isArray(coords)) {
-            // Array format: could be [lat, lng] or [lng, lat]
-            // Try both orders and validate
-            const [first, second] = coords;
-            if (Math.abs(first) <= 90 && Math.abs(second) <= 180) {
-              // First is likely latitude (within -90 to 90)
-              lat = parseFloat(first);
-              lng = parseFloat(second);
-            } else if (Math.abs(second) <= 90 && Math.abs(first) <= 180) {
-              // Second is likely latitude
-              lat = parseFloat(second);
-              lng = parseFloat(first);
-            } else {
-              // Default to first as lat, second as lng
-              lat = parseFloat(first);
-              lng = parseFloat(second);
-            }
-          } else if (typeof coords === 'object') {
-            // Object format: {lat, lng} or {latitude, longitude}
-            lat = parseFloat(coords.lat || coords.latitude);
-            lng = parseFloat(coords.lng || coords.longitude);
-          }
-          
-          // Validate coordinates are within valid ranges
-          if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      .filter(member => {
+        // Check if coordinates exist in various possible formats
+        const coords = member.coordinates;
+        if (!coords) return false;
+
+        // Handle different coordinate formats
+        if (typeof coords === 'object') {
+          // Object format: {lat, lng} or {latitude, longitude}
+          return !!(coords.lat || coords.latitude || coords.lng || coords.longitude);
+        }
+        if (Array.isArray(coords) && coords.length >= 2) {
+          // Array format: [lat, lng]
+          return true;
+        }
+        return false;
+      })
+      .map(member => {
+        const coords = member.coordinates;
+        let lat, lng;
+
+        // Parse coordinates from different formats
+        // PRIORITY 1: Object format {lat, lng} or {latitude, longitude} (database standard)
+        if (typeof coords === 'object' && !Array.isArray(coords)) {
+          lat = parseFloat(coords.lat || coords.latitude);
+          lng = parseFloat(coords.lng || coords.longitude);
+
+          // Validate we got both values
+          if (isNaN(lat) || isNaN(lng)) {
+            console.warn(`[WorldMap] Invalid coordinates for ${member.full_name}:`, coords);
             return null;
           }
-          
-          return {
-            name: member.location || member.full_name || member.name,
-            coordinates: [lat, lng], // [latitude, longitude] for Leaflet
-            region: 'crew'
-          };
-        })
-        .filter(loc => loc !== null)
+        }
+        // PRIORITY 2: Array format [lat, lng] (Leaflet standard)
+        else if (Array.isArray(coords) && coords.length >= 2) {
+          const [first, second] = coords;
+
+          // Assume [lat, lng] format (Leaflet standard)
+          lat = parseFloat(first);
+          lng = parseFloat(second);
+
+          // Validate coordinates are within valid ranges
+          // Latitude must be between -90 and 90
+          // Longitude must be between -180 and 180
+          if (isNaN(lat) || isNaN(lng)) {
+            console.warn(`[WorldMap] Invalid array coordinates for ${member.full_name}:`, coords);
+            return null;
+          }
+
+          // If values are out of range, they might be swapped
+          if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+            console.warn(`[WorldMap] Coordinates out of range for ${member.full_name}, attempting swap:`, coords);
+            // Try swapping
+            [lat, lng] = [lng, lat];
+
+            // If still invalid, reject
+            if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+              console.error(`[WorldMap] Cannot fix coordinates for ${member.full_name}:`, coords);
+              return null;
+            }
+          }
+        } else {
+          console.warn(`[WorldMap] Unknown coordinate format for ${member.full_name}:`, coords);
+          return null;
+        }
+
+        // Final validation: ensure coordinates are within valid ranges
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          console.error(`[WorldMap] Coordinates out of valid range for ${member.full_name}: lat=${lat}, lng=${lng}`);
+          return null;
+        }
+
+        // Debug logging
+        console.log(`[WorldMap] Parsed ${member.full_name || member.location}: lat=${lat}, lng=${lng}, creating [${lat}, ${lng}]`);
+
+        return {
+          name: member.location || member.full_name || member.name,
+          coordinates: [lat, lng], // [latitude, longitude] for Leaflet
+          region: 'crew'
+        };
+      })
+      .filter(loc => loc !== null)
     : locations;
 
   // Determine which locations should show labels
-  const locationsWithLabels = mapLocations.filter(location => 
-    location.name.includes('TLP') || 
+  const locationsWithLabels = mapLocations.filter(location =>
+    location.name.includes('TLP') ||
     ['Alaska', 'Netherlands', 'TLP Space Coast', 'TLP West Coast'].includes(location.name)
   );
 
@@ -214,7 +240,8 @@ const WorldMap = ({ crewMembers = [] }) => {
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       "></div>`,
       iconSize: [12, 12],
-      iconAnchor: [6, 6],
+      iconAnchor: [6, 6], // Center of the icon
+      popupAnchor: [0, -6], // Position popup above the icon (0 horizontal offset, -6 vertical to account for icon radius)
     });
   };
 
@@ -232,11 +259,11 @@ const WorldMap = ({ crewMembers = [] }) => {
   function MapResizeHandler() {
     const map = useMap();
     const hasInvalidated = useRef(false);
-    
+
     useEffect(() => {
       // Store map instance globally for access in event handlers
       window.mapInstance = map;
-      
+
       // Invalidate size when component mounts to ensure proper rendering
       const invalidateSize = () => {
         if (!hasInvalidated.current) {
@@ -244,20 +271,20 @@ const WorldMap = ({ crewMembers = [] }) => {
           hasInvalidated.current = true;
         }
       };
-      
+
       setTimeout(invalidateSize, 100);
-      
+
       // Also invalidate after tiles load to fix marker alignment
       const timeoutId = setTimeout(() => {
         map.invalidateSize();
       }, 500);
-      
+
       // Invalidate on window resize
       const handleResize = () => {
         map.invalidateSize();
       };
       window.addEventListener('resize', handleResize);
-      
+
       return () => {
         clearTimeout(timeoutId);
         window.removeEventListener('resize', handleResize);
@@ -266,7 +293,7 @@ const WorldMap = ({ crewMembers = [] }) => {
         }
       };
     }, [map]);
-    
+
     return null;
   }
 
@@ -305,15 +332,40 @@ const WorldMap = ({ crewMembers = [] }) => {
           min-height: 44px !important;
         }
         .leaflet-control-zoom a:hover {
-          background-color: #e5e5e5 !important;
+          background-color: #f0f0f0 !important;
+        }
+        .leaflet-control-attribution {
+          background-color: rgba(0, 0, 0, 0.7) !important;
+          color: white !important;
+          font-size: 10px !important;
+        }
+        .leaflet-control-attribution a {
+          color: #4a9eff !important;
         }
         .leaflet-popup-content-wrapper {
-          background-color: rgba(0, 0, 0, 0.9) !important;
+          background-color: #1a1a1a !important;
           color: white !important;
-          border-radius: 4px !important;
+          border-radius: 8px !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+          padding: 0 !important;
+        }
+        .leaflet-popup-content {
+          margin: 12px 16px !important;
+          font-size: 14px !important;
+          font-weight: 600 !important;
+          text-align: center !important;
+          white-space: nowrap !important;
         }
         .leaflet-popup-tip {
-          background-color: rgba(0, 0, 0, 0.9) !important;
+          background-color: #1a1a1a !important;
+        }
+        .leaflet-popup-close-button {
+          color: white !important;
+          font-size: 20px !important;
+          padding: 4px 8px !important;
+        }
+        .leaflet-popup-close-button:hover {
+          color: #ef4444 !important;
         }
         .custom-label {
           background-color: rgba(255, 255, 255, 0.95);
@@ -332,12 +384,15 @@ const WorldMap = ({ crewMembers = [] }) => {
         .leaflet-overlay-pane {
           z-index: 400 !important;
         }
+        /* FIX: Force markers to be absolutely positioned */
+        .leaflet-marker-icon {
+          position: absolute !important;
+        }
         .custom-red-marker {
-          z-index: 1000 !important;
-          position: relative !important;
+          position: absolute !important;
         }
       `}</style>
-      
+
       <MapContainer
         center={[30, 0]}
         zoom={2}
@@ -389,7 +444,7 @@ const WorldMap = ({ crewMembers = [] }) => {
             }
           }}
         />
-        
+
         {/* GeoJSON overlay to highlight North America and Europe in white - Disabled for now */}
         {/* <GeoJSONHighlight /> */}
 
@@ -397,7 +452,7 @@ const WorldMap = ({ crewMembers = [] }) => {
         {mapLocations.map((location, index) => {
           const icon = createRedMarker();
           if (!icon) return null;
-          
+
           return (
             <Marker
               key={index}

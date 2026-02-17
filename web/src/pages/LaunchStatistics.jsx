@@ -107,36 +107,6 @@ function LaunchStatistics() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      {/* Top Header Bar */}
-      <div className="bg-black border-b border-gray-800">
-        <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-1.5 sm:py-2">
-          <div className="flex items-center justify-between">
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-400 w-full justify-between">
-              <div className="flex items-center gap-2">
-                <Link to="/" className="hover:text-white transition-colors">TLP Network Inc.</Link>
-                <span>|</span>
-                <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-                <span>|</span>
-                <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
-                <span>|</span>
-                <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
-                <span className="hidden lg:inline">|</span>
-                <Link to="/spacebase" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
-                <span className="hidden xl:inline">|</span>
-                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hidden xl:inline hover:text-white transition-colors">SHOP</a>
-                <span className="hidden xl:inline">|</span>
-                <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
-                <span>|</span>
-                <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Navigation Bar */}
       <div className="bg-[#8B1A1A] border-t-2 border-white">
         <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">

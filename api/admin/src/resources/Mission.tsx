@@ -19,7 +19,8 @@ import {
   Loading,
   ImageInput,
   ImageField,
-  SimpleShowLayout
+  SimpleShowLayout,
+  FunctionField
 } from 'react-admin';
 import { Box, Typography, Divider, Grid, Alert } from '@mui/material';
 
@@ -49,114 +50,142 @@ export const MissionContentEdit = () => {
     <Edit resource="mission_content" id={1} title="Edit Mission Page Content">
       <TabbedForm>
         <FormTab label="Hero Section">
-          <TextInput 
-            source="hero_title" 
-            label="Hero Title" 
-            fullWidth 
+          <TextInput
+            source="hero_title"
+            label="Hero Title"
+            fullWidth
           />
-          <TextInput 
-            source="hero_subtitle" 
-            label="Hero Subtitle" 
-            fullWidth 
+          <TextInput
+            source="hero_subtitle"
+            label="Hero Subtitle"
+            fullWidth
           />
-          <TextInput 
-            source="hero_mission_statement" 
-            label="Mission Statement" 
-            fullWidth 
-            multiline 
+          <TextInput
+            source="hero_mission_statement"
+            label="Mission Statement"
+            fullWidth
+            multiline
             rows={3}
           />
-          <ImageInput source="hero_background_image_url" label="Background Image">
-            <ImageField source="src" />
-          </ImageInput>
+          <Box sx={{ mb: 2 }}>
+            <ImageInput source="hero_background_image_url" label="Background Image">
+              <ImageField source="src" title="title" />
+            </ImageInput>
+            <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, display: 'block' }}>
+              Main background image for the mission hero section. Upload an image or enter a URL below.
+            </Typography>
+            <TextInput
+              source="hero_background_image_url"
+              label="Background Image URL (optional)"
+              fullWidth
+              sx={{ mt: 1 }}
+              helperText="Or enter a direct image URL instead of uploading"
+              format={(v: any) => (v && typeof v === 'object' ? v.src : v)}
+              parse={(v: any) => v}
+            />
+          </Box>
         </FormTab>
 
         <FormTab label="CTA Buttons">
           <Grid container spacing={2}>
             <Grid item xs={12} md={4}>
               <Typography variant="h6" gutterBottom>Button 1</Typography>
-              <TextInput 
-                source="button1_text" 
-                label="Button Text" 
-                fullWidth 
+              <TextInput
+                source="button1_text"
+                label="Button Text"
+                fullWidth
               />
-              <TextInput 
-                source="button1_status_text" 
-                label="Status Text" 
-                fullWidth 
+              <TextInput
+                source="button1_status_text"
+                label="Status Text"
+                fullWidth
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <Typography variant="h6" gutterBottom>Button 2</Typography>
-              <TextInput 
-                source="button2_text" 
-                label="Button Text" 
-                fullWidth 
+              <TextInput
+                source="button2_text"
+                label="Button Text"
+                fullWidth
               />
-              <TextInput 
-                source="button2_status_text" 
-                label="Status Text" 
-                fullWidth 
+              <TextInput
+                source="button2_status_text"
+                label="Status Text"
+                fullWidth
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <Typography variant="h6" gutterBottom>Button 3</Typography>
-              <TextInput 
-                source="button3_text" 
-                label="Button Text" 
-                fullWidth 
+              <TextInput
+                source="button3_text"
+                label="Button Text"
+                fullWidth
               />
-              <TextInput 
-                source="button3_status_text" 
-                label="Status Text" 
-                fullWidth 
+              <TextInput
+                source="button3_status_text"
+                label="Status Text"
+                fullWidth
               />
             </Grid>
           </Grid>
         </FormTab>
 
         <FormTab label="Mission Overview">
-          <TextInput 
-            source="lift_off_time" 
-            label="Lift Off Time" 
-            fullWidth 
+          <TextInput
+            source="lift_off_time"
+            label="Lift Off Time"
+            fullWidth
           />
-          <TextInput 
-            source="launch_facility" 
-            label="Launch Facility" 
-            fullWidth 
+          <TextInput
+            source="launch_facility"
+            label="Launch Facility"
+            fullWidth
           />
-          <TextInput 
-            source="launch_pad" 
-            label="Launch Pad" 
-            fullWidth 
+          <TextInput
+            source="launch_pad"
+            label="Launch Pad"
+            fullWidth
           />
-          <TextInput 
-            source="launch_provider" 
-            label="Launch Provider" 
-            fullWidth 
+          <TextInput
+            source="launch_provider"
+            label="Launch Provider"
+            fullWidth
           />
-          <TextInput 
-            source="rocket" 
-            label="Rocket" 
-            fullWidth 
+          <TextInput
+            source="rocket"
+            label="Rocket"
+            fullWidth
           />
         </FormTab>
 
         <FormTab label="Lander Overview">
-          <TextInput 
-            source="lander_provider" 
-            label="Lander Provider" 
-            fullWidth 
+          <TextInput
+            source="lander_provider"
+            label="Lander Provider"
+            fullWidth
           />
-          <TextInput 
-            source="lunar_lander" 
-            label="Lunar Lander" 
-            fullWidth 
+          <TextInput
+            source="lunar_lander"
+            label="Lunar Lander"
+            fullWidth
           />
-          <ImageInput source="lander_image_url" label="Lander Image">
-            <ImageField source="src" />
-          </ImageInput>
+          <Box sx={{ mb: 2 }}>
+            <ImageInput source="lander_image_url" label="Lander Image">
+              <ImageField source="src" title="title" />
+            </ImageInput>
+            <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, display: 'block' }}>
+              Image of the lunar lander. Upload an image or enter a URL below.
+            </Typography>
+            <TextInput
+              source="lander_image_url"
+              label="Lander Image URL (optional)"
+              fullWidth
+              sx={{ mt: 1 }}
+              helperText="Or enter a direct image URL instead of uploading"
+              format={(v: any) => (v && typeof v === 'object' ? v.src : v)}
+              parse={(v: any) => v}
+            />
+          </Box>
         </FormTab>
       </TabbedForm>
     </Edit>
@@ -224,7 +253,17 @@ export const MissionContentShow = () => {
         <TextField source="hero_title" label="Hero Title" />
         <TextField source="hero_subtitle" label="Hero Subtitle" />
         <TextField source="hero_mission_statement" label="Mission Statement" />
-        <ImageField source="hero_background_image_url" label="Background Image" />
+        <FunctionField
+          label="Background Image"
+          render={(record: any) => {
+            const src = typeof record.hero_background_image_url === 'object' ? record.hero_background_image_url?.src : record.hero_background_image_url;
+            return src ? (
+              <Box sx={{ mt: 1, mb: 1, maxWidth: '500px', borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+                <img src={src} alt="Hero Background" style={{ width: '100%', height: 'auto', display: 'block' }} />
+              </Box>
+            ) : <Typography variant="body2" color="textSecondary">No background image</Typography>;
+          }}
+        />
 
         <Divider sx={{ my: 2 }} />
         <Typography variant="h5" gutterBottom>CTA Buttons</Typography>
@@ -258,7 +297,17 @@ export const MissionContentShow = () => {
         <Typography variant="h5" gutterBottom>Lander Overview</Typography>
         <TextField source="lander_provider" label="Lander Provider" />
         <TextField source="lunar_lander" label="Lunar Lander" />
-        <ImageField source="lander_image_url" label="Lander Image" />
+        <FunctionField
+          label="Lander Image"
+          render={(record: any) => {
+            const src = typeof record.lander_image_url === 'object' ? record.lander_image_url?.src : record.lander_image_url;
+            return src ? (
+              <Box sx={{ mt: 1, mb: 1, maxWidth: '500px', borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+                <img src={src} alt="Lander" style={{ width: '100%', height: 'auto', display: 'block' }} />
+              </Box>
+            ) : <Typography variant="body2" color="textSecondary">No lander image</Typography>;
+          }}
+        />
       </SimpleShowLayout>
     </Show>
   );

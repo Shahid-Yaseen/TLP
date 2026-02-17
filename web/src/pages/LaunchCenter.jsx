@@ -244,32 +244,6 @@ function LaunchCenter() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      {/* Top Header Bar */}
-      <div className="bg-black border-b border-gray-800">
-        <div className="max-w-full mx-auto px-6 py-2 flex justify-between items-center text-xs text-gray-400">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="hover:text-white transition-colors">TLP Network Inc.</Link>
-            <span>|</span>
-            <span>LAUNCH CENTER</span>
-            <span>|</span>
-            <span>TLP SPACE NEWS</span>
-            <span>|</span>
-            <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
-            <span>|</span>
-            <span>SPACEBASE</span>
-            <span>|</span>
-            <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">SHOP</a>
-            <span>|</span>
-            <Link to="/navigator/advanced" className="hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>ABOUT US</span>
-            <span>|</span>
-            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
-          </div>
-        </div>
-      </div>
-
       {/* Main Navigation Bar */}
       <div className="bg-[#8B1A1A] border-t-2 border-white">
         <div className="max-w-full mx-auto px-6 flex items-center justify-between">

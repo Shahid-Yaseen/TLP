@@ -76,7 +76,7 @@ export const dataProvider: DataProvider = {
       const endpoint = getResourceEndpoint(resource);
       const url = `${getApiUrl()}/api/${endpoint}`;
       const { json } = await httpClient(url);
-      
+
       // Transform image URLs to objects for ImageInput/ImageField
       if (json.hero_background_image_url && typeof json.hero_background_image_url === 'string') {
         json.hero_background_image_url = {
@@ -90,10 +90,10 @@ export const dataProvider: DataProvider = {
           title: 'Lander Image'
         };
       }
-      
+
       // Ensure id is set to 1 for singleton
       json.id = 1;
-      
+
       return {
         data: [json],
         total: 1,
@@ -148,10 +148,10 @@ export const dataProvider: DataProvider = {
       const endpoint = getResourceEndpoint(resource);
       const url = `${getApiUrl()}/api/${endpoint}`;
       const { json } = await httpClient(url);
-      
+
       // Ensure id is set to 1 for singleton
       json.id = 1;
-      
+
       // Transform image URLs to objects for ImageInput/ImageField
       if (json.hero_background_image_url && typeof json.hero_background_image_url === 'string') {
         json.hero_background_image_url = {
@@ -165,7 +165,7 @@ export const dataProvider: DataProvider = {
           title: 'Lander Image'
         };
       }
-      
+
       return { data: json };
     }
 
@@ -182,25 +182,25 @@ export const dataProvider: DataProvider = {
     if (resource === 'crew' && json.profile_image_url && typeof json.profile_image_url === 'string') {
       // Clean malformed URLs when reading from API
       let cleanedUrl = json.profile_image_url;
-      
+
       // Remove any server IP addresses that might be prepended
       cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
       cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
       cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
-      
+
       // Also handle cases where IP might be in the middle
       cleanedUrl = cleanedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
       cleanedUrl = cleanedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
       cleanedUrl = cleanedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
-      
+
       // Fix malformed protocols
       cleanedUrl = cleanedUrl.replace(/https\/\//g, 'https://');
       cleanedUrl = cleanedUrl.replace(/http\/\//g, 'http://');
-      
+
       // Remove any remaining IP addresses
       cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
       cleanedUrl = cleanedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
-      
+
       json.profile_image_url = {
         src: cleanedUrl,
         title: json.full_name || 'Profile Image'
@@ -360,6 +360,11 @@ export const dataProvider: DataProvider = {
             json.video_countdown_text = metadata.video.countdown_text || '';
           }
           // country_id is already in the main json object
+
+          // Flatten summary array into string for multiline input
+          if (json.summary && Array.isArray(json.summary)) {
+            json.summary_string = json.summary.join('\n');
+          }
         }
       }
     }
@@ -445,12 +450,23 @@ export const dataProvider: DataProvider = {
         }
       }
 
+      // Handle summary string to array conversion
+      let finalSummary = data.summary;
+      if (data.summary_string && typeof data.summary_string === 'string') {
+        finalSummary = data.summary_string.split('\n').map((s: string) => s.trim()).filter((s: string) => s !== '');
+      }
+
       // Remove custom fields and add metadata
-      const { is_breaking, is_developing, sub_category, summary, video_youtube_url, video_url, video_title, video_thumbnail, video_countdown_text, ...rest } = data;
+      const {
+        is_breaking, is_developing, sub_category, sub_category_id,
+        summary, summary_string, video_youtube_url, video_url,
+        video_title, video_thumbnail, video_countdown_text,
+        poll_data, polls, related_launch_ids, tag_ids, ...rest
+      } = data;
 
       // Ensure tag_ids is an array or undefined (not empty array)
-      const tagIds = rest.tag_ids && Array.isArray(rest.tag_ids) && rest.tag_ids.length > 0
-        ? rest.tag_ids
+      const tagIds = tag_ids && Array.isArray(tag_ids) && tag_ids.length > 0
+        ? tag_ids
         : undefined;
 
       // Keep is_featured, is_trending, and country_id as they need to be saved to database columns
@@ -462,6 +478,9 @@ export const dataProvider: DataProvider = {
         ...cleanRest,
         tag_ids: tagIds,
         metadata: Object.keys(metadata).length > 0 ? metadata : {},
+        summary: finalSummary,
+        polls: polls || (poll_data ? [poll_data] : []),
+        related_launch_ids,
       };
 
       // Include is_featured, is_trending, is_interview, and is_top_story if they exist
@@ -506,6 +525,12 @@ export const dataProvider: DataProvider = {
         finalData.country_id = Number(countryIdValue);
       }
 
+      // Only add sub_category_id if it's a valid number
+      const subCategoryIdValue = sub_category_id === '' || sub_category_id === null || sub_category_id === undefined ? null : sub_category_id;
+      if (subCategoryIdValue && !isNaN(Number(subCategoryIdValue)) && Number(subCategoryIdValue) > 0) {
+        finalData.sub_category_id = Number(subCategoryIdValue);
+      }
+
       data = finalData;
 
       // Final safety check: ensure author_id and category_id are not in the data if they're invalid
@@ -522,7 +547,7 @@ export const dataProvider: DataProvider = {
         if (typeof imageField === 'string' && imageField.trim() !== '') {
           return imageField.trim();
         }
-        
+
         // If it's a file upload (from ImageInput file picker)
         if (imageField && imageField.rawFile) {
           const formData = new FormData();
@@ -540,7 +565,7 @@ export const dataProvider: DataProvider = {
           if (uploadResponse.ok) {
             const uploadData = await uploadResponse.json();
             let uploadedUrl = uploadData.url;
-            
+
             // Clean the URL - remove any server IP addresses
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
@@ -552,21 +577,21 @@ export const dataProvider: DataProvider = {
             uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
-            
-            return (uploadedUrl.match(/^https?:\/\//)) 
-              ? uploadedUrl 
+
+            return (uploadedUrl.match(/^https?:\/\//))
+              ? uploadedUrl
               : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
           }
         }
-        
+
         // If it's an object with src property (from ImageInput displaying existing image)
         if (typeof imageField === 'object' && imageField !== null && imageField.src) {
           return imageField.src;
         }
-        
+
         // Return undefined for empty/null values
         return undefined;
       };
@@ -603,29 +628,29 @@ export const dataProvider: DataProvider = {
           const uploadData = await uploadResponse.json();
           // Use full URL for the image - check if it's already an absolute URL
           let uploadedUrl = uploadData.url;
-          
+
           // Aggressively clean the URL - remove any server IP addresses
           // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttps//domain
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
-          
+
           // Also handle cases where IP might be in the middle: http://IPhttps://domain
           uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
           uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
           uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
-          
+
           // Fix malformed URLs (missing colon in https://) - replace anywhere in string
           uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
           uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
-          
+
           // Remove any remaining IP addresses that might be prepended
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
-          
+
           // Only prepend API base URL if it's not already an absolute URL
-          data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 
-            ? uploadedUrl 
+          data.profile_image_url = (uploadedUrl.match(/^https?:\/\//))
+            ? uploadedUrl
             : `${getApiUrl()}${uploadedUrl}`;
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
@@ -641,6 +666,11 @@ export const dataProvider: DataProvider = {
     // Handle mission image uploads
     if (resource === 'mission_content') {
       const handleImageUpload = async (imageField: any, uploadEndpoint: string) => {
+        // If it's already a string URL (from TextInput), use it directly
+        if (typeof imageField === 'string' && imageField.trim() !== '') {
+          return imageField.trim();
+        }
+
         if (imageField && imageField.rawFile) {
           const formData = new FormData();
           formData.append('image', imageField.rawFile);
@@ -657,44 +687,37 @@ export const dataProvider: DataProvider = {
           if (uploadResponse.ok) {
             const uploadData = await uploadResponse.json();
             let uploadedUrl = uploadData.url;
-            
+
             // Aggressively clean the URL - remove any server IP addresses
-            // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttps//domain
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
-            
-            // Also handle cases where IP might be in the middle: http://IPhttps://domain
             uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
             uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
             uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
-            
-            // Fix malformed URLs (missing colon in https://) - replace anywhere in string
             uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
             uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
-            
-            // Remove any remaining IP addresses that might be prepended
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
-            
+
             // Only prepend API base URL if it's not already an absolute URL
-            return (uploadedUrl.match(/^https?:\/\//)) 
-              ? uploadedUrl 
+            return (uploadedUrl.match(/^https?:\/\//))
+              ? uploadedUrl
               : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
           }
-        } else if (typeof imageField === 'object' && imageField.src) {
+        } else if (typeof imageField === 'object' && imageField !== null && imageField.src) {
           return imageField.src;
         }
-        return imageField; // Already a string URL or undefined
+        return undefined;
       };
 
-      if (data.hero_background_image_url) {
+      if (data.hero_background_image_url !== undefined) {
         data.hero_background_image_url = await handleImageUpload(data.hero_background_image_url, 'mission');
       }
-      if (data.lander_image_url) {
+      if (data.lander_image_url !== undefined) {
         data.lander_image_url = await handleImageUpload(data.lander_image_url, 'mission');
       }
     }
@@ -743,12 +766,17 @@ export const dataProvider: DataProvider = {
     if (resource === 'mission_content') {
       const endpoint = getResourceEndpoint(resource);
       const url = `${getApiUrl()}/api/${endpoint}`;
-      
+
       // Handle file uploads
       let data = { ...params.data };
-      
+
       // Handle mission image uploads
       const handleImageUpload = async (imageField: any, uploadEndpoint: string) => {
+        // If it's already a string URL (from TextInput), use it directly
+        if (typeof imageField === 'string' && imageField.trim() !== '') {
+          return imageField.trim();
+        }
+
         if (imageField && imageField.rawFile) {
           const formData = new FormData();
           formData.append('image', imageField.rawFile);
@@ -765,34 +793,37 @@ export const dataProvider: DataProvider = {
           if (uploadResponse.ok) {
             const uploadData = await uploadResponse.json();
             let uploadedUrl = uploadData.url;
-            
-            // Remove any incorrectly prepended server IP first
+
+            // Aggressively clean the URL
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
-            
-            // Fix malformed URLs (missing colon in https://) - replace anywhere in string
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
+            uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
             uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
             uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
-            
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
+            uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
+
             // Only prepend API base URL if it's not already an absolute URL
-            return (uploadedUrl.match(/^https?:\/\//)) 
-              ? uploadedUrl 
+            return (uploadedUrl.match(/^https?:\/\//))
+              ? uploadedUrl
               : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
           }
-        } else if (typeof imageField === 'object' && imageField.src) {
+        } else if (typeof imageField === 'object' && imageField !== null && imageField.src) {
           return imageField.src;
         }
-        return imageField; // Already a string URL or undefined
+        return undefined;
       };
 
-      if (data.hero_background_image_url) {
+      if (data.hero_background_image_url !== undefined) {
         data.hero_background_image_url = await handleImageUpload(data.hero_background_image_url, 'mission');
       }
-      if (data.lander_image_url) {
+      if (data.lander_image_url !== undefined) {
         data.lander_image_url = await handleImageUpload(data.lander_image_url, 'mission');
       }
 
@@ -854,12 +885,23 @@ export const dataProvider: DataProvider = {
         }
       }
 
+      // Handle summary string to array conversion
+      let finalSummary = data.summary;
+      if (data.summary_string && typeof data.summary_string === 'string') {
+        finalSummary = data.summary_string.split('\n').map((s: string) => s.trim()).filter((s: string) => s !== '');
+      }
+
       // Remove custom fields and add metadata
-      const { is_breaking, is_developing, sub_category, summary, video_youtube_url, video_url, video_title, video_thumbnail, video_countdown_text, ...rest } = data;
+      const {
+        is_breaking, is_developing, sub_category, sub_category_id,
+        summary, summary_string, video_youtube_url, video_url,
+        video_title, video_thumbnail, video_countdown_text,
+        poll_data, polls, related_launch_ids, tag_ids, ...rest
+      } = data;
 
       // Ensure tag_ids is an array or undefined (not empty array)
-      const tagIds = rest.tag_ids && Array.isArray(rest.tag_ids) && rest.tag_ids.length > 0
-        ? rest.tag_ids
+      const tagIds = tag_ids && Array.isArray(tag_ids) && tag_ids.length > 0
+        ? tag_ids
         : undefined;
 
       // Keep is_featured, is_trending, and country_id as they need to be saved to database columns
@@ -869,6 +911,9 @@ export const dataProvider: DataProvider = {
         ...cleanRest,
         tag_ids: tagIds,
         metadata: Object.keys(metadata).length > 0 ? metadata : {},
+        summary: finalSummary,
+        polls: polls || (poll_data ? [poll_data] : []),
+        related_launch_ids,
       };
 
       // Include is_featured, is_trending, is_interview, and is_top_story if they exist
@@ -918,13 +963,24 @@ export const dataProvider: DataProvider = {
         }
       }
 
+      if (data.sub_category_id !== undefined) {
+        const subCategoryIdValue = data.sub_category_id === '' || data.sub_category_id === null || data.sub_category_id === undefined ? null : data.sub_category_id;
+        if (subCategoryIdValue && !isNaN(Number(subCategoryIdValue)) && Number(subCategoryIdValue) > 0) {
+          finalData.sub_category_id = Number(subCategoryIdValue);
+        } else {
+          finalData.sub_category_id = null;
+        }
+      }
+
+
+
       // Handle article image uploads (hero_image_url and featured_image_url)
       const handleArticleImageUpload = async (imageField: any) => {
         // If it's already a string URL (from TextInput), use it directly
         if (typeof imageField === 'string' && imageField.trim() !== '') {
           return imageField.trim();
         }
-        
+
         // If it's a file upload (from ImageInput file picker)
         if (imageField && imageField.rawFile) {
           const formData = new FormData();
@@ -942,7 +998,7 @@ export const dataProvider: DataProvider = {
           if (uploadResponse.ok) {
             const uploadData = await uploadResponse.json();
             let uploadedUrl = uploadData.url;
-            
+
             // Clean the URL - remove any server IP addresses
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
@@ -954,21 +1010,21 @@ export const dataProvider: DataProvider = {
             uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
             uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
-            
-            return (uploadedUrl.match(/^https?:\/\//)) 
-              ? uploadedUrl 
+
+            return (uploadedUrl.match(/^https?:\/\//))
+              ? uploadedUrl
               : `${getApiUrl()}${uploadedUrl}`;
           } else {
             const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));
             throw new Error(`Failed to upload image: ${errorData.error || uploadResponse.statusText}`);
           }
         }
-        
+
         // If it's an object with src property (from ImageInput displaying existing image)
         if (typeof imageField === 'object' && imageField !== null && imageField.src) {
           return imageField.src;
         }
-        
+
         // Return undefined for empty/null values
         return undefined;
       };
@@ -1022,29 +1078,29 @@ export const dataProvider: DataProvider = {
           const uploadData = await uploadResponse.json();
           // Use full URL for the image - check if it's already an absolute URL
           let uploadedUrl = uploadData.url;
-          
+
           // Aggressively clean the URL - remove any server IP addresses
           // Pattern: http://IP_ADDRESShttps://domain or http://IP_ADDRESShttps//domain
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(https?\/\/)/, 'https://');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d.]+(http?\/\/)/, 'http://');
-          
+
           // Also handle cases where IP might be in the middle: http://IPhttps://domain
           uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?:\/\/)/, '$2');
           uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(https?\/\/)/, 'https://');
           uploadedUrl = uploadedUrl.replace(/(https?:\/\/)[\d.]+(http?\/\/)/, 'http://');
-          
+
           // Fix malformed URLs (missing colon in https://) - replace anywhere in string
           uploadedUrl = uploadedUrl.replace(/https\/\//g, 'https://');
           uploadedUrl = uploadedUrl.replace(/http\/\//g, 'http://');
-          
+
           // Remove any remaining IP addresses that might be prepended
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?:\/\/)/, '$1');
           uploadedUrl = uploadedUrl.replace(/^https?:\/\/[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}(https?\/\/)/, 'https://');
-          
+
           // Only prepend API base URL if it's not already an absolute URL
-          data.profile_image_url = (uploadedUrl.match(/^https?:\/\//)) 
-            ? uploadedUrl 
+          data.profile_image_url = (uploadedUrl.match(/^https?:\/\//))
+            ? uploadedUrl
             : `${getApiUrl()}${uploadedUrl}`;
         } else {
           const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }));

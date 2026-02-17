@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import CommentItem from '../components/CommentItem';
+import PollCard from '../components/PollCard';
 import { useAuth } from '../contexts/AuthContext';
 import RedDotLoader from '../components/common/RedDotLoader';
 
@@ -11,6 +11,7 @@ const LaunchNewsDetail = () => {
   const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { setSectionNav } = useOutletContext();
   const { user } = useAuth();
   const [article, setArticle] = useState(null);
   const [relatedArticles, setRelatedArticles] = useState([]);
@@ -19,7 +20,7 @@ const LaunchNewsDetail = () => {
   const [currentTime, setCurrentTime] = useState('');
   const [authorImageError, setAuthorImageError] = useState(false);
   const [highlightedWord, setHighlightedWord] = useState(null);
-  
+
   // Comments state
   const [comments, setComments] = useState([]);
   const [commentSort, setCommentSort] = useState('newest');
@@ -66,7 +67,7 @@ const LaunchNewsDetail = () => {
   const fetchArticle = async () => {
     try {
       const articleRes = await axios.get(`${API_URL}/api/news/${slug}`);
-      
+
       if (!articleRes.data) {
         setArticle(null);
         setRelatedArticles([]);
@@ -75,14 +76,14 @@ const LaunchNewsDetail = () => {
       }
 
       setArticle(articleRes.data);
-      
+
       try {
-        const relatedRes = await axios.get(`${API_URL}/api/news`, { 
-          params: { 
-            limit: 4, 
+        const relatedRes = await axios.get(`${API_URL}/api/news`, {
+          params: {
+            limit: 4,
             status: 'published',
             category: 'launch'
-          } 
+          }
         });
         const relatedData = Array.isArray(relatedRes.data) ? relatedRes.data : relatedRes.data?.data || [];
         const filteredRelated = relatedData.filter(a => a.id !== articleRes.data.id && a.slug !== slug);
@@ -91,7 +92,7 @@ const LaunchNewsDetail = () => {
         console.error('Error fetching related articles:', relatedError);
         setRelatedArticles([]);
       }
-      
+
       try {
         const launchesRes = await axios.get(`${API_URL}/api/launches?limit=3&offset=0`);
         const launchesData = Array.isArray(launchesRes.data) ? launchesRes.data : launchesRes.data?.data || [];
@@ -112,7 +113,7 @@ const LaunchNewsDetail = () => {
 
   const fetchComments = async () => {
     if (!article?.id) return;
-    
+
     setCommentsLoading(true);
     try {
       const response = await axios.get(`${API_URL}/api/news/${article.id}/comments`, {
@@ -190,9 +191,9 @@ const LaunchNewsDetail = () => {
           <div className="flex items-center gap-3">
             <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
               <div className="w-14 h-14 bg-black flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/TLP Helmet.png" 
-                  alt="TLP Logo" 
+                <img
+                  src="/TLP Helmet.png"
+                  alt="TLP Logo"
                   className="w-10 h-10 object-contain"
                 />
               </div>
@@ -215,7 +216,7 @@ const LaunchNewsDetail = () => {
               };
               const route = categorySlugMap[cat] || '/news';
               const isActive = cat === 'LAUNCH' || article?.category_name === cat;
-              
+
               return (
                 <div key={cat} className="flex items-center">
                   {idx > 0 && <span className="mx-1 font-bold text-white">|</span>}
@@ -240,20 +241,25 @@ const LaunchNewsDetail = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, [article?.category_name, currentTime]);
+
   if (loading) {
     return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
   }
 
   if (!article) {
     return (
-      <Layout sectionNav={sectionNav}>
+      <>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Article Not Found</h1>
           <Link to="/launches/news" className="text-newstheme hover:text-newstheme/80" style={{ color: '#fa9a00' }}>
             Return to Launch News
           </Link>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -261,11 +267,11 @@ const LaunchNewsDetail = () => {
   const shareText = `${article.title} - ${article.excerpt || ''}`;
 
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       {/* Top Banner - MISSION CANCELLED */}
       {article.breaking_news && (
         <div className="relative w-full h-64 bg-black overflow-hidden mb-6">
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center opacity-30"
             style={{
               backgroundImage: `url(${article.featured_image_url || 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop'})`,
@@ -301,9 +307,9 @@ const LaunchNewsDetail = () => {
                   <div className="absolute top-8 sm:top-10 left-12 sm:left-14 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
                   <div className="absolute top-8 sm:top-10 right-4 sm:right-5 bottom-4 sm:bottom-5 w-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
                   <div className="absolute bottom-4 sm:bottom-5 left-4 sm:left-5 right-4 sm:right-5 h-0.5 bg-[#8B1A1A] z-30 pointer-events-none"></div>
-                  
+
                   {/* Background Image */}
-                  <div 
+                  <div
                     className="absolute top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
                     style={{
                       backgroundImage: `url('${article.video.thumbnail || article.featured_image_url || 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1200&h=800&fit=crop'}')`,
@@ -312,13 +318,13 @@ const LaunchNewsDetail = () => {
                     }}
                   >
                     <div className="absolute top-0 left-0 w-full h-full bg-black/85 z-10"></div>
-                    
+
                     {/* Branding - Top Left */}
                     <div className="absolute top-0 left-4 sm:left-5 z-20 flex items-center gap-2 sm:gap-3">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black flex items-center justify-center overflow-hidden">
-                        <img 
-                          src="/TLP Helmet.png" 
-                          alt="TLP Logo" 
+                        <img
+                          src="/TLP Helmet.png"
+                          alt="TLP Logo"
                           className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
                         />
                       </div>
@@ -337,7 +343,7 @@ const LaunchNewsDetail = () => {
                           <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-none drop-shadow-lg" style={{ fontFamily: 'Nasalization, sans-serif' }}>
                             {article.video.title}
                           </div>
-                          
+
                           {/* Rectangular Play Button */}
                           <button
                             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-12 sm:w-24 sm:h-14 md:w-28 md:h-16 bg-black/80 hover:bg-black/90 flex items-center justify-center shadow-lg backdrop-blur-sm transition-all cursor-pointer z-40"
@@ -345,16 +351,16 @@ const LaunchNewsDetail = () => {
                             aria-label="Play video"
                           >
                             <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
+                              <path d="M8 5v14l11-7z" />
                             </svg>
                           </button>
                         </div>
 
                         {/* Countdown to Launch - Under Title */}
                         <div className="mt-4 sm:mt-6 z-20 relative">
-                          <div 
+                          <div
                             className="bg-[#8B1A1A] px-6 sm:px-8 md:px-10 py-2 sm:py-2.5 text-white text-sm sm:text-base md:text-lg font-bold uppercase text-center tracking-wider"
-                            style={{ 
+                            style={{
                               fontFamily: 'Nasalization, sans-serif',
                               clipPath: 'polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)',
                               boxShadow: '0 0 10px rgba(139, 26, 26, 0.5)'
@@ -374,38 +380,47 @@ const LaunchNewsDetail = () => {
             <div className="bg-[#121212] p-6 mt-6">
               <div
                 className="prose prose-invert max-w-none text-white text-base leading-relaxed"
-                dangerouslySetInnerHTML={{ 
-                  __html: article.content 
+                dangerouslySetInnerHTML={{
+                  __html: article.content
                     ? article.content.split('\n\n').map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`).join('')
                     : article.body || '<p>No content available.</p>'
                 }}
                 style={{ color: 'white' }}
               />
 
+              {/* Polls Section */}
+              {article.polls && article.polls.length > 0 && (
+                <div className="mt-8">
+                  {article.polls.map((poll) => (
+                    <PollCard key={poll.id} poll={poll} />
+                  ))}
+                </div>
+              )}
+
               {/* Tags */}
               <div className="flex gap-2 mt-8 flex-wrap">
                 {article.tags && Array.isArray(article.tags) && article.tags.length > 0
                   ? article.tags.map((tag, idx) => {
-                      const tagName = typeof tag === 'string' ? tag : tag.name || tag.slug?.toUpperCase();
-                      const tagSlug = typeof tag === 'string' ? tag.toLowerCase().replace(/\s+/g, '-') : (tag.slug || tag.name?.toLowerCase().replace(/\s+/g, '-'));
-                      return (
-                        <Link
-                          key={idx}
-                          to={`/news?tag=${encodeURIComponent(tagSlug)}`}
-                          className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold uppercase hover:bg-yellow-600 transition-colors cursor-pointer"
-                        >
-                          {tagName}
-                        </Link>
-                      );
-                    })
-                  : article.category_name && (
+                    const tagName = typeof tag === 'string' ? tag : tag.name || tag.slug?.toUpperCase();
+                    const tagSlug = typeof tag === 'string' ? tag.toLowerCase().replace(/\s+/g, '-') : (tag.slug || tag.name?.toLowerCase().replace(/\s+/g, '-'));
+                    return (
                       <Link
-                        to={`/news?category=${encodeURIComponent(article.category_name.toLowerCase().replace(/\s+/g, '-'))}`}
+                        key={idx}
+                        to={`/news?tag=${encodeURIComponent(tagSlug)}`}
                         className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold uppercase hover:bg-yellow-600 transition-colors cursor-pointer"
                       >
-                        {article.category_name}
+                        {tagName}
                       </Link>
-                    )
+                    );
+                  })
+                  : article.category_name && (
+                    <Link
+                      to={`/news?category=${encodeURIComponent(article.category_name.toLowerCase().replace(/\s+/g, '-'))}`}
+                      className="bg-yellow-500 text-black px-4 py-2 text-sm font-semibold uppercase hover:bg-yellow-600 transition-colors cursor-pointer"
+                    >
+                      {article.category_name}
+                    </Link>
+                  )
                 }
               </div>
             </div>
@@ -442,7 +457,7 @@ const LaunchNewsDetail = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="mb-3">
                       <h3 className="text-xl font-bold inline text-[#8B1A1A] uppercase tracking-wide">
@@ -511,9 +526,9 @@ const LaunchNewsDetail = () => {
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center shrink-0 border border-[#383838]">
                           {user.profile_image_url ? (
-                            <img 
-                              src={user.profile_image_url} 
-                              alt={user.username} 
+                            <img
+                              src={user.profile_image_url}
+                              alt={user.username}
                               className="w-full h-full rounded-full object-cover"
                             />
                           ) : (
@@ -544,9 +559,9 @@ const LaunchNewsDetail = () => {
                     <div className="flex items-start gap-4 mb-4">
                       <div className="w-10 h-10 rounded-full bg-[#222222] flex items-center justify-center shrink-0 border border-[#383838]">
                         {user.profile_image_url ? (
-                          <img 
-                            src={user.profile_image_url} 
-                            alt={user.username} 
+                          <img
+                            src={user.profile_image_url}
+                            alt={user.username}
                             className="w-full h-full rounded-full object-cover"
                           />
                         ) : (
@@ -598,31 +613,28 @@ const LaunchNewsDetail = () => {
               <div className="flex items-center justify-end gap-4 mb-4 pb-4 border-b border-[#222222]">
                 <button
                   onClick={() => setCommentSort('best')}
-                  className={`text-sm transition-colors px-1 pb-1 ${
-                    commentSort === 'best'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'best'
+                    ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   Best
                 </button>
                 <button
                   onClick={() => setCommentSort('newest')}
-                  className={`text-sm transition-colors px-1 pb-1 ${
-                    commentSort === 'newest'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'newest'
+                    ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   Newest
                 </button>
                 <button
                   onClick={() => setCommentSort('oldest')}
-                  className={`text-sm transition-colors px-1 pb-1 ${
-                    commentSort === 'oldest'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'oldest'
+                    ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   Oldest
                 </button>
@@ -664,12 +676,12 @@ const LaunchNewsDetail = () => {
               </button>
               <button className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                 </svg>
               </button>
               <button className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
                 </svg>
               </button>
               <button className="w-10 h-10 rounded-full bg-[#8B1A1A] flex items-center justify-center hover:opacity-90 text-white transition-opacity">
@@ -762,7 +774,7 @@ const LaunchNewsDetail = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -3,6 +3,18 @@ import axios from 'axios';
 import API_URL from '../config/api';
 import { buildLaunchFilters } from '../utils/filters';
 
+const REGION_COUNTRY_MAP = {
+  AMERICA: { code: 'US', name: 'United States' },
+  CANADA: { code: 'CA', name: 'Canada' },
+  EUROPE: { code: 'FR,DE,IT,ES,GB,SE,NO', name: null },
+  RUSSIA: { code: 'RU', name: 'Russia' },
+  CHINA: { code: 'CN', name: 'China' },
+  INDIA: { code: 'IN', name: 'India' },
+  ASIA: { code: 'JP,KR', name: null },
+  'DOWN UNDER': { code: 'AU', name: 'Australia' },
+  OTHER: { code: null, name: null },
+};
+
 /**
  * Custom hook for managing launch data fetching and filtering
  * @param {string} type - 'upcoming' or 'previous'
@@ -48,25 +60,12 @@ export function useLaunchData(type = 'upcoming') {
 
       // Add region filter (map to country codes/names)
       if (regionFilter !== 'ALL') {
-        const regionCountryMap = {
-          AMERICA: { code: 'US', name: 'United States' },
-          CANADA: { code: 'CA', name: 'Canada' },
-          EUROPE: { code: null, name: null },
-          RUSSIA: { code: 'RU', name: 'Russia' },
-          CHINA: { code: 'CN', name: 'China' },
-          INDIA: { code: 'IN', name: 'India' },
-          'DOWN UNDER': { code: 'AU', name: 'Australia' },
-          OTHER: { code: null, name: null },
-        };
-        
-        const countryInfo = regionCountryMap[regionFilter];
+        const countryInfo = REGION_COUNTRY_MAP[regionFilter];
         if (countryInfo) {
           if (countryInfo.code) {
             filterParams.country__code = countryInfo.code;
           } else if (countryInfo.name) {
             filterParams.country__name = countryInfo.name;
-          } else if (regionFilter === 'EUROPE') {
-            filterParams.country__code = 'FR,DE,IT,ES,GB,SE,NO';
           }
         }
       }
@@ -117,7 +116,7 @@ export function useLaunchData(type = 'upcoming') {
     }
   };
 
-  // Fetch hero launch (unfiltered by search, always the first launch)
+  // Fetch hero launch (unfiltered by search; respects region and hideTBD)
   const fetchHeroLaunch = async () => {
     try {
       const filterParams = buildLaunchFilters({
@@ -133,6 +132,13 @@ export function useLaunchData(type = 'upcoming') {
       } else if (type === 'previous') {
         filterParams.net__lt = now;
         delete filterParams.net__gte;
+      }
+
+      // Apply same region filter so hero matches the list
+      if (regionFilter !== 'ALL') {
+        const countryInfo = REGION_COUNTRY_MAP[regionFilter];
+        if (countryInfo?.code) filterParams.country__code = countryInfo.code;
+        else if (countryInfo?.name) filterParams.country__name = countryInfo.name;
       }
 
       // Hide TBD filter (but not search or other filters for hero)

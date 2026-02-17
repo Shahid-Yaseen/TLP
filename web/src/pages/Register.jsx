@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
 import RedDotLoader from '../components/common/RedDotLoader';
 
 const Register = () => {
@@ -61,7 +60,7 @@ const Register = () => {
   };
 
   return (
-    <Layout>
+    <>
       {loading && <RedDotLoader fullScreen={true} size="large" />}
       <div className="min-h-screen flex items-center justify-center px-6 py-12">
         <div className="max-w-md w-full">
@@ -169,7 +168,7 @@ const Register = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

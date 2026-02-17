@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Layout from '../components/Layout';
 import AdvancedOrbitScene from '../components/orbit/AdvancedOrbitScene';
 import SatelliteFilters from '../components/orbit/SatelliteFilters';
 import SatelliteStatistics from '../components/orbit/SatelliteStatistics';
@@ -161,7 +160,7 @@ const AdvancedOrbitNavigator = () => {
   }, []);
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-black text-white relative" style={{ fontFamily: 'Nasalization, sans-serif' }}>
         <div className="relative" style={{ height: 'calc(100vh - 50px)' }}>
           {/* Title Header - Positioned below Layout header */}
@@ -232,7 +231,7 @@ const AdvancedOrbitNavigator = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

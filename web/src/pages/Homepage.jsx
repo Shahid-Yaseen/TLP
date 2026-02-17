@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import LaunchCard from '../components/LaunchCard';
 import ArticleCard from '../components/ArticleCard';
 import RecoveryBadge from '../components/RecoveryBadge';
@@ -66,7 +65,7 @@ const Homepage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Create axios instance with longer timeout
       const apiClient = axios.create({
         baseURL: API_URL,
@@ -137,7 +136,14 @@ const Homepage = () => {
       // Handle articles response
       if (articlesRes.status === 'fulfilled') {
         const articlesData = articlesRes.value.data?.data || articlesRes.value.data || [];
-        setArticles(Array.isArray(articlesData) ? articlesData : []);
+        const articlesArray = Array.isArray(articlesData) ? articlesData : [];
+
+        // Deduplicate articles by ID to prevent showing same article multiple times
+        const uniqueArticles = Array.from(
+          new Map(articlesArray.map(article => [article.id, article])).values()
+        );
+
+        setArticles(uniqueArticles);
       } else {
         console.warn('Failed to fetch articles:', articlesRes.reason?.message);
         setArticles([]);
@@ -346,7 +352,7 @@ const Homepage = () => {
   };
 
   return (
-    <Layout>
+    <>
       {/* Hero Section */}
       <div className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
@@ -642,7 +648,7 @@ const Homepage = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -112,11 +112,62 @@ router.post('/', authenticate, role('admin'), asyncHandler(async (req, res) => {
     metadata
   } = req.body;
 
-  if (!first_name || !last_name || !full_name) {
+  // Validate: either full_name OR (first_name AND last_name) must be provided
+  if (!full_name && (!first_name || !last_name)) {
     return res.status(400).json({
-      error: 'Missing required fields: first_name, last_name, full_name',
+      error: 'Must provide either full_name OR both first_name and last_name',
       code: 'VALIDATION_ERROR'
     });
+  }
+
+  // Auto-generate full_name if not provided
+  let finalFullName = full_name;
+  if (!finalFullName && first_name && last_name) {
+    finalFullName = `${first_name} ${last_name}`;
+  }
+
+  // Auto-generate first_name and last_name if not provided but full_name is
+  let finalFirstName = first_name;
+  let finalLastName = last_name;
+  if (!finalFirstName && !finalLastName && finalFullName) {
+    const nameParts = finalFullName.trim().split(/\s+/);
+    if (nameParts.length >= 2) {
+      finalFirstName = nameParts[0];
+      finalLastName = nameParts.slice(1).join(' ');
+    } else {
+      // Single name - use as both first and last
+      finalFirstName = nameParts[0];
+      finalLastName = nameParts[0];
+    }
+  }
+
+  // Validate coordinates format if provided
+  if (coordinates) {
+    if (typeof coordinates === 'object' && !Array.isArray(coordinates)) {
+      // Object format: must have lat and lng
+      if (!coordinates.lat || !coordinates.lng) {
+        return res.status(400).json({
+          error: 'Coordinates must be in format {lat: number, lng: number}',
+          code: 'VALIDATION_ERROR'
+        });
+      }
+      // Validate ranges
+      if (Math.abs(coordinates.lat) > 90 || Math.abs(coordinates.lng) > 180) {
+        return res.status(400).json({
+          error: 'Coordinates out of valid range (lat: -90 to 90, lng: -180 to 180)',
+          code: 'VALIDATION_ERROR'
+        });
+      }
+    } else if (Array.isArray(coordinates) && coordinates.length >= 2) {
+      // Array format: convert to object
+      const [lat, lng] = coordinates;
+      if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        return res.status(400).json({
+          error: 'Coordinates out of valid range (lat: -90 to 90, lng: -180 to 180)',
+          code: 'VALIDATION_ERROR'
+        });
+      }
+    }
   }
 
   const { rows } = await pool.query(`
@@ -126,9 +177,9 @@ router.post('/', authenticate, role('admin'), asyncHandler(async (req, res) => {
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     RETURNING *
   `, [
-    first_name,
-    last_name,
-    full_name,
+    finalFirstName,
+    finalLastName,
+    finalFullName,
     location || null,
     category || null,
     title || null,
@@ -153,7 +204,7 @@ router.patch('/:id', authenticate, role('admin'), asyncHandler(async (req, res) 
   ];
 
   const updates = Object.keys(req.body).filter(key => allowedFields.includes(key));
-  
+
   if (updates.length === 0) {
     return res.status(400).json({ error: 'No valid fields to update', code: 'VALIDATION_ERROR' });
   }

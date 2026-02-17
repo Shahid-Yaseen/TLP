@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import RedDotLoader from '../components/common/RedDotLoader';
 
 const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => {
   const navigate = useNavigate();
+  const { setSectionNav } = useOutletContext();
   const [articles, setArticles] = useState([]);
   const [featuredArticle, setFeaturedArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -174,12 +174,17 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, [categoryName, currentTime]);
+
   if (loading) {
     return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
   }
 
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       <div className="w-full px-6 pt-[2px] pb-[2px]">
         {/* Category Header */}
         <div className="flex items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-6">
@@ -311,7 +316,7 @@ const CategoryNews = ({ categoryName, categorySlug, routePrefix = '/news' }) => 
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

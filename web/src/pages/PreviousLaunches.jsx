@@ -232,130 +232,6 @@ function PreviousLaunches() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      {/* Top Header Bar */}
-      <div className="bg-black border-b border-gray-800">
-        <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-1.5 sm:py-2">
-          <div className="flex items-center justify-between">
-            {/* Desktop View */}
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-400 w-full justify-between">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="hover:text-white transition-colors">TLP Network Inc.</Link>
-            <span>|</span>
-            <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-            <span>|</span>
-            <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
-            <span>|</span>
-            <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
-                <span className="hidden lg:inline">|</span>
-                <Link to="/spacebase" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
-                <span className="hidden xl:inline">|</span>
-                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hidden xl:inline hover:text-white transition-colors">SHOP</a>
-                <span className="hidden xl:inline">|</span>
-                <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
-            <span>|</span>
-            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
-            <span>|</span>
-            {isAuthenticated ? (
-              <div className="relative ml-2" ref={profileMenuRef}>
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 hover:text-white transition-colors"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span className="text-gray-400">{user?.full_name || user?.email || user?.username || 'PROFILE'}</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`h-4 w-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-black border border-gray-800 rounded shadow-lg z-50">
-                    <Link
-                      to="/profile"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="block px-4 py-2 text-sm text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
-                    >
-                      Profile
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        logout();
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link to="/login" className="hover:text-white transition-colors ml-2">LOGIN</Link>
-            )}
-          </div>
-            </div>
-
-            {/* Mobile View - Hamburger Menu */}
-            <div className="md:hidden w-full flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-              </div>
-              <button
-                onClick={() => setTopMenuOpen(!topMenuOpen)}
-                className="text-white p-2 focus:outline-none"
-                aria-label="Toggle menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {topMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {topMenuOpen && (
-            <div className="md:hidden mt-3 pb-2 border-t border-gray-700 pt-3">
-              <div className="flex flex-col gap-3 text-xs text-gray-400">
-                <Link to="/news" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP SPACE NEWS</Link>
-                <Link to="/mission" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP MISSION</Link>
-                <Link to="/spacebase" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
-                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SHOP</a>
-                <Link to="/navigator/advanced" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">3D ORBIT NAVIGATOR</Link>
-                <div className="border-t border-gray-700 pt-3 mt-1">
-                  <Link to="/about" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">ABOUT US</Link>
-                  <Link to="/support" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">SUPPORT</Link>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Main Navigation Bar */}
       <div className="bg-[#8B1A1A] border-t-2 border-white">
         <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0 bg-[#8B1A1A]">
@@ -760,7 +636,7 @@ function PreviousLaunches() {
         <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
             <div className="flex flex-wrap gap-1 w-full sm:w-auto">
-            {['ALL', 'CANADA', 'AMERICA', 'EUROPE', 'DOWN UNDER', 'INDIA', 'RUSSIA', 'CHINA', 'OTHER'].map((region) => (
+            {['ALL', 'CANADA', 'AMERICA', 'EUROPE', 'DOWN UNDER', 'INDIA', 'RUSSIA', 'CHINA', 'ASIA', 'OTHER'].map((region) => (
               <button
                 key={region}
                 onClick={() => setRegionFilter(region)}
@@ -900,41 +776,64 @@ function PreviousLaunches() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {monthLaunches.map((launch) => {
                 const borderColor = getStatusBarColor(launch);
-                
                 const launchImageUrl = getLaunchImageUrl(launch);
-                
+                const launchDate = launch.launch_date || launch.net;
+                const row5Text = launch.outcome
+                  ? String(launch.outcome).toUpperCase().replace(/-/g, ' ')
+                  : (launchDate
+                    ? new Date(launchDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '—');
+
                 return (
                   <Link
                     key={launch.id || launch.external_id || Math.random()}
-                    to={`/launches/${launch.id}`}
+                    to={`/launches/${getLaunchSlug(launch)}`}
                     className="block bg-gray-900 rounded overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
                     style={{ minHeight: '180px' }}
                   >
-                    <div 
+                    <div
                       className="absolute inset-0 bg-cover bg-center"
-                      style={{ 
+                      style={{
                         backgroundImage: `url('${launchImageUrl}')`,
                         opacity: launchImageUrl === HERO_BG_IMAGE ? 0.08 : 0.6
                       }}
-                    ></div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-gray-900/55 to-black/60"></div>
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${borderColor}`}></div>
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-gray-900/55 to-black/60" />
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${borderColor}`} />
 
-                    <div className="relative z-10 p-4 h-full flex flex-col justify-center items-center text-center">
-                      <div>
-                        <div className="text-[9px] text-gray-400 mb-2 font-bold uppercase tracking-widest">
-                          {launch.provider || launch.provider_abbrev || 'Provider'}
-                        </div>
-                        <h3 className="text-base font-bold mb-2 leading-tight tracking-tight text-white uppercase">
-                          {(launch.name || 'Launch Name').toUpperCase()}
-                        </h3>
-                        <div className="mb-2">
-                          <RecoveryBadge launch={launch} />
-                        </div>
-                        <p className="text-xs text-gray-400 leading-snug normal-case">
-                          {launch.provider || launch.provider_abbrev || ''} {launch.rocket || ''} | {launch.site || launch.site_name || 'Location TBD'}
+                    <div className="relative z-10 p-4 h-full flex flex-col justify-center text-center">
+                      {/* Row 1: Date / Time */}
+                      {launchDate && (
+                        <p className="text-[10px] text-gray-400 leading-tight normal-case mb-1">
+                          {new Date(launchDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {' at '}
+                          {new Date(launchDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()}
                         </p>
+                      )}
+
+                      {/* Row 2: Company */}
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">
+                        {launch.provider || launch.provider_abbrev || 'Provider'}
+                      </p>
+
+                      {/* Row 3: Rocket Name | Mission Name */}
+                      <p className="text-xs text-gray-300 leading-tight normal-case mb-1">
+                        {launch.rocket || 'Rocket'} | {(launch.name || 'Mission').toUpperCase()}
+                      </p>
+
+                      {/* Row 4: Launch Site */}
+                      <p className="text-[10px] text-gray-400 leading-tight normal-case mb-2">
+                        {launch.site || launch.site_name || 'Location TBD'}
+                      </p>
+
+                      <div className="mb-2">
+                        <RecoveryBadge launch={launch} />
                       </div>
+
+                      {/* Row 5: Outcome or formatted date */}
+                      <p className="text-xs font-semibold text-white uppercase tracking-wide">
+                        {row5Text}
+                      </p>
                     </div>
                   </Link>
                 );

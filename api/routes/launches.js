@@ -65,8 +65,17 @@ function buildFilters(query) {
 
   // Basic filters
   if (query.id) addFilter('launches.id', parseInt(query.id));
+  if (query.ids) {
+    addInFilter('launches.id', query.ids);
+  }
   if (query.slug) addFilter('launches.slug', query.slug);
-  if (query.name) addContains('launches.name', query.name);
+  const searchName = query.name || query.q || query.search;
+  if (searchName) {
+    // Broaden search: mission name, provider, rocket, launch site
+    filters.push(`(launches.name ILIKE $${paramCount} OR providers.name ILIKE $${paramCount} OR rockets.name ILIKE $${paramCount} OR launch_sites.name ILIKE $${paramCount})`);
+    args.push(`%${searchName}%`);
+    paramCount++;
+  }
   if (query.serial_number) addFilter('launches.serial_number', query.serial_number);
   if (query.launch_designator) addFilter('launches.launch_designator', query.launch_designator);
   if (query.video_url) addFilter('launches.video_url', query.video_url);
@@ -300,9 +309,13 @@ function buildFilters(query) {
     // This would require celestial body relationship on launch sites
   }
 
-  // Country filters
+  // Country filters (include launch_sites.country text for sites without country_id)
   if (query.country__id) addFilter('countries.id', parseInt(query.country__id));
-  if (query.country__name) addContains('countries.name', query.country__name);
+  if (query.country__name) {
+    filters.push(`(countries.name ILIKE $${paramCount} OR launch_sites.country ILIKE $${paramCount})`);
+    args.push(`%${query.country__name}%`);
+    paramCount++;
+  }
   if (query.country__code) {
     // Support comma-separated country codes (e.g., 'FR,DE,IT')
     if (query.country__code.includes(',')) {

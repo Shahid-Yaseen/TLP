@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../../components/Layout';
 import AstronautCard from '../../components/AstronautCard';
-
 import API_URL from '../../config/api';
 
 const AstronautsList = () => {
+  const { setSectionNav } = useOutletContext();
   const [astronauts, setAstronauts] = useState([]);
   const [filteredAstronauts, setFilteredAstronauts] = useState([]);
   const [featuredAstronaut, setFeaturedAstronaut] = useState(null);
@@ -123,8 +122,13 @@ const AstronautsList = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, []);
+
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       {/* Sub-navigation */}
       <div className="bg-black border-b border-gray-800 py-2">
         <div className="max-w-7xl mx-auto px-6 flex items-center gap-4 text-sm">
@@ -233,7 +237,7 @@ const AstronautsList = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

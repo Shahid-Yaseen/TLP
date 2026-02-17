@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../../components/Layout';
-
 import API_URL from '../../config/api';
 
 const PadsList = () => {
+  const { setSectionNav } = useOutletContext();
   const [pads, setPads] = useState([]);
   const [filteredPads, setFilteredPads] = useState([]);
   const [sites, setSites] = useState([]);
@@ -87,8 +86,13 @@ const PadsList = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, []);
+
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Filters */}
         <div className="bg-black border-b border-gray-800 py-4 mb-8">
@@ -131,7 +135,7 @@ const PadsList = () => {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

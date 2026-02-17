@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../../components/Layout';
-
 import API_URL from '../../config/api';
 
 const EnginesList = () => {
+  const { setSectionNav } = useOutletContext();
   const [engines, setEngines] = useState([]);
   const [filteredEngines, setFilteredEngines] = useState([]);
   const [agencies, setAgencies] = useState([]);
@@ -88,18 +87,23 @@ const EnginesList = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, []);
+
   if (loading) {
     return (
-      <Layout sectionNav={sectionNav}>
+      <>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center text-gray-400">
           Loading engines...
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Filters */}
         <div className="bg-black border-b border-gray-800 py-4 mb-8">
@@ -164,7 +168,7 @@ const EnginesList = () => {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

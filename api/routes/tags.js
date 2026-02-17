@@ -17,17 +17,27 @@ const pool = getPool();
  * Get all article tags (supports ids, limit, offset for admin dataProvider)
  */
 router.get('/', optionalAuth, asyncHandler(async (req, res) => {
-  const { ids, limit, offset } = req.query;
+  const { ids, limit, offset, q } = req.query;
   let sql = 'SELECT * FROM article_tags';
   const params = [];
   let paramCount = 1;
+  const filters = [];
 
   if (ids) {
     const idList = ids.split(',').map((id) => parseInt(id.trim(), 10)).filter((id) => !isNaN(id));
     if (idList.length > 0) {
-      sql += ` WHERE id = ANY($${paramCount++}::int[])`;
+      filters.push(`id = ANY($${paramCount++}::int[])`);
       params.push(idList);
     }
+  }
+
+  if (q) {
+    filters.push(`name ILIKE $${paramCount++}`);
+    params.push(`%${q}%`);
+  }
+
+  if (filters.length > 0) {
+    sql += ` WHERE ${filters.join(' AND ')}`;
   }
 
   sql += ' ORDER BY name ASC';
@@ -43,12 +53,14 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
 
   if (limit !== undefined && offset !== undefined) {
     let countSql = 'SELECT COUNT(*) FROM article_tags';
-    const countParams = [];
-    if (ids && params.length > 0) {
-      countSql = 'SELECT COUNT(*) FROM article_tags WHERE id = ANY($1::int[])';
-      countParams.push(params[0]);
+    if (filters.length > 0) {
+      countSql += ` WHERE ${filters.join(' AND ').replace(/\$\d+/g, (match) => {
+        // This is a bit complex due to param mapping, 
+        // but since we only care about the count, we can just use the same params
+        return match;
+      })}`;
     }
-    const countResult = await pool.query(countSql, countParams);
+    const countResult = await pool.query(countSql, params.slice(0, filters.length));
     const total = parseInt(countResult.rows[0].count, 10);
     return res.json({ data: rows, total });
   }

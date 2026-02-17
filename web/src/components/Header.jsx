@@ -39,23 +39,28 @@ const Header = ({ sectionNav = null }) => {
     };
   }, [showProfileMenu]);
 
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/' || location.pathname === '/home';
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <>
       {/* Top Header Bar */}
       <div className="bg-black border-b-2 border-white">
         <div className="max-w-full mx-auto px-6 py-2 flex justify-between items-center text-xs text-white">
           <div className="flex items-center gap-2">
-            <Link to="/" className="hover:text-gray-300 transition-colors">
+            <Link to="/" className={`hover:text-gray-300 transition-colors ${isActive('/') ? 'text-white font-bold' : 'text-gray-400'}`}>
               TLP Network Inc.
             </Link>
             <span className="text-gray-500">|</span>
-            <Link to="/launches" className="hover:text-gray-300 transition-colors">LAUNCH CENTER</Link>
+            <Link to="/launches/upcoming" className={`hover:text-gray-300 transition-colors ${isActive('/launches') ? 'text-white font-bold' : 'text-gray-400'}`}>LAUNCH CENTER</Link>
             <span className="text-gray-500">|</span>
-            <Link to="/news" className="hover:text-gray-300 transition-colors">TLP SPACE NEWS</Link>
+            <Link to="/news" className={`hover:text-gray-300 transition-colors ${isActive('/news') ? 'text-white font-bold' : 'text-gray-400'}`}>TLP SPACE NEWS</Link>
             <span className="text-gray-500">|</span>
-            <Link to="/mission" className="hover:text-gray-300 transition-colors">TLP MISSION</Link>
+            <Link to="/mission" className={`hover:text-gray-300 transition-colors ${isActive('/mission') ? 'text-white font-bold' : 'text-gray-400'}`}>TLP MISSION</Link>
             <span className="text-gray-500">|</span>
-            <Link to="/spacebase" className="hover:text-gray-300 transition-colors">SPACEBASE</Link>
+            <Link to="/spacebase" className={`hover:text-gray-300 transition-colors ${isActive('/spacebase') ? 'text-white font-bold' : 'text-gray-400'}`}>SPACEBASE</Link>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/about" className="hover:text-gray-300 transition-colors">ABOUT US</Link>

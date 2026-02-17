@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import CommentItem from '../components/CommentItem';
 import { getLaunchComments, createLaunchComment } from '../services/comments';
@@ -15,6 +14,7 @@ const LaunchDetail = () => {
   const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { setSectionNav } = useOutletContext();
   const { user } = useAuth();
   const [launch, setLaunch] = useState(null);
   const [relatedStories, setRelatedStories] = useState([]);
@@ -39,22 +39,22 @@ const LaunchDetail = () => {
   // Helper function to remove links and URLs from description text
   const stripLinksFromText = (text) => {
     if (!text) return text;
-    
+
     // Remove HTML anchor tags and keep only the text content
     let cleaned = text.replace(/<a\s+[^>]*>([^<]*)<\/a>/gi, '$1');
-    
+
     // Remove URLs (http://, https://, www.)
     cleaned = cleaned.replace(/https?:\/\/[^\s]+/gi, '');
     cleaned = cleaned.replace(/www\.[^\s]+/gi, '');
-    
+
     // Remove any remaining HTML tags
     cleaned = cleaned.replace(/<[^>]*>/g, '');
-    
+
     // Decode HTML entities
     const textarea = document.createElement('textarea');
     textarea.innerHTML = cleaned;
     cleaned = textarea.value;
-    
+
     return cleaned.trim();
   };
 
@@ -73,14 +73,16 @@ const LaunchDetail = () => {
     if (!launch) return;
 
     const updateRocketPosition = () => {
-      const now = new Date().getTime();
-      const windowStart = launch.window_start
-        ? new Date(launch.window_start).getTime()
+      // Get T-0 time (NET - No Earlier Than)
+      const t0Time = launch.net
+        ? new Date(launch.net).getTime()
         : launch.launch_date
           ? new Date(launch.launch_date).getTime()
-          : launch.net
-            ? new Date(launch.net).getTime()
-            : null;
+          : null;
+
+      const windowStart = launch.window_start
+        ? new Date(launch.window_start).getTime()
+        : t0Time; // Fallback to T-0 if no window_start
 
       const windowEnd = launch.window_end
         ? new Date(launch.window_end).getTime()
@@ -88,25 +90,18 @@ const LaunchDetail = () => {
           ? windowStart + (4 * 60 * 60 * 1000) // Default 4 hour window if no end time
           : null;
 
-      if (!windowStart || !windowEnd) {
+      if (!windowStart || !windowEnd || !t0Time) {
         setRocketProgress(0);
         return;
       }
 
-      // Calculate progress (0-100%)
-      let progress = 0;
-      if (now < windowStart) {
-        // Before window opens - rocket at start
-        progress = 0;
-      } else if (now > windowEnd) {
-        // After window closes - rocket at end
-        progress = 100;
-      } else {
-        // Within window - calculate progress
-        const totalDuration = windowEnd - windowStart;
-        const elapsed = now - windowStart;
-        progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-      }
+      // Calculate rocket position based on T-0 within the window
+      // Rocket should be positioned at T-0, not at current time
+      const totalDuration = windowEnd - windowStart;
+      const t0Offset = t0Time - windowStart;
+
+      // Position rocket at T-0 within the window (0-100%)
+      let progress = Math.min(100, Math.max(0, (t0Offset / totalDuration) * 100));
 
       setRocketProgress(progress);
     };
@@ -542,54 +537,105 @@ const LaunchDetail = () => {
     return null;
   };
 
-  // Find first YouTube URL from video URLs
+  // Find first YouTube URL from video URLs (manual stream links only)
+  // Only show video if there's at least one vid_url (manual stream link)
   const getYouTubeUrl = () => {
     if (!launch) return null;
 
-    // Check launch vid_urls
-    if (launch.vid_urls && Array.isArray(launch.vid_urls)) {
+    // Check launch vid_urls (manual stream links)
+    // Only use vid_urls if they exist - these are manually added stream links
+    if (launch.vid_urls && Array.isArray(launch.vid_urls) && launch.vid_urls.length > 0) {
       for (const urlObj of launch.vid_urls) {
         const url = typeof urlObj === 'string' ? urlObj : (urlObj?.url || urlObj);
         if (url && typeof url === 'string' && (url.includes('youtube.com') || url.includes('youtu.be'))) {
-          console.log('Found YouTube URL in launch.vid_urls:', url);
+          console.log('Found manual YouTube stream link in launch.vid_urls:', url);
           return url;
         }
       }
     }
 
-    // Check mission vid_urls
-    if (launch.mission?.vid_urls && Array.isArray(launch.mission.vid_urls)) {
-      for (const urlObj of launch.mission.vid_urls) {
-        const url = typeof urlObj === 'string' ? urlObj : (urlObj?.url || urlObj);
-        if (url && typeof url === 'string' && (url.includes('youtube.com') || url.includes('youtu.be'))) {
-          console.log('Found YouTube URL in launch.mission.vid_urls:', url);
-          return url;
-        }
-      }
-    }
-
-    console.log('No YouTube URL found. Launch vid_urls:', launch.vid_urls, 'Mission vid_urls:', launch.mission?.vid_urls);
+    // Do NOT check mission vid_urls - only use manually added launch vid_urls
+    // This prevents auto-pulled external stream links from being displayed
+    console.log('No manual stream link found. Launch vid_urls:', launch.vid_urls);
     return null;
   };
 
+  // sectionNav and setSectionNav useEffect MUST run before any conditional return (Rules of Hooks)
+  const youtubeUrlForNav = launch ? getYouTubeUrl() : null;
+  const sectionNavValue = (!loading && launch) ? (
+    <div className="bg-[#8B1A1A] border-t-2 border-white">
+      <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0 bg-[#8B1A1A]">
+        <div className="flex items-center justify-between bg-[#8B1A1A]">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative" style={{ overflow: 'visible' }}>
+              <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black flex items-center justify-center overflow-hidden">
+                <img
+                  src="/TLP Helmet.png"
+                  alt="TLP Logo"
+                  className="w-7 h-7 sm:w-10 sm:h-10 object-contain"
+                />
+              </div>
+              <div className="absolute top-full left-0 bg-[#8B1A1A] px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
+                {currentTime}
+              </div>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>LAUNCH</h1>
+          </div>
+          <div className="hidden lg:flex items-center gap-0 text-xs uppercase flex-1 ml-6">
+            <Link
+              to="/launches/upcoming"
+              className="px-3 py-2 text-gray-400 hover:text-white transition-colors"
+            >
+              UPCOMING
+            </Link>
+            <span className="mx-1 font-bold text-white">|</span>
+            <Link
+              to="/launches/previous"
+              className="px-3 py-2 text-gray-400 hover:text-white transition-colors"
+            >
+              PREVIOUS
+            </Link>
+          </div>
+          {youtubeUrlForNav && (
+            <div className="hidden lg:block">
+              <a
+                href={youtubeUrlForNav}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 sm:px-5 py-1.5 sm:py-2 bg-white text-black hover:bg-gray-100 transition uppercase text-[10px] sm:text-xs font-semibold whitespace-nowrap"
+              >
+                Watch On Youtube
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  useEffect(() => {
+    setSectionNav(sectionNavValue);
+    return () => setSectionNav(null);
+  }, [loading, launch, currentTime]);
+
   if (loading) {
     return (
-      <Layout>
+      <>
         <RedDotLoader fullScreen={true} size="large" />
-      </Layout>
+      </>
     );
   }
 
   if (!launch) {
     return (
-      <Layout>
+      <>
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Launch Not Found</h1>
           <Link to="/launches/upcoming" className="text-[#8B1A1A] hover:text-[#A02A2A]">
             Return to Launch Center
           </Link>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -875,67 +921,8 @@ const LaunchDetail = () => {
     return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentPageUrl)}`;
   };
 
-  const sectionNav = (
-    <div className="bg-[#8B1A1A] border-t-2 border-white">
-      <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0 bg-[#8B1A1A]">
-        <div className="flex items-center justify-between bg-[#8B1A1A]">
-          {/* Logo and Title */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative" style={{ overflow: 'visible' }}>
-              <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black flex items-center justify-center overflow-hidden">
-                <img
-                  src="/TLP Helmet.png"
-                  alt="TLP Logo"
-                  className="w-7 h-7 sm:w-10 sm:h-10 object-contain"
-                />
-              </div>
-              <div className="absolute top-full left-0 bg-[#8B1A1A] px-2 py-0.5 text-[10px] text-white font-semibold whitespace-nowrap z-50">
-                {currentTime}
-              </div>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: 'Nasalization, sans-serif' }}>LAUNCH</h1>
-          </div>
-
-          {/* Desktop Navigation - Left Side */}
-          <div className="hidden lg:flex items-center gap-0 text-xs uppercase flex-1 ml-6">
-            <Link
-              to="/launches/upcoming"
-              className="px-3 py-2 text-gray-400 hover:text-white transition-colors"
-            >
-              UPCOMING
-            </Link>
-            <span className="mx-1 font-bold text-white">|</span>
-            <Link
-              to="/launches/previous"
-              className="px-3 py-2 text-gray-400 hover:text-white transition-colors"
-            >
-              PREVIOUS
-            </Link>
-            {/* STATISTICS button hidden for now */}
-            {/* <span className="mx-1 font-bold text-white">|</span>
-          <button className="px-3 py-2 text-gray-400 hover:text-white transition-colors">STATISTICS</button> */}
-          </div>
-
-          {/* Desktop YouTube Button - Right Side */}
-          {youtubeUrl && (
-            <div className="hidden lg:block">
-              <a
-                href={youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 sm:px-5 py-1.5 sm:py-2 bg-white text-black hover:bg-gray-100 transition uppercase text-[10px] sm:text-xs font-semibold whitespace-nowrap"
-              >
-                Watch On Youtube
-              </a>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       {/* Hero Section with Image - Single Background Container */}
       <div
         className="relative bg-cover bg-center bg-no-repeat"
@@ -1170,8 +1157,8 @@ const LaunchDetail = () => {
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold uppercase transition-colors ${activeTab === tab
-                        ? 'bg-white text-black'
-                        : 'text-white hover:bg-[#A02A2A]'
+                      ? 'bg-white text-black'
+                      : 'text-white hover:bg-[#A02A2A]'
                       }`}
                   >
                     {tab}
@@ -1366,22 +1353,10 @@ const LaunchDetail = () => {
                         <div className="space-y-4">
                           <h5 className="text-md font-semibold mb-3 text-gray-300">Rocket Configuration</h5>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                            {rocket.id && (
-                              <div>
-                                <span className="text-gray-400">Rocket ID:</span>{' '}
-                                <span className="font-semibold text-white">{rocket.id}</span>
-                              </div>
-                            )}
                             {(rocket.configuration.name || rocket.name) && (
                               <div>
                                 <span className="text-gray-400">Name:</span>{' '}
                                 <span className="font-semibold text-white">{rocket.configuration.name || rocket.name}</span>
-                              </div>
-                            )}
-                            {rocket.configuration.id && (
-                              <div>
-                                <span className="text-gray-400">Configuration ID:</span>{' '}
-                                <span className="font-semibold text-white">{rocket.configuration.id}</span>
                               </div>
                             )}
                             {rocket.configuration.full_name && (
@@ -1482,12 +1457,6 @@ const LaunchDetail = () => {
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                          {rocket.id && (
-                            <div>
-                              <span className="text-gray-400">Rocket ID:</span>{' '}
-                              <span className="font-semibold text-white">{rocket.id}</span>
-                            </div>
-                          )}
                           {rocket.name && (
                             <div>
                               <span className="text-gray-400">Name:</span>{' '}
@@ -2130,8 +2099,8 @@ const LaunchDetail = () => {
                 <button
                   onClick={() => setCommentSort('best')}
                   className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'best'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
-                      : 'text-gray-400 hover:text-white'
+                    ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                    : 'text-gray-400 hover:text-white'
                     }`}
                 >
                   Best
@@ -2139,8 +2108,8 @@ const LaunchDetail = () => {
                 <button
                   onClick={() => setCommentSort('newest')}
                   className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'newest'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
-                      : 'text-gray-400 hover:text-white'
+                    ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                    : 'text-gray-400 hover:text-white'
                     }`}
                 >
                   Newest
@@ -2148,8 +2117,8 @@ const LaunchDetail = () => {
                 <button
                   onClick={() => setCommentSort('oldest')}
                   className={`text-sm transition-colors px-1 pb-1 ${commentSort === 'oldest'
-                      ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
-                      : 'text-gray-400 hover:text-white'
+                    ? 'font-semibold text-[#8B1A1A] border-b-2 border-[#8B1A1A]'
+                    : 'text-gray-400 hover:text-white'
                     }`}
                 >
                   Oldest
@@ -2266,27 +2235,39 @@ const LaunchDetail = () => {
                 {/* Launch Window Bar */}
                 {(launch.window_start || launch.window_end || launch.launch_date || launch.net) && (
                   <div className="my-4">
+                    {/* T-0 Time Display - Above Window Times */}
+                    {launch.net && (
+                      <div className="mb-3 flex justify-center">
+                        <div className="bg-[#8B1A1A] rounded-lg p-3 w-fit">
+                          <div className="text-[10px] text-white mb-1 font-normal text-center">T-0 Time</div>
+                          <div className="text-[10px] text-white font-bold mb-0.5 text-center">
+                            {formatWindowTimeWithTimezone(
+                              launch.net,
+                              pad.location?.timezone_name || pad.timezone || null
+                            ).local}
+                          </div>
+                          <div className="text-[10px] text-white font-normal text-center">
+                            {formatWindowTimeWithTimezone(
+                              launch.net,
+                              pad.location?.timezone_name || pad.timezone || null
+                            ).utc}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Progress Bar with Rocket Icon */}
                     <div className="mb-4">
                       <div className="relative w-full h-2">
-                        {/* Background bar (dark gray) */}
+                        {/* Background bar (dark gray) - represents full launch window */}
                         <div className="absolute inset-0 bg-[#333333] rounded"></div>
-                        {/* Foreground bar (dark red) - shows progress */}
-                        <div
-                          className="absolute inset-0 bg-[#8B1A1A] rounded"
-                          style={{
-                            width: `${rocketProgress}%`,
-                            transition: 'width 1s linear'
-                          }}
-                        ></div>
-                        {/* Rocket Icon - moves based on real-time progress, positioned at the edge of progress */}
+                        {/* Rocket Icon - positioned at T-0 within the launch window */}
                         <div
                           className="absolute top-1/2 z-10"
                           style={{
                             left: `${Math.max(0, Math.min(100, rocketProgress))}%`,
                             transform: 'translateY(-50%) translateX(-50%) rotate(-45deg)',
-                            transition: 'left 1s linear',
-                            willChange: 'left'
+                            transition: 'none'
                           }}
                         >
                           <IoRocket
@@ -2507,7 +2488,7 @@ const LaunchDetail = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

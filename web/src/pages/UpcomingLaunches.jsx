@@ -63,94 +63,90 @@ const getUpcomingStatusBarColor = (launch) => {
   return 'bg-gray-500';
 };
 
-// Launch Card Component with Countdown
+// Launch Card Component with Countdown (5-row layout)
 const LaunchCardWithCountdown = ({ launch, getLaunchImageUrl }) => {
   const launchDate = launch.launch_date || launch.net;
   const countdown = useCountdown(launchDate);
-  
   const borderColor = getUpcomingStatusBarColor(launch);
-  
   const launchImageUrl = getLaunchImageUrl(launch);
-  
+
   return (
     <Link
       to={`/launches/${getLaunchSlug(launch)}`}
       className="block bg-gray-900 rounded overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
       style={{ minHeight: '180px' }}
     >
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ 
+        style={{
           backgroundImage: `url('${launchImageUrl}')`,
           opacity: launchImageUrl === HERO_BG_IMAGE ? 0.08 : 0.6
         }}
-      ></div>
-      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-gray-900/55 to-black/60"></div>
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${borderColor}`}></div>
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-gray-900/55 to-black/60" />
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${borderColor}`} />
 
-      <div className="relative z-10 p-4 h-full flex flex-col justify-center items-center text-center">
-        <div>
-          {launch.launch_date && (
-            <p className="text-[10px] text-gray-400 leading-tight normal-case mb-1">
-              {new Date(launch.launch_date).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric',
-                year: 'numeric'
-              }) + ' at ' + new Date(launch.launch_date).toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit', 
-                hour12: true 
-              }).toLowerCase()}
-            </p>
-          )}
-          
-          <div className="text-[9px] text-gray-400 mb-1 font-bold uppercase tracking-widest">
-            {launch.provider || launch.provider_abbrev || 'Provider'}
-          </div>
-          <h3 className="text-base font-bold mb-1 leading-tight tracking-tight text-white uppercase">
-            {(launch.name || 'Launch Name').toUpperCase()}
-          </h3>
-          <p className="text-xs text-gray-400 leading-tight normal-case mb-2">
-            {launch.provider || launch.provider_abbrev || ''} {launch.rocket || ''} | {launch.site || launch.site_name || 'Location TBD'}
+      <div className="relative z-10 p-4 h-full flex flex-col justify-center text-center">
+        {/* Row 1: Date / Time */}
+        {launchDate && (
+          <p className="text-[10px] text-gray-400 leading-tight normal-case mb-1">
+            {new Date(launchDate).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })}
+            {' at '}
+            {new Date(launchDate).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            }).toLowerCase()}
           </p>
-          
-          {/* Recovery Badge */}
-          <div className="mb-2">
-            <RecoveryBadge launch={launch} />
-          </div>
-          
-          {launchDate && new Date(launchDate) > new Date() && (
-            <div className="flex items-center justify-center gap-1 text-white mb-2">
-              <div className="flex flex-col items-center">
-                <div className="text-lg font-mono text-white">
-                  {String(countdown.days).padStart(2, '0')}
-                </div>
-                <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">D</div>
-              </div>
-              <span className="text-sm font-medium text-white leading-none self-start pt-1.5">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-lg font-mono text-white">
-                  {String(countdown.hours).padStart(2, '0')}
-                </div>
-                <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">H</div>
-              </div>
-              <span className="text-sm font-medium text-white leading-none self-start pt-1.5">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-lg font-mono text-white">
-                  {String(countdown.minutes).padStart(2, '0')}
-                </div>
-                <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">M</div>
-              </div>
-              <span className="text-sm font-medium text-white leading-none self-start pt-1.5">:</span>
-              <div className="flex flex-col items-center">
-                <div className="text-lg font-mono text-white">
-                  {String(countdown.seconds).padStart(2, '0')}
-                </div>
-                <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">S</div>
-              </div>
-            </div>
-          )}
+        )}
+
+        {/* Row 2: Company */}
+        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">
+          {launch.provider || launch.provider_abbrev || 'Provider'}
+        </p>
+
+        {/* Row 3: Rocket Name | Mission Name */}
+        <p className="text-xs text-gray-300 leading-tight normal-case mb-1">
+          {launch.rocket || 'Rocket'} | {(launch.name || 'Mission').toUpperCase()}
+        </p>
+
+        {/* Row 4: Launch Site */}
+        <p className="text-[10px] text-gray-400 leading-tight normal-case mb-2">
+          {launch.site || launch.site_name || 'Location TBD'}
+        </p>
+
+        <div className="mb-2">
+          <RecoveryBadge launch={launch} />
         </div>
+
+        {/* Row 5: Countdown */}
+        {launchDate && new Date(launchDate) > new Date() && (
+          <div className="flex items-center justify-center gap-1 text-white">
+            <div className="flex flex-col items-center">
+              <div className="text-lg font-mono text-white">{String(countdown.days).padStart(2, '0')}</div>
+              <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">D</div>
+            </div>
+            <span className="text-sm font-medium text-white leading-none self-start pt-1.5">:</span>
+            <div className="flex flex-col items-center">
+              <div className="text-lg font-mono text-white">{String(countdown.hours).padStart(2, '0')}</div>
+              <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">H</div>
+            </div>
+            <span className="text-sm font-medium text-white leading-none self-start pt-1.5">:</span>
+            <div className="flex flex-col items-center">
+              <div className="text-lg font-mono text-white">{String(countdown.minutes).padStart(2, '0')}</div>
+              <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">M</div>
+            </div>
+            <span className="text-sm font-medium text-white leading-none self-start pt-1.5">:</span>
+            <div className="flex flex-col items-center">
+              <div className="text-lg font-mono text-white">{String(countdown.seconds).padStart(2, '0')}</div>
+              <div className="text-[8px] uppercase tracking-widest text-gray-400 mt-0.5">S</div>
+            </div>
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -383,130 +379,6 @@ function UpcomingLaunches() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      {/* Top Header Bar */}
-      <div className="bg-black border-b border-gray-800">
-        <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-1.5 sm:py-2">
-          <div className="flex items-center justify-between">
-            {/* Desktop View */}
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-400 w-full justify-between">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="hover:text-white transition-colors">TLP Network Inc.</Link>
-            <span>|</span>
-            <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-            <span>|</span>
-            <Link to="/news" className="hover:text-white transition-colors">TLP SPACE NEWS</Link>
-            <span>|</span>
-            <Link to="/mission" className="hover:text-white transition-colors">TLP MISSION</Link>
-                <span className="hidden lg:inline">|</span>
-                <Link to="/spacebase" className="hidden lg:inline hover:text-white transition-colors">SPACEBASE</Link>
-                <span className="hidden xl:inline">|</span>
-                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" className="hidden xl:inline hover:text-white transition-colors">SHOP</a>
-                <span className="hidden xl:inline">|</span>
-                <Link to="/navigator/advanced" className="hidden xl:inline hover:text-white transition-colors">3D ORBIT NAVIGATOR</Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/about" className="hover:text-white transition-colors">ABOUT US</Link>
-            <span>|</span>
-            <Link to="/support" className="hover:text-white transition-colors">SUPPORT</Link>
-            <span>|</span>
-            {isAuthenticated ? (
-              <div className="relative ml-2" ref={profileMenuRef}>
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 hover:text-white transition-colors"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span className="text-gray-400">{user?.full_name || user?.email || user?.username || 'PROFILE'}</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`h-4 w-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-black border border-gray-800 rounded shadow-lg z-50">
-                    <Link
-                      to="/profile"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="block px-4 py-2 text-sm text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
-                    >
-                      Profile
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        logout();
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link to="/login" className="hover:text-white transition-colors ml-2">LOGIN</Link>
-            )}
-          </div>
-            </div>
-
-            {/* Mobile View - Hamburger Menu */}
-            <div className="md:hidden w-full flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Link to="/launches/upcoming" className="hover:text-white transition-colors">LAUNCH CENTER</Link>
-              </div>
-              <button
-                onClick={() => setTopMenuOpen(!topMenuOpen)}
-                className="text-white p-2 focus:outline-none"
-                aria-label="Toggle menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {topMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {topMenuOpen && (
-            <div className="md:hidden mt-3 pb-2 border-t border-gray-700 pt-3">
-              <div className="flex flex-col gap-3 text-xs text-gray-400">
-                <Link to="/news" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP SPACE NEWS</Link>
-                <Link to="/mission" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">TLP MISSION</Link>
-                <Link to="/spacebase" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SPACEBASE</Link>
-                <a href="https://thelaunchpad.store" target="_blank" rel="noopener noreferrer" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">SHOP</a>
-                <Link to="/navigator/advanced" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1">3D ORBIT NAVIGATOR</Link>
-                <div className="border-t border-gray-700 pt-3 mt-1">
-                  <Link to="/about" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">ABOUT US</Link>
-                  <Link to="/support" onClick={() => setTopMenuOpen(false)} className="hover:text-white transition-colors py-1 block">SUPPORT</Link>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Main Navigation Bar */}
       <div className="bg-[#8B1A1A] border-t-2 border-white">
         <div className="max-w-full mx-4 sm:mx-6 md:mx-8 px-3 sm:px-6 py-2 sm:py-0 bg-[#8B1A1A]">
@@ -775,41 +647,13 @@ function UpcomingLaunches() {
           <div className="sm:hidden">
             <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-3 pb-2 -mx-4 px-4">
               {launches && launches.length > 0 ? (
-                launches.slice(0, 5).map((launch, idx) => {
-                  const launchImageUrl = getLaunchImageUrl(launch);
-                  const barColor = getUpcomingStatusBarColor(launch);
-                  return (
-                    <Link
-                      key={launch.id || launch.external_id || idx}
-                      to={`/launches/${getLaunchSlug(launch)}`}
-                      className="relative h-44 w-[280px] shrink-0 snap-center bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
-                    >
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                        style={{ backgroundImage: `url('${launchImageUrl}')` }}
-                      ></div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
-                      <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
-                        <div className={`h-0.5 ${barColor} mb-1`}></div>
-                        <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
-                          {launch.provider || launch.provider_abbrev || 'Provider'}
-                        </div>
-                        <h4 className="text-[11px] font-bold text-white uppercase leading-tight mb-1">
-                          {(launch.name || 'Launch Name').toUpperCase()}
-                        </h4>
-                        <div className="mb-1 flex justify-center">
-                          <RecoveryBadge launch={launch} className="scale-75" />
-                        </div>
-                        <p className="text-[8px] text-gray-400 leading-tight normal-case">
-                          {launch.site || launch.site_name || 'Details here...'}
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })
+                launches.slice(0, 6).map((launch, idx) => (
+                  <div key={launch.id || launch.external_id || idx} className="w-[280px] shrink-0 snap-center">
+                    <LaunchCardWithCountdown launch={launch} getLaunchImageUrl={getLaunchImageUrl} />
+                  </div>
+                ))
               ) : (
-                // Show placeholder cards if no launches found
-                Array.from({ length: 5 }).map((_, idx) => (
+                Array.from({ length: 6 }).map((_, idx) => (
                   <div 
                     key={idx} 
                     className="relative h-44 w-[280px] shrink-0 snap-center bg-gray-900 rounded overflow-hidden"
@@ -833,41 +677,18 @@ function UpcomingLaunches() {
             </div>
           </div>
 
-          {/* Desktop Grid */}
-          <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7 gap-2 sm:gap-3">
+          {/* Desktop Grid - Featured (max 6) */}
+          <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 gap-2 sm:gap-3">
             {launches && launches.length > 0 ? (
-              launches.slice(0, 7).map((launch, idx) => {
-                const launchImageUrl = getLaunchImageUrl(launch);
-                const barColor = getUpcomingStatusBarColor(launch);
-                return (
-                  <Link
-                    key={launch.id || launch.external_id || idx}
-                    to={`/launches/${getLaunchSlug(launch)}`}
-                    className="relative h-40 lg:h-44 bg-cover bg-center rounded overflow-hidden group cursor-pointer transition-all duration-300 hover:opacity-90"
-                  >
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                      style={{ backgroundImage: `url('${launchImageUrl}')` }}
-                    ></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
-                    <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
-                      <div className={`h-0.5 ${barColor} mb-1`}></div>
-                      <div className="text-[9px] font-bold text-white uppercase tracking-widest mb-1">
-                        {launch.provider || launch.provider_abbrev || 'Provider'}
-                      </div>
-                      <h4 className="text-[11px] font-bold text-white uppercase leading-tight mb-1">
-                        {(launch.name || 'Launch Name').toUpperCase()}
-                      </h4>
-                      <p className="text-[8px] text-gray-400 leading-tight normal-case">
-                        {launch.site || launch.site_name || 'Details here...'}
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })
+              launches.slice(0, 6).map((launch, idx) => (
+                <LaunchCardWithCountdown
+                  key={launch.id || launch.external_id || idx}
+                  launch={launch}
+                  getLaunchImageUrl={getLaunchImageUrl}
+                />
+              ))
             ) : (
-              // Show placeholder cards if no launches found
-              Array.from({ length: 5 }).map((_, idx) => (
+              Array.from({ length: 6 }).map((_, idx) => (
                 <div 
                   key={idx} 
                   className="relative h-40 lg:h-44 bg-gray-900 rounded overflow-hidden"
@@ -897,7 +718,7 @@ function UpcomingLaunches() {
           <div className="max-w-full mx-auto px-3 sm:px-6 py-2 sm:py-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
             <div className="flex flex-wrap gap-1 w-full sm:w-auto">
-            {['ALL', 'CANADA', 'AMERICA', 'EUROPE', 'DOWN UNDER', 'INDIA', 'RUSSIA', 'CHINA', 'OTHER'].map((region) => (
+            {['ALL', 'CANADA', 'AMERICA', 'EUROPE', 'DOWN UNDER', 'INDIA', 'RUSSIA', 'CHINA', 'ASIA', 'OTHER'].map((region) => (
               <button
                 key={region}
                 onClick={() => setRegionFilter(region)}

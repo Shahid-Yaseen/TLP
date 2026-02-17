@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import Layout from './components/Layout';
 import LaunchCenter from './pages/LaunchCenter';
 import UpcomingLaunches from './pages/UpcomingLaunches';
 import PreviousLaunches from './pages/PreviousLaunches';
@@ -37,62 +38,92 @@ import AdvancedOrbitNavigator from './pages/AdvancedOrbitNavigator';
 import ComingSoonSpaceBase from './pages/ComingSoonSpaceBase';
 import ComingSoonOrbitNavigator from './pages/ComingSoonOrbitNavigator';
 import ComingSoonSupport from './pages/ComingSoonSupport';
+import ArticleList from './pages/admin/ArticleList';
+import ArticleEditor from './pages/admin/ArticleEditor';
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Homepage />} />
-        <Route path="/home" element={<Homepage />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/mission" element={<Mission />} />
-        <Route path="/launches" element={<Navigate to="/launches/upcoming" replace />} />
-        <Route path="/launches/upcoming" element={<UpcomingLaunches />} />
-        <Route path="/launches/previous" element={<PreviousLaunches />} />
-        <Route path="/launches/statistics" element={<LaunchStatistics />} />
-        <Route path="/launches/news" element={<LaunchNews />} />
-        <Route path="/launches/news/:slug" element={<LaunchNewsDetail />} />
-        <Route path="/launches/:slug" element={<LaunchDetail />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/news/in-space" element={<InSpaceNews />} />
-        <Route path="/news/technology" element={<TechnologyNews />} />
-        <Route path="/news/military" element={<MilitaryNews />} />
-        <Route path="/news/finance" element={<FinanceNews />} />
-        <Route path="/news/author/:slug" element={<AuthorProfile />} />
-        <Route path="/news/:slug" element={<ArticleDetail />} />
-        <Route path="/spacebase" element={<ComingSoonSpaceBase />} />
-        <Route path="/spacebase/astronauts" element={<AstronautsList />} />
-        <Route path="/spacebase/astronauts/:id" element={<AstronautProfile />} />
-        <Route path="/spacebase/rockets" element={<RocketsList />} />
-        <Route path="/spacebase/engines" element={<EnginesList />} />
-        <Route path="/spacebase/spacecraft" element={<SpacecraftList />} />
-        <Route path="/spacebase/facilities" element={<FacilitiesList />} />
-        <Route path="/spacebase/pads" element={<PadsList />} />
-        <Route path="/spacebase/agencies" element={<AgenciesList />} />
-        
-        {/* Authentication Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-email" element={<EmailVerification />} />
-        
-        {/* Protected Routes */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        
-        {/* Placeholder routes for other pages */}
-        <Route path="/briefing" element={<div className="min-h-screen bg-black text-white p-8">Mission Briefing (YouTube, Leaflet, etc.)</div>} />
-        <Route path="/tlpedia" element={<div className="min-h-screen bg-black text-white p-8">TLPedia (search/faceted results)</div>} />
-        <Route path="/navigator" element={<EarthOrbitNavigator />} />
-        <Route path="/navigator/advanced" element={<ComingSoonOrbitNavigator />} />
-        <Route path="/support" element={<ComingSoonSupport />} />
+        <Route element={<Layout />}>
+          {/* Public Routes */}
+          <Route path="/" element={<Homepage />} />
+          <Route path="/home" element={<Homepage />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/mission" element={<Mission />} />
+          <Route path="/launches" element={<Navigate to="/launches/upcoming" replace />} />
+          <Route path="/launches/upcoming" element={<UpcomingLaunches />} />
+          <Route path="/launches/previous" element={<PreviousLaunches />} />
+          <Route path="/launches/statistics" element={<LaunchStatistics />} />
+          <Route path="/launches/news" element={<LaunchNews />} />
+          <Route path="/launches/news/:slug" element={<LaunchNewsDetail />} />
+          <Route path="/launches/:slug" element={<LaunchDetail />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/news/in-space" element={<InSpaceNews />} />
+          <Route path="/news/technology" element={<TechnologyNews />} />
+          <Route path="/news/military" element={<MilitaryNews />} />
+          <Route path="/news/finance" element={<FinanceNews />} />
+          <Route path="/news/author/:slug" element={<AuthorProfile />} />
+          <Route path="/news/:slug" element={<ArticleDetail />} />
+          <Route path="/spacebase" element={<ComingSoonSpaceBase />} />
+          <Route path="/spacebase/astronauts" element={<AstronautsList />} />
+          <Route path="/spacebase/astronauts/:id" element={<AstronautProfile />} />
+          <Route path="/spacebase/rockets" element={<RocketsList />} />
+          <Route path="/spacebase/engines" element={<EnginesList />} />
+          <Route path="/spacebase/spacecraft" element={<SpacecraftList />} />
+          <Route path="/spacebase/facilities" element={<FacilitiesList />} />
+          <Route path="/spacebase/pads" element={<PadsList />} />
+          <Route path="/spacebase/agencies" element={<AgenciesList />} />
+
+          {/* Authentication Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin/articles"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ArticleList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/articles/new"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ArticleEditor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/articles/edit/:id"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ArticleEditor />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Placeholder routes and special layouts */}
+          <Route path="/briefing" element={<div className="min-h-screen bg-black text-white p-8">Mission Briefing (YouTube, Leaflet, etc.)</div>} />
+          <Route path="/tlpedia" element={<div className="min-h-screen bg-black text-white p-8">TLPedia (search/faceted results)</div>} />
+          <Route path="/navigator" element={<EarthOrbitNavigator />} />
+          <Route path="/navigator/advanced" element={<ComingSoonOrbitNavigator />} />
+          <Route path="/support" element={<ComingSoonSupport />} />
+        </Route>
       </Routes>
     </AuthProvider>
   );

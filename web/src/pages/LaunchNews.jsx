@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
-import Layout from '../components/Layout';
 import API_URL from '../config/api';
 import RedDotLoader from '../components/common/RedDotLoader';
 
 const LaunchNews = () => {
   const navigate = useNavigate();
+  const { setSectionNav } = useOutletContext();
   const [articles, setArticles] = useState([]);
   const [featuredArticle, setFeaturedArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ const LaunchNews = () => {
           setCategoriesFromApi(data);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -66,21 +66,21 @@ const LaunchNews = () => {
   const fetchArticles = async () => {
     try {
       setLoading(true);
-      
+
       const [articlesRes, featuredRes] = await Promise.all([
         axios.get(`${API_URL}/api/news`, { params: { status: 'published', limit: 10, category: 'launch' } }),
         axios.get(`${API_URL}/api/news/featured`, { params: { limit: 1 } }).catch(() => ({ data: [] })),
       ]);
 
-      const articlesData = Array.isArray(articlesRes.data) 
-        ? articlesRes.data 
+      const articlesData = Array.isArray(articlesRes.data)
+        ? articlesRes.data
         : articlesRes.data?.data || [];
-      
+
       // Filter featured article by launch category if available
-      let featuredData = Array.isArray(featuredRes.data) 
-        ? featuredRes.data 
+      let featuredData = Array.isArray(featuredRes.data)
+        ? featuredRes.data
         : featuredRes.data?.data || [];
-      
+
       // If featured article is not from launch category, use first launch article
       if (featuredData.length > 0 && featuredData[0].category_slug !== 'launch') {
         const launchFeatured = articlesData.find(a => a.category_slug === 'launch' || a.category_name === 'LAUNCH');
@@ -118,9 +118,9 @@ const LaunchNews = () => {
           <div className="flex items-center gap-3">
             <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
               <div className="w-14 h-14 bg-black flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/TLP Helmet.png" 
-                  alt="TLP Logo" 
+                <img
+                  src="/TLP Helmet.png"
+                  alt="TLP Logo"
                   className="w-10 h-10 object-contain"
                 />
               </div>
@@ -136,7 +136,7 @@ const LaunchNews = () => {
             {categories.slice(1).map((cat, idx) => (
               <div key={cat} className="flex items-center">
                 {idx > 0 && <span className="mx-1 font-bold text-white">|</span>}
-                  {cat === 'LAUNCH' ? (
+                {cat === 'LAUNCH' ? (
                   <button
                     className="px-2 py-1 text-white border-b-2 border-white font-bold"
                   >
@@ -154,7 +154,7 @@ const LaunchNews = () => {
                         navigate('/news');
                       }
                     }}
-                    className="px-2 py-1 text-white font-normal hover:text-gray-200"
+                    className="px-2 py-1 text-white font-normal hover:border-b-2 hover:border-white hover:font-bold transition-all"
                   >
                     {cat}
                   </button>
@@ -167,12 +167,17 @@ const LaunchNews = () => {
     </div>
   );
 
+  useEffect(() => {
+    setSectionNav(sectionNav);
+    return () => setSectionNav(null);
+  }, [currentTime]);
+
   if (loading) {
     return <RedDotLoader fullScreen={true} size="large" color="#fa9a00" />;
   }
 
   return (
-    <Layout sectionNav={sectionNav}>
+    <>
       <div className="w-full px-6 pt-[2px] pb-[2px]">
         {/* Category Header */}
         <div className="flex items-center justify-center mt-8 sm:mt-12 md:mt-16 mb-6">
@@ -187,7 +192,7 @@ const LaunchNews = () => {
         {featuredArticle ? (
           <div className="mb-6">
             <Link to={`/launches/news/${featuredArticle.slug || featuredArticle.id}`}>
-              <div 
+              <div
                 className="relative h-[600px] overflow-hidden"
                 style={{
                   backgroundImage: `url(${featuredArticle.featured_image_url || featuredArticle.hero_image_url || getDemoImage(0, 'launch')})`,
@@ -195,14 +200,14 @@ const LaunchNews = () => {
                   backgroundPosition: 'center',
                 }}
               >
-                <div 
+                <div
                   className="absolute inset-0"
                   style={{
                     background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
                   }}
                 ></div>
                 <div className="absolute inset-0 flex flex-col justify-end items-center p-8 z-10 text-center">
-                  <h1 
+                  <h1
                     className="text-5xl font-bold mb-4 text-white uppercase leading-tight max-w-4xl"
                     style={{ fontFamily: 'Nasalization, sans-serif' }}
                   >
@@ -230,7 +235,7 @@ const LaunchNews = () => {
           <div className="grid grid-cols-2 gap-3 mb-6">
             {articles.slice(0, 2).map((article, idx) => (
               <Link key={article.id} to={`/launches/news/${article.slug || article.id}`}>
-                <div 
+                <div
                   className="relative h-[300px] overflow-hidden"
                   style={{
                     backgroundImage: `url(${article.featured_image_url || article.hero_image_url || getDemoImage(idx + 1, 'launch')})`,
@@ -238,14 +243,14 @@ const LaunchNews = () => {
                     backgroundPosition: 'center',
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute inset-0"
                     style={{
                       background: 'linear-gradient(to bottom, rgba(10, 31, 58, 0.5), rgba(0, 0, 0, 0.7))',
                     }}
                   ></div>
                   <div className="absolute inset-0 flex flex-col justify-end items-center p-6 z-10 text-center">
-                    <h3 
+                    <h3
                       className="text-lg font-bold mb-2 text-white uppercase leading-tight"
                       style={{ fontFamily: 'Nasalization, sans-serif' }}
                     >
@@ -275,7 +280,7 @@ const LaunchNews = () => {
                       className="w-full h-48 object-cover"
                     />
                   </div>
-                  
+
                   {/* Right Side - Text Content */}
                   <div className="col-span-2 p-6 flex flex-col justify-between">
                     <div>
@@ -286,7 +291,7 @@ const LaunchNews = () => {
                         {article.excerpt}
                       </p>
                     </div>
-                    
+
                     {/* Tags/Buttons */}
                     <div className="flex gap-2 mt-4 flex-wrap">
                       <span className="px-3 py-1 bg-newstheme text-white text-xs font-semibold rounded-full uppercase" style={{ backgroundColor: '#fa9a00' }}>
@@ -304,7 +309,7 @@ const LaunchNews = () => {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 
