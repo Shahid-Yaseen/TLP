@@ -46,6 +46,9 @@ jobs:
         env:
           # Empty = same-origin in browser (https://tlpnetwork.com/api). Fixes mixed content when site is HTTPS.
           VITE_API_URL: ''
+          # Pre-launch password gate – set secrets in GitHub repo Settings → Secrets
+          VITE_PASSWORD_PROTECT: ${{ secrets.VITE_PASSWORD_PROTECT }}
+          VITE_ACCESS_PASSWORD: ${{ secrets.VITE_ACCESS_PASSWORD }}
         run: npm run build
 
       - name: Upload build artifacts
