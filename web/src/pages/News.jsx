@@ -493,8 +493,8 @@ const News = () => {
             <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
           </div>
 
-          {/* Hero Section - Large Featured Article */}
-          {featuredArticle && (
+          {/* Hero Section - Large Featured Article or placeholder */}
+          {featuredArticle ? (
             <div className="mb-6">
               <Link to={`/news/${featuredArticle?.slug || featuredArticle?.id}`}>
                 <div
@@ -527,6 +527,15 @@ const News = () => {
                   </div>
                 </div>
               </Link>
+            </div>
+          ) : (
+            <div className="mb-6">
+              <div className="relative h-[600px] overflow-hidden bg-gradient-to-b from-gray-900 via-gray-950 to-black flex items-center justify-center">
+                <div className="text-center px-4">
+                  <h1 className="text-5xl font-bold text-white uppercase" style={{ fontFamily: 'Nasalization, sans-serif' }}>NEWS</h1>
+                  <p className="text-lg text-gray-300 mt-3">Latest space news and updates</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -623,8 +632,8 @@ const News = () => {
             <div className="flex-1 h-1 bg-newstheme" style={{ backgroundColor: '#fa9a00' }}></div>
           </div>
 
-          {/* Hero Section - Large Featured Article */}
-          {featuredArticle && (
+          {/* Hero Section - Large Featured Article or placeholder */}
+          {featuredArticle ? (
             <div className="mb-6">
               <Link to={`/news/${featuredArticle?.slug || featuredArticle?.id}`}>
                 <div
@@ -657,6 +666,15 @@ const News = () => {
                   </div>
                 </div>
               </Link>
+            </div>
+          ) : (
+            <div className="mb-6">
+              <div className="relative h-[600px] overflow-hidden bg-gradient-to-b from-gray-900 via-gray-950 to-black flex items-center justify-center">
+                <div className="text-center px-4">
+                  <h1 className="text-5xl font-bold text-white uppercase" style={{ fontFamily: 'Nasalization, sans-serif' }}>{tagName}</h1>
+                  <p className="text-lg text-gray-300 mt-3">Latest updates for {tagName}</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -784,8 +802,8 @@ const News = () => {
       </div>
 
       <div className="w-full px-3 sm:px-4 md:px-6 pt-[2px] pb-[2px]">
-        {/* Featured Article - China Shenzhou 20 */}
-        {featuredArticle && (
+        {/* Featured Article - China Shenzhou 20 (or placeholder) */}
+        {featuredArticle ? (
           <div className="mb-8 sm:mb-10 md:mb-12">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {/* Main Featured Article */}
@@ -848,6 +866,20 @@ const News = () => {
                     </div>
                   </Link>
                 ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Placeholder hero when no featured article exists */
+          <div className="mb-8 sm:mb-10 md:mb-12">
+            <div className="relative h-[400px] sm:h-[500px] md:h-[550px] lg:h-[600px] overflow-hidden bg-gradient-to-b from-gray-900 via-gray-950 to-black">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center px-4">
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white uppercase" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                    NEWS
+                  </h1>
+                  <p className="text-lg text-gray-300 mt-3">Latest space news and updates</p>
+                </div>
               </div>
             </div>
           </div>
