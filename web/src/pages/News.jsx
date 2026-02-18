@@ -405,7 +405,7 @@ const News = () => {
         <div className="flex items-center gap-4 md:gap-8 flex-wrap" style={{ backgroundColor: '#fa9a00' }}>
           {/* Logo and Title */}
           <div className="flex items-center gap-3">
-            <div className="relative" style={{ overflow: 'visible', marginTop: '12px' }}>
+            <div className="relative" style={{ overflow: 'visible' }}>
               <div className="w-14 h-14 bg-black flex items-center justify-center overflow-hidden">
                 <img
                   src="/TLP Helmet.png"
