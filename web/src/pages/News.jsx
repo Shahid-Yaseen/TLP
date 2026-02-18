@@ -1074,36 +1074,40 @@ const News = () => {
           </div>
 
           {articles.length === 0 && !featuredArticle ? (
-            <div className="flex flex-col items-center justify-center py-16 sm:py-24 md:py-32 px-6 text-center border border-gray-800 rounded-lg bg-[#0d0d0d]">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-800 flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Nasalization, sans-serif' }}>
-                No stories yet
-              </h3>
-              <p className="text-gray-400 text-sm sm:text-base max-w-md mb-6">
-                {selectedTrending || timeFilter
-                  ? 'No articles match the current filter. Try a different time range or topic.'
-                  : 'Check back soon for the latest space news and updates.'}
-              </p>
-              <div className="flex flex-wrap gap-3 justify-center">
-                {timeFilter && (
-                  <button
-                    onClick={() => setTimeFilter(null)}
-                    className="px-4 py-2 text-sm font-medium bg-white text-black hover:bg-gray-200 transition-colors"
-                  >
-                    Show all
-                  </button>
-                )}
-                <Link
-                  to="/"
-                  className="px-4 py-2 text-sm font-medium bg-[#fa9a00] text-black hover:bg-[#e08a00] transition-colors"
-                  style={{ backgroundColor: '#fa9a00' }}
-                >
-                  Back to home
-                </Link>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
+              <div className="md:col-span-3">
+                <div className="w-full h-full min-h-[420px] flex flex-col items-center justify-center px-6 text-center border border-gray-800 rounded-lg bg-[#0d0d0d]">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-800 flex items-center justify-center mb-6">
+                    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Nasalization, sans-serif' }}>
+                    No stories yet
+                  </h3>
+                  <p className="text-gray-400 text-sm sm:text-base max-w-md mb-6">
+                    {selectedTrending || timeFilter
+                      ? 'No articles match the current filter. Try a different time range or topic.'
+                      : 'Check back soon for the latest space news and updates.'}
+                  </p>
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    {timeFilter && (
+                      <button
+                        onClick={() => setTimeFilter(null)}
+                        className="px-4 py-2 text-sm font-medium bg-white text-black hover:bg-gray-200 transition-colors"
+                      >
+                        Show all
+                      </button>
+                    )}
+                    <Link
+                      to="/"
+                      className="px-4 py-2 text-sm font-medium bg-[#fa9a00] text-black hover:bg-[#e08a00] transition-colors"
+                      style={{ backgroundColor: '#fa9a00' }}
+                    >
+                      Back to home
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
